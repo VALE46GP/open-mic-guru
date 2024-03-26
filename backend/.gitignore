@@ -1,0 +1,16 @@
+# Environment variables
+.env
+
+# Dependency directory
+node_modules/
+
+# macOS system files
+.DS_Store
+
+# Logs
+*.log
+
+# Optional: IDE-specific files
+.idea/
+*.code-workspace
+.vscode/

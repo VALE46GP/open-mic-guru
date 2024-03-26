@@ -34,7 +34,33 @@ app.post('/users', async (req, res) => {
     }
 });
 
-// Additional routes for events, links, user_roles, etc., would follow a similar pattern...
+// GET All Events
+app.get('/events', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT * FROM events');
+        res.json(result.rows);
+    } catch (err) {
+        console.error(err);
+        res.status(500).send('Server error');
+    }
+});
+
+// POST a New Event
+app.post('/events', async (req, res) => {
+    try {
+        const { venue_id, date_time } = req.body;
+        // We're assuming 'name' would be a property you'd include for an event.
+        const newName = req.body.name || 'New Event'; // Default event name if not provided.
+        const result = await pool.query(
+            'INSERT INTO events (name, venue_id, date_time) VALUES ($1, $2, $3) RETURNING *',
+            [newName, venue_id, date_time]
+        );
+        res.status(201).json(result.rows[0]);
+    } catch (err) {
+        console.error(err);
+        res.status(500).send('Server error');
+    }
+});
 
 
 // Start the server
