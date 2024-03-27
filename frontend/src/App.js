@@ -1,18 +1,18 @@
-import logo from './logo.svg';
+import React from 'react';
+import { BrowserRouter as Router, Route, Routes } from 'react-router-dom'; // Import Routes instead of Switch
+import TestDbPage from './TestDbPage'; // Import the TestDbPage component
 import './App.css';
-import DatabaseTest from './DatabaseTest';
 
 function App() {
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-      </header>
-      <DatabaseTest />
-    </div>
+    <Router>
+      <div className="App">
+        <Routes> {/* Use Routes here instead of Switch */}
+          <Route path="/testdb" element={<TestDbPage />} />
+          {/* Define other routes here */}
+        </Routes>
+      </div>
+    </Router>
   );
 }
 
