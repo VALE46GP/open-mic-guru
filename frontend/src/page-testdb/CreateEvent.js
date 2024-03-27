@@ -1,42 +1,22 @@
 import React, { useState } from 'react';
+import { useDatabaseData } from '../context/DatabaseContext';
 
-function DatabaseTest() {
-    const [users, setUsers] = useState([]);
-    const [events, setEvents] = useState([]);
-    const [newUserName, setNewUserName] = useState('');
+function CreateEvent() {
     const [newEventName, setNewEventName] = useState('');
     const [newVenueId, setNewVenueId] = useState('');
     const [newEventDateTime, setNewEventDateTime] = useState('');
     const [newEventAddress, setNewEventAddress] = useState('');
     const [newEventLatitude, setNewEventLatitude] = useState('');
     const [newEventLongitude, setNewEventLongitude] = useState('');
+    const { updateDatabaseData, databaseData } = useDatabaseData();
 
-    // Handler for creating a new user
-    const handleCreateUser = async () => {
-        try {
-            const response = await fetch('/users', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ name: newUserName }),
-            });
-            const data = await response.json();
-            setUsers([...users, data]);
-            setNewUserName('');
-        } catch (error) {
-            console.error('Error creating user:', error);
-        }
-    };
-
-    // Handler for creating a new event
     const handleCreateEvent = async () => {
         if (!(newEventAddress || (newEventLatitude && newEventLongitude))) {
             alert('An event must have either an address or both latitude and longitude.');
             return;
         }
         try {
-            const response = await fetch('/events', {
+            const response = await fetch('/api/events', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -51,7 +31,10 @@ function DatabaseTest() {
                 }),
             });
             const data = await response.json();
-            setEvents([...events, data]);
+            updateDatabaseData({
+              ...databaseData,
+              events: [...databaseData.events, data]
+            });
             setNewEventName('');
             setNewVenueId('');
             setNewEventDateTime('');
@@ -63,23 +46,8 @@ function DatabaseTest() {
         }
     };
 
-    // Render method with forms for user and event creation
     return (
-        <div className="database-test">
-            {/* Form for creating a new user */}
-            <div>
-                <h2>Create a New User</h2>
-                <input
-                    type="text"
-                    placeholder="User Name"
-                    value={newUserName}
-                    onChange={(e) => setNewUserName(e.target.value)}
-                />
-                <button onClick={handleCreateUser}>Submit</button>
-            </div>
-
-            {/* Form for creating a new event */}
-            <div>
+        <div>
                 <h2>Create a New Event</h2>
                 <input
                     type="text"
@@ -119,8 +87,7 @@ function DatabaseTest() {
                 />
                 <button onClick={handleCreateEvent}>Submit</button>
             </div>
-        </div>
     );
 }
 
-export default DatabaseTest;
+export default CreateEvent;

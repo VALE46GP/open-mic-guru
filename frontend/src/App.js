@@ -1,16 +1,18 @@
 import React from 'react';
-import { BrowserRouter as Router, Route, Routes } from 'react-router-dom'; // Import Routes instead of Switch
-import TestDbPage from './TestDbPage'; // Import the TestDbPage component
+import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
+import TestDbPage from './page-testdb/TestDbPage';
 import './App.css';
+import { DatabaseDataProvider } from './context/DatabaseContext';
 
 function App() {
   return (
     <Router>
       <div className="App">
-        <Routes> {/* Use Routes here instead of Switch */}
-          <Route path="/testdb" element={<TestDbPage />} />
-          {/* Define other routes here */}
-        </Routes>
+        <DatabaseDataProvider>
+          <Routes>
+            <Route path="/testdb" element={<TestDbPage />} />
+          </Routes>
+        </DatabaseDataProvider>
       </div>
     </Router>
   );

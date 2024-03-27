@@ -1,14 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
+import { useDatabaseData } from '../context/DatabaseContext'; // Adjust the import path as necessary
 
 function DatabaseOverview() {
-    const [databaseData, setDatabaseData] = useState(null);
-
-    useEffect(() => {
-        fetch('/testdb')
-            .then(response => response.json())
-            .then(data => setDatabaseData(data))
-            .catch(error => console.error('Error fetching database data:', error));
-    }, []);
+    const { databaseData } = useDatabaseData();
 
     if (!databaseData) return <div>Loading...</div>;
 
