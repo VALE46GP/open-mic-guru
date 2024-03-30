@@ -1,5 +1,5 @@
 import React from 'react';
-import { useDatabaseData } from '../context/DatabaseContext'; // Adjust the import path as necessary
+import { useDatabaseData } from '../context/DatabaseContext';
 
 function DatabaseOverview() {
     const { databaseData } = useDatabaseData();

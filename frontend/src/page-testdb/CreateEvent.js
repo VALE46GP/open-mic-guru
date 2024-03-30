@@ -1,20 +1,55 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useDatabaseData } from '../context/DatabaseContext';
 
 function CreateEvent() {
     const [newEventName, setNewEventName] = useState('');
-    const [newVenueId, setNewVenueId] = useState('');
     const [newEventDateTime, setNewEventDateTime] = useState('');
-    const [newEventAddress, setNewEventAddress] = useState('');
-    const [newEventLatitude, setNewEventLatitude] = useState('');
-    const [newEventLongitude, setNewEventLongitude] = useState('');
+    const [selectedVenue, setSelectedVenue] = useState(null);
+    const autocompleteInputRef = useRef(null);
     const { updateDatabaseData, databaseData } = useDatabaseData();
 
-    const handleCreateEvent = async () => {
-        if (!(newEventAddress || (newEventLatitude && newEventLongitude))) {
-            alert('An event must have either an address or both latitude and longitude.');
+    const initializeAutocomplete = () => {
+        console.log("Attempting to initialize Autocomplete");
+        if (!autocompleteInputRef.current) {
+            console.log("Autocomplete input ref not available");
             return;
         }
+        console.log("Initializing Autocomplete on:", autocompleteInputRef.current);
+        const autocomplete = new window.google.maps.places.Autocomplete(
+            autocompleteInputRef.current,
+            { types: ['establishment'] }
+        );
+        autocomplete.setFields(['place_id', 'name', 'address_components', 'geometry']);
+        autocomplete.addListener('place_changed', () => {
+            const place = autocomplete.getPlace();
+            console.log("Place selected:", place);
+            setSelectedVenue(place);
+        });
+    };
+
+    useEffect(() => {
+        const checkGoogleMapsLoaded = setInterval(() => {
+            if (window.google && window.google.maps) {
+                console.log("Google Maps API is fully loaded");
+                clearInterval(checkGoogleMapsLoaded);
+                console.log('Google object:', window.google);
+                initializeAutocomplete();
+            }
+        }, 100); // Check every 100 milliseconds
+
+        return () => clearInterval(checkGoogleMapsLoaded); // Cleanup on unmount
+    }, []);
+
+    const handleCreateEvent = async () => {
+        if (!selectedVenue) {
+            alert("Please select a location from the dropdown.");
+            return;
+        }
+
+        // Assuming checkOrCreateVenue now properly handles the selected venue
+        // and returns the venue's ID which is needed to create the event
+        const venueId = await checkOrCreateVenue(selectedVenue);
+
         try {
             const response = await fetch('/api/events', {
                 method: 'POST',
@@ -23,70 +58,72 @@ function CreateEvent() {
                 },
                 body: JSON.stringify({
                     name: newEventName,
-                    venue_id: newVenueId,
+                    venue_id: venueId, // This should be defined now
                     date_time: newEventDateTime,
-                    address: newEventAddress,
-                    latitude: newEventLatitude,
-                    longitude: newEventLongitude,
                 }),
             });
-            const data = await response.json();
-            updateDatabaseData({
-              ...databaseData,
-              events: [...databaseData.events, data]
-            });
+            const newEvent = await response.json();
+            updateDatabaseData({ events: [...databaseData.events, newEvent] });
             setNewEventName('');
-            setNewVenueId('');
             setNewEventDateTime('');
-            setNewEventAddress('');
-            setNewEventLatitude('');
-            setNewEventLongitude('');
+            setSelectedVenue(null); // Reset selected venue
         } catch (error) {
             console.error('Error creating event:', error);
         }
     };
 
+    async function checkOrCreateVenue(selectedVenue) {
+        // Construct a complete address from the address components using short_name
+        const address = selectedVenue.address_components.map(component => component.short_name).join(', ');
+
+        // Prepare the venue data with more details
+        const venueData = {
+            name: selectedVenue.name,
+            address: address,
+            latitude: selectedVenue.geometry.location.lat,
+            longitude: selectedVenue.geometry.location.lng,
+            // Include other details you might need, adjusting keys as per your backend API
+            // phone and url might be fetched from additional details request if needed
+        };
+
+        try {
+            const response = await fetch('/api/venues/checkOrCreate', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(venueData),
+            });
+            const data = await response.json();
+            return data.venueId; // Use this ID in your event creation logic
+        } catch (error) {
+            console.error('Error checking or creating venue:', error);
+            return null; // Or handle appropriately
+        }
+    }
+
     return (
         <div>
-                <h2>Create a New Event</h2>
-                <input
-                    type="text"
-                    placeholder="Event Name"
-                    value={newEventName}
-                    onChange={(e) => setNewEventName(e.target.value)}
-                />
-                <input
-                    type="text"
-                    placeholder="Venue ID"
-                    value={newVenueId}
-                    onChange={(e) => setNewVenueId(e.target.value)}
-                />
-                <input
-                    type="datetime-local"
-                    placeholder="Event Date and Time"
-                    value={newEventDateTime}
-                    onChange={(e) => setNewEventDateTime(e.target.value)}
-                />
-                <input
-                    type="text"
-                    placeholder="Event Address"
-                    value={newEventAddress}
-                    onChange={(e) => setNewEventAddress(e.target.value)}
-                />
-                <input
-                    type="text"
-                    placeholder="Latitude"
-                    value={newEventLatitude}
-                    onChange={(e) => setNewEventLatitude(e.target.value)}
-                />
-                <input
-                    type="text"
-                    placeholder="Longitude"
-                    value={newEventLongitude}
-                    onChange={(e) => setNewEventLongitude(e.target.value)}
-                />
-                <button onClick={handleCreateEvent}>Submit</button>
-            </div>
+            <h2>Create a New Event</h2>
+            <input
+                type="text"
+                placeholder="Event Name"
+                value={newEventName}
+                onChange={(e) => setNewEventName(e.target.value)}
+            />
+            <input
+                ref={autocompleteInputRef}
+                type="text"
+                placeholder="Location"
+            />
+            <input
+                type="datetime-local"
+                placeholder="Event Date and Time"
+                value={newEventDateTime}
+                onChange={(e) => setNewEventDateTime(e.target.value)}
+            />
+            <button onClick={handleCreateEvent}>Submit</button>
+        </div>
     );
 }
 
