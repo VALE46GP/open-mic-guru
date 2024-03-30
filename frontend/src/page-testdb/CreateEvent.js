@@ -74,6 +74,9 @@ function CreateEvent() {
 
     async function checkOrCreateVenue(selectedVenue) {
         // Construct a complete address from the address components using short_name
+        console.log('location: ', selectedVenue.geometry.location)
+        console.log('latitude: ', selectedVenue.geometry.location.lat)
+
         const address = selectedVenue.address_components.map(component => component.short_name).join(', ');
 
         // Prepare the venue data with more details
@@ -122,7 +125,7 @@ function CreateEvent() {
                 value={newEventDateTime}
                 onChange={(e) => setNewEventDateTime(e.target.value)}
             />
-            <button onClick={handleCreateEvent}>Submit</button>
+            <button className="submit-button" onClick={handleCreateEvent}>Submit</button>
         </div>
     );
 }

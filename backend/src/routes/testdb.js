@@ -11,7 +11,7 @@ router.get('/testdb', async (req, res) => {
         const userRolesCountQuery = await db.query('SELECT COUNT(*) AS user_roles_count FROM user_roles');
 
         const upcomingEventsQuery = await db.query(`
-            SELECT e.id, e.date_time, v.name AS venue_name, e.additional_info
+            SELECT e.id, e.date_time, v.name AS venue_name, e.venue_id, e.additional_info
             FROM events e
             JOIN venues v ON e.venue_id = v.id
             WHERE e.date_time > NOW()
@@ -21,6 +21,7 @@ router.get('/testdb', async (req, res) => {
 
         const usersQuery = await db.query('SELECT * FROM users');
         const eventsQuery = await db.query('SELECT * FROM events');
+        const venuesQuery = await db.query('SELECT * FROM venues');
 
         res.json({
             counts: {
@@ -32,7 +33,8 @@ router.get('/testdb', async (req, res) => {
             },
             upcomingEvents: upcomingEventsQuery.rows,
             users: usersQuery.rows,
-            events: eventsQuery.rows
+            events: eventsQuery.rows,
+            venues: venuesQuery.rows // Add this line to include venues data in the response
         });
     } catch (err) {
         console.error('Database connection error:', err);

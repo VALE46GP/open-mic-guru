@@ -5,7 +5,7 @@ import CreateEvent from './CreateEvent';
 
 function TestDbPage() {
   return (
-    <div>
+    <div className="App">
       <h1>Test Database Page</h1>
       <DatabaseOverview />
       <CreateUser />

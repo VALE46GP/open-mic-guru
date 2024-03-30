@@ -34,7 +34,7 @@ function CreateUser() {
                 value={newUserName}
                 onChange={(e) => setNewUserName(e.target.value)}
             />
-            <button onClick={handleCreateUser}>Submit</button>
+            <button className="submit-button" onClick={handleCreateUser}>Submit</button>
         </div>
     );
 }
