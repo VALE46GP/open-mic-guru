@@ -2,6 +2,7 @@ import React from 'react';
 import DatabaseOverview from './DatabaseOverview';
 import CreateUser from './CreateUser';
 import CreateEvent from './CreateEvent';
+import CreateVenue from './CreateVenue'; // Add this import
 
 function TestDbPage() {
   return (
@@ -10,6 +11,7 @@ function TestDbPage() {
       <DatabaseOverview />
       <CreateUser />
       <CreateEvent />
+      <CreateVenue />
     </div>
   );
 }

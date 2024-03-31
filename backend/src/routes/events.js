@@ -16,8 +16,9 @@ router.get('/', async (req, res) => {
 // POST a new event
 router.post('/', async (req, res) => {
     try {
-        const { venue_id, date_time } = req.body;
-        const result = await db.query('INSERT INTO events (venue_id, date_time) VALUES ($1, $2) RETURNING *', [venue_id, date_time]);
+        console.log('Received event data:', req.body);
+        const { venue_id, date_time, name } = req.body;
+        const result = await db.query('INSERT INTO events (venue_id, date_time, name) VALUES ($1, $2, $3) RETURNING *', [venue_id, date_time, name]);
         res.status(201).json(result.rows[0]);
     } catch (err) {
         console.error(err);

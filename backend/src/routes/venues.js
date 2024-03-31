@@ -6,6 +6,8 @@ const db = require('../db');
 router.post('/checkOrCreate', async (req, res) => {
     const { name, address, latitude, longitude } = req.body;
 
+    console.log('Received venue data:', req.body); // Added logging to help debug
+
     try {
         // Check if venue exists based on name and address
         let venue = await db.query('SELECT * FROM venues WHERE name = $1 AND address = $2', [name, address]);

@@ -46,9 +46,9 @@ function CreateEvent() {
             return;
         }
 
-        // Assuming checkOrCreateVenue now properly handles the selected venue
-        // and returns the venue's ID which is needed to create the event
-        const venueId = await checkOrCreateVenue(selectedVenue);
+        let venueId = await checkOrCreateVenue(selectedVenue);
+
+        console.log('Sending event data:', { name: newEventName, venue_id: venueId, date_time: newEventDateTime });
 
         try {
             const response = await fetch('/api/events', {
@@ -57,7 +57,7 @@ function CreateEvent() {
                     'Content-Type': 'application/json',
                 },
                 body: JSON.stringify({
-                    name: newEventName,
+                    name: newEventName, // Ensure this line is correctly referencing the state variable
                     venue_id: venueId, // This should be defined now
                     date_time: newEventDateTime,
                 }),
@@ -83,11 +83,11 @@ function CreateEvent() {
         const venueData = {
             name: selectedVenue.name,
             address: address,
-            latitude: selectedVenue.geometry.location.lat,
-            longitude: selectedVenue.geometry.location.lng,
-            // Include other details you might need, adjusting keys as per your backend API
-            // phone and url might be fetched from additional details request if needed
+            latitude: selectedVenue.geometry.location.lat(), // Ensure these methods are called to get the value
+            longitude: selectedVenue.geometry.location.lng(),
         };
+
+        console.log('Sending venue data:', venueData);
 
         try {
             const response = await fetch('/api/venues/checkOrCreate', {

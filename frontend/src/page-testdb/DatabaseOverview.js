@@ -20,7 +20,7 @@ function DatabaseOverview() {
                 </thead>
                 <tbody>
                     {databaseData.users.map((user) => (
-                        <tr key={user.id}>
+                        <tr key={`user-${user.id}`}> {/* Prefix with "user-" */}
                             <td>{user.id}</td>
                             <td>{user.name}</td>
                         </tr>
@@ -31,15 +31,15 @@ function DatabaseOverview() {
             <table>
                 <thead>
                     <tr>
-                        <th>ID</th>
-                        <th>Info</th>
-                        <th>Date and Time</th>
-                        <th>Venue ID</th>
+                        <th>id</th>
+                        <th>additional_info</th>
+                        <th>date_ime</th>
+                        <th>venue_id</th>
                     </tr>
                 </thead>
                 <tbody>
                     {databaseData.events.map((event) => (
-                        <tr key={event.id}>
+                        <tr key={`event-${event.id}`}> {/* Prefix with "event-" */}
                             <td>{event.id}</td>
                             <td>{event.additional_info}</td>
                             <td>{new Date(event.date_time).toLocaleString()}</td>
@@ -52,16 +52,16 @@ function DatabaseOverview() {
             <table>
                 <thead>
                     <tr>
-                        <th>ID</th>
-                        <th>Name</th>
-                        <th>Address</th>
-                        <th>Latitude</th>
-                        <th>Longitude</th>
+                        <th>id</th>
+                        <th>name</th>
+                        <th>address</th>
+                        <th>latitude</th>
+                        <th>longitude</th>
                     </tr>
                 </thead>
                 <tbody>
                     {databaseData.venues.map((venue) => (
-                        <tr key={venue.id}>
+                        <tr key={`venue-${venue.id}`}> {/* Prefix with "venue-" */}
                             <td>{venue.id}</td>
                             <td>{venue.name}</td>
                             <td>{venue.address}</td>
