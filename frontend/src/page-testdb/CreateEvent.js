@@ -63,7 +63,7 @@ function CreateEvent() {
                     venue_id: venueId,
                     date_time: newEventDateTime,
                     additional_info: additionalInfo,
-                    host_id: hostId, // Add this line
+                    host_id: hostId,
                 }),
             });
             const newEvent = await response.json();
@@ -72,7 +72,7 @@ function CreateEvent() {
             setNewEventDateTime('');
             setSelectedVenue(null);
             setAdditionalInfo('');
-            setHostId(''); // Reset host ID
+            setHostId('');
         } catch (error) {
             console.error('Error creating event:', error);
         }
