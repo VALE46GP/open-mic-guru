@@ -20,7 +20,7 @@ function DatabaseOverview() {
                 </thead>
                 <tbody>
                     {databaseData.users.map((user) => (
-                        <tr key={`user-${user.id}`}> {/* Prefix with "user-" */}
+                        <tr key={`user-${user.id}`}>
                             <td>{user.id}</td>
                             <td>{user.name}</td>
                         </tr>
@@ -34,18 +34,20 @@ function DatabaseOverview() {
                         <th>id</th>
                         <th>name</th>
                         <th>additional_info</th>
-                        <th>date_ime</th>
+                        <th>date_time</th>
                         <th>venue_id</th>
+                        <th>host_id</th>
                     </tr>
                 </thead>
                 <tbody>
                     {databaseData.events.map((event) => (
-                        <tr key={`event-${event.id}`}> {/* Prefix with "event-" */}
+                        <tr key={`event-${event.id}`}>
                             <td>{event.id}</td>
                             <td>{event.name}</td>
                             <td>{event.additional_info}</td>
                             <td>{new Date(event.date_time).toLocaleString()}</td>
                             <td>{event.venue_id}</td>
+                            <td>{event.host_id}</td>
                         </tr>
                     ))}
                 </tbody>
@@ -63,7 +65,7 @@ function DatabaseOverview() {
                 </thead>
                 <tbody>
                     {databaseData.venues.map((venue) => (
-                        <tr key={`venue-${venue.id}`}> {/* Prefix with "venue-" */}
+                        <tr key={`venue-${venue.id}`}>
                             <td>{venue.id}</td>
                             <td>{venue.name}</td>
                             <td>{venue.address}</td>

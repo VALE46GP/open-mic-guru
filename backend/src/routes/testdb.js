@@ -11,16 +11,21 @@ router.get('/testdb', async (req, res) => {
         const userRolesCountQuery = await db.query('SELECT COUNT(*) AS user_roles_count FROM user_roles');
 
         const upcomingEventsQuery = await db.query(`
-            SELECT e.id, e.date_time, v.name AS venue_name, e.venue_id, e.additional_info
+            SELECT e.id, e.date_time, v.name AS venue_name, e.venue_id, e.additional_info, ur.user_id AS host_id
             FROM events e
             JOIN venues v ON e.venue_id = v.id
+            LEFT JOIN user_roles ur ON e.id = ur.event_id AND ur.role = 'host'
             WHERE e.date_time > NOW()
             ORDER BY e.date_time ASC
             LIMIT 5
         `);
 
+        const eventsQuery = await db.query(`
+            SELECT e.id, e.date_time, e.name, e.venue_id, e.additional_info, ur.user_id AS host_id
+            FROM events e
+            LEFT JOIN user_roles ur ON e.id = ur.event_id AND ur.role = 'host'
+        `);
         const usersQuery = await db.query('SELECT * FROM users');
-        const eventsQuery = await db.query('SELECT * FROM events');
         const venuesQuery = await db.query('SELECT * FROM venues');
 
         res.json({
@@ -34,7 +39,7 @@ router.get('/testdb', async (req, res) => {
             upcomingEvents: upcomingEventsQuery.rows,
             users: usersQuery.rows,
             events: eventsQuery.rows,
-            venues: venuesQuery.rows // Add this line to include venues data in the response
+            venues: venuesQuery.rows
         });
     } catch (err) {
         console.error('Database connection error:', err);

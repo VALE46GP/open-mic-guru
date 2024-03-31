@@ -6,6 +6,7 @@ function CreateEvent() {
     const [newEventDateTime, setNewEventDateTime] = useState('');
     const [selectedVenue, setSelectedVenue] = useState(null);
     const [additionalInfo, setAdditionalInfo] = useState('');
+    const [hostId, setHostId] = useState(''); // Add this line
     const autocompleteInputRef = useRef(null);
     const { updateDatabaseData, databaseData } = useDatabaseData();
 
@@ -49,7 +50,7 @@ function CreateEvent() {
 
         let venueId = await checkOrCreateVenue(selectedVenue);
 
-        console.log('Sending event data:', { name: newEventName, venue_id: venueId, date_time: newEventDateTime, additional_info: additionalInfo });
+        console.log('Sending event data:', { name: newEventName, venue_id: venueId, date_time: newEventDateTime, additional_info: additionalInfo, host_id: hostId }); // Modified line
 
         try {
             const response = await fetch('/api/events', {
@@ -58,35 +59,35 @@ function CreateEvent() {
                     'Content-Type': 'application/json',
                 },
                 body: JSON.stringify({
-                    name: newEventName, // Ensure this line is correctly referencing the state variable
-                    venue_id: venueId, // This should be defined now
+                    name: newEventName,
+                    venue_id: venueId,
                     date_time: newEventDateTime,
-                    additional_info: additionalInfo, // Add this line
+                    additional_info: additionalInfo,
+                    host_id: hostId, // Add this line
                 }),
             });
             const newEvent = await response.json();
             updateDatabaseData({ events: [...databaseData.events, newEvent] });
             setNewEventName('');
             setNewEventDateTime('');
-            setSelectedVenue(null); // Reset selected venue
-            setAdditionalInfo(''); // Reset additional info
+            setSelectedVenue(null);
+            setAdditionalInfo('');
+            setHostId(''); // Reset host ID
         } catch (error) {
             console.error('Error creating event:', error);
         }
     };
 
     async function checkOrCreateVenue(selectedVenue) {
-        // Construct a complete address from the address components using short_name
         console.log('location: ', selectedVenue.geometry.location)
         console.log('latitude: ', selectedVenue.geometry.location.lat)
 
         const address = selectedVenue.address_components.map(component => component.short_name).join(', ');
 
-        // Prepare the venue data with more details
         const venueData = {
             name: selectedVenue.name,
             address: address,
-            latitude: selectedVenue.geometry.location.lat(), // Ensure these methods are called to get the value
+            latitude: selectedVenue.geometry.location.lat(),
             longitude: selectedVenue.geometry.location.lng(),
         };
 
@@ -133,6 +134,12 @@ function CreateEvent() {
                 placeholder="Additional Info"
                 value={additionalInfo}
                 onChange={(e) => setAdditionalInfo(e.target.value)}
+            />
+            <input
+                type="number"
+                placeholder="Host ID"
+                value={hostId}
+                onChange={(e) => setHostId(e.target.value)}
             />
             <button className="submit-button" onClick={handleCreateEvent}>Submit</button>
         </div>
