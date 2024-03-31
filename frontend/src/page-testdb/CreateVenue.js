@@ -3,10 +3,6 @@ import { useDatabaseData } from '../context/DatabaseContext';
 
 function CreateVenue() {
     const [selectedVenue, setSelectedVenue] = useState(null);
-    const [newVenueName, setNewVenueName] = useState('');
-    const [newVenueAddress, setNewVenueAddress] = useState('');
-    const [newVenueLatitude, setNewVenueLatitude] = useState('');
-    const [newVenueLongitude, setNewVenueLongitude] = useState('');
     const { updateDatabaseData, databaseData } = useDatabaseData();
     const autocompleteInputRef = useRef(null);
 
@@ -33,7 +29,7 @@ function CreateVenue() {
             return;
         }
 
-        const address = selectedVenue.address_components.map(component => component.long_name).join(', ');
+        const address = selectedVenue.address_components.map(component => component.short_name).join(', ');
 
         const venueData = {
             name: selectedVenue.name,
@@ -53,10 +49,6 @@ function CreateVenue() {
             const data = await response.json();
             updateDatabaseData({ venues: [...databaseData.venues, data] });
             // Reset form fields
-            setNewVenueName('');
-            setNewVenueAddress('');
-            setNewVenueLatitude('');
-            setNewVenueLongitude('');
         } catch (error) {
             console.error('Error creating venue:', error);
         }

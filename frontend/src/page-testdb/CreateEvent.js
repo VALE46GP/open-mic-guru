@@ -5,6 +5,7 @@ function CreateEvent() {
     const [newEventName, setNewEventName] = useState('');
     const [newEventDateTime, setNewEventDateTime] = useState('');
     const [selectedVenue, setSelectedVenue] = useState(null);
+    const [additionalInfo, setAdditionalInfo] = useState('');
     const autocompleteInputRef = useRef(null);
     const { updateDatabaseData, databaseData } = useDatabaseData();
 
@@ -48,7 +49,7 @@ function CreateEvent() {
 
         let venueId = await checkOrCreateVenue(selectedVenue);
 
-        console.log('Sending event data:', { name: newEventName, venue_id: venueId, date_time: newEventDateTime });
+        console.log('Sending event data:', { name: newEventName, venue_id: venueId, date_time: newEventDateTime, additional_info: additionalInfo });
 
         try {
             const response = await fetch('/api/events', {
@@ -60,6 +61,7 @@ function CreateEvent() {
                     name: newEventName, // Ensure this line is correctly referencing the state variable
                     venue_id: venueId, // This should be defined now
                     date_time: newEventDateTime,
+                    additional_info: additionalInfo, // Add this line
                 }),
             });
             const newEvent = await response.json();
@@ -67,6 +69,7 @@ function CreateEvent() {
             setNewEventName('');
             setNewEventDateTime('');
             setSelectedVenue(null); // Reset selected venue
+            setAdditionalInfo(''); // Reset additional info
         } catch (error) {
             console.error('Error creating event:', error);
         }
@@ -124,6 +127,12 @@ function CreateEvent() {
                 placeholder="Event Date and Time"
                 value={newEventDateTime}
                 onChange={(e) => setNewEventDateTime(e.target.value)}
+            />
+            <textarea
+                className="input-style"
+                placeholder="Additional Info"
+                value={additionalInfo}
+                onChange={(e) => setAdditionalInfo(e.target.value)}
             />
             <button className="submit-button" onClick={handleCreateEvent}>Submit</button>
         </div>

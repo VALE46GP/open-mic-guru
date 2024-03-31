@@ -32,6 +32,7 @@ function DatabaseOverview() {
                 <thead>
                     <tr>
                         <th>id</th>
+                        <th>name</th>
                         <th>additional_info</th>
                         <th>date_ime</th>
                         <th>venue_id</th>
@@ -41,6 +42,7 @@ function DatabaseOverview() {
                     {databaseData.events.map((event) => (
                         <tr key={`event-${event.id}`}> {/* Prefix with "event-" */}
                             <td>{event.id}</td>
+                            <td>{event.name}</td>
                             <td>{event.additional_info}</td>
                             <td>{new Date(event.date_time).toLocaleString()}</td>
                             <td>{event.venue_id}</td>
