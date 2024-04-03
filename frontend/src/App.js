@@ -4,7 +4,7 @@ import TestDbPage from './pages/TestDbPage';
 import './App.css';
 import { DatabaseDataProvider } from './context/DatabaseContext';
 import { AuthProvider } from './context/AuthContext';
-import ProtectedRoute from './components/ProtectedRoute';
+import ProtectedRoute from './components/utils/ProtectedRoute';
 import LoginPage from './pages/LoginPage';
 
 function App() {

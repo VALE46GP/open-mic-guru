@@ -1,8 +1,8 @@
 import React from 'react';
-import DatabaseOverview from '../components/page-testdb/DatabaseOverview';
-import CreateUser from '../components/page-testdb/CreateUser';
-import CreateEvent from '../components/page-testdb/CreateEvent';
-import CreateVenue from '../components/page-testdb/CreateVenue'; // Add this import
+import DatabaseOverview from '../components/utils/DatabaseOverview';
+import CreateUser from '../components/users/CreateUser';
+import CreateEvent from '../components/events/CreateEvent';
+import CreateVenue from '../components/venues/CreateVenue'; // Add this import
 
 function TestDbPage() {
   return (

@@ -1,8 +1,8 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useDatabaseData } from '../../context/DatabaseContext';
 import { useAuth } from '../../context/AuthContext';
-import VenueAutocomplete from '../VenueAutocomplete';
-import TextInput from '../subcomponents/TextInput';
+import VenueAutocomplete from '../shared/VenueAutocomplete';
+import TextInput from '../shared/TextInput';
 
 function CreateEvent() {
     const [newEventName, setNewEventName] = useState('');
