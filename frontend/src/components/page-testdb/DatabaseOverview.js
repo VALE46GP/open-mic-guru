@@ -16,6 +16,8 @@ function DatabaseOverview() {
                     <tr>
                         <th>ID</th>
                         <th>Name</th>
+                        <th>Email</th>
+                        <th>Password</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -23,6 +25,8 @@ function DatabaseOverview() {
                         <tr key={`user-${user.id}`}>
                             <td>{user.id}</td>
                             <td>{user.name}</td>
+                            <td>{user.email}</td>
+                            <td>{user.password}</td>
                         </tr>
                     ))}
                 </tbody>
