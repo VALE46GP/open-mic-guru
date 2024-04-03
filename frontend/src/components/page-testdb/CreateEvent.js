@@ -1,34 +1,16 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useDatabaseData } from '../../context/DatabaseContext';
 import { useAuth } from '../../context/AuthContext';
+import VenueAutocomplete from '../VenueAutocomplete';
+import TextInput from '../subcomponents/TextInput';
 
 function CreateEvent() {
     const [newEventName, setNewEventName] = useState('');
     const [newEventDateTime, setNewEventDateTime] = useState('');
     const [selectedVenue, setSelectedVenue] = useState(null);
     const [additionalInfo, setAdditionalInfo] = useState('');
-    const autocompleteInputRef = useRef(null);
     const { updateDatabaseData, databaseData } = useDatabaseData();
     const { getUserId } = useAuth();
-
-    const initializeAutocomplete = () => {
-        console.log("Attempting to initialize Autocomplete");
-        if (!autocompleteInputRef.current) {
-            console.log("Autocomplete input ref not available");
-            return;
-        }
-        console.log("Initializing Autocomplete on:", autocompleteInputRef.current);
-        const autocomplete = new window.google.maps.places.Autocomplete(
-            autocompleteInputRef.current,
-            { types: ['establishment'] }
-        );
-        autocomplete.setFields(['place_id', 'name', 'address_components', 'geometry']);
-        autocomplete.addListener('place_changed', () => {
-            const place = autocomplete.getPlace();
-            console.log("Place selected:", place);
-            setSelectedVenue(place);
-        });
-    };
 
     useEffect(() => {
         const checkGoogleMapsLoaded = setInterval(() => {
@@ -36,7 +18,6 @@ function CreateEvent() {
                 console.log("Google Maps API is fully loaded");
                 clearInterval(checkGoogleMapsLoaded);
                 console.log('Google object:', window.google);
-                initializeAutocomplete();
             }
         }, 100); // Check every 100 milliseconds
 
@@ -113,18 +94,13 @@ function CreateEvent() {
     return (
         <div>
             <h2>Create a New Event</h2>
-            <input
-                type="text"
+            <TextInput
                 placeholder="Event Name"
                 value={newEventName}
                 onChange={(e) => setNewEventName(e.target.value)}
             />
-            <input
-                ref={autocompleteInputRef}
-                type="text"
-                placeholder="Location"
-            />
-            <input
+            <VenueAutocomplete onPlaceSelected={setSelectedVenue} />
+            <TextInput
                 type="datetime-local"
                 placeholder="Event Date and Time"
                 value={newEventDateTime}
