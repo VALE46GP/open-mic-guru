@@ -1,6 +1,6 @@
 import React from 'react';
 import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
-import TestDbPage from './page-testdb/TestDbPage';
+import TestDbPage from './pages/TestDbPage';
 import './App.css';
 import { DatabaseDataProvider } from './context/DatabaseContext';
 import { AuthProvider } from './context/AuthContext';

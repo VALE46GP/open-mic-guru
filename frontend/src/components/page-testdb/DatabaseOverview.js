@@ -1,5 +1,5 @@
 import React from 'react';
-import { useDatabaseData } from '../context/DatabaseContext';
+import { useDatabaseData } from '../../context/DatabaseContext';
 
 function DatabaseOverview() {
     const { databaseData } = useDatabaseData();

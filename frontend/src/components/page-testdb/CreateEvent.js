@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useDatabaseData } from '../context/DatabaseContext';
+import { useDatabaseData } from '../../context/DatabaseContext';
 
 function CreateEvent() {
     const [newEventName, setNewEventName] = useState('');

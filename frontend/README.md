@@ -1,3 +1,41 @@
+# Authentication Flow Documentation
+
+This document outlines the authentication flow for the Express.js backend and React frontend of our application, detailing both code comments and README instructions to ensure clarity and ease of use for developers.
+
+## Backend (Express.js)
+
+### Code Comments
+
+- **Routes (`routes/auth.js`)**: Each route is documented to explain its purpose, the authentication strategy used (e.g., Google OAuth), and any middleware applied.
+- **Middleware (`middleware/verifyToken.js`)**: Custom middleware for token verification is documented, explaining its role in protecting routes.
+- **Passport Configuration**: The configuration of Passport strategies, including environment variables and callback functions, is explained.
+
+### README Instructions
+
+- **Environment Variables**: List all necessary environment variables such as `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, and `JWT_SECRET`.
+- **Setup Steps**: Provide detailed steps for setting up the authentication strategy, including registering the application with Google to obtain client ID and secret.
+- **Endpoints**: Document the authentication endpoints (`/auth/google`, `/auth/google/callback`), their HTTP methods, and expected request/response formats.
+
+## Frontend (React)
+
+### Code Comments
+
+- **Context/Provider (`src/context/AuthContext.js`)**: The `AuthContext` provides authentication state and functions (login, logout) across the application. Each function and state variable is documented.
+- **Hooks (`src/hooks/useAuth.js`)**: Custom hooks for accessing authentication state and performing actions are explained.
+- **Components (`src/pages/LoginPage.js`)**: Components related to authentication, like `LoginPage`, include comments on form handling, state management, and backend interaction.
+
+### README Instructions
+
+- **Authentication Flow**: Describe the user experience of authentication, including login, logout, and navigation through protected routes.
+- **Protected Routes**: Explain the implementation and usage of `ProtectedRoute` components to restrict access based on authentication state.
+- **Environment Setup**: Mention any necessary configurations for the frontend to communicate with the backend, such as the backend URL.
+
+By adhering to these documentation practices, developers can quickly understand and effectively work with the authentication flow in the application.
+
+---------------------------------------------------------
+Boilerplate Create React App README:
+---------------------------------------------------------
+
 # Getting Started with Create React App
 
 This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
@@ -68,3 +106,7 @@ This section has moved here: [https://facebook.github.io/create-react-app/docs/d
 ### `npm run build` fails to minify
 
 This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+
+---------------------------------------------------------
+
+
