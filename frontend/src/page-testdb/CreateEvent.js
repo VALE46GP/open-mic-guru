@@ -6,7 +6,7 @@ function CreateEvent() {
     const [newEventDateTime, setNewEventDateTime] = useState('');
     const [selectedVenue, setSelectedVenue] = useState(null);
     const [additionalInfo, setAdditionalInfo] = useState('');
-    const [hostId, setHostId] = useState(''); // Add this line
+    const [hostId, setHostId] = useState('');
     const autocompleteInputRef = useRef(null);
     const { updateDatabaseData, databaseData } = useDatabaseData();
 
@@ -102,10 +102,10 @@ function CreateEvent() {
                 body: JSON.stringify(venueData),
             });
             const data = await response.json();
-            return data.venueId; // Use this ID in your event creation logic
+            return data.venueId;
         } catch (error) {
             console.error('Error checking or creating venue:', error);
-            return null; // Or handle appropriately
+            return null;
         }
     }
 

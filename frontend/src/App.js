@@ -3,15 +3,21 @@ import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
 import TestDbPage from './page-testdb/TestDbPage';
 import './App.css';
 import { DatabaseDataProvider } from './context/DatabaseContext';
+import { AuthProvider } from './context/AuthContext';
+import ProtectedRoute from './components/ProtectedRoute';
+import LoginPage from './pages/LoginPage';
 
 function App() {
   return (
     <Router>
       <div className="App">
         <DatabaseDataProvider>
-          <Routes>
-            <Route path="/testdb" element={<TestDbPage />} />
-          </Routes>
+          <AuthProvider>
+            <Routes>
+              <Route path="/login" element={<LoginPage />} />
+              <Route path="/testdb" element={<ProtectedRoute element={<TestDbPage />} />} />
+            </Routes>
+          </AuthProvider>
         </DatabaseDataProvider>
       </div>
     </Router>

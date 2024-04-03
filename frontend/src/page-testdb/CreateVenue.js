@@ -33,8 +33,8 @@ function CreateVenue() {
 
         const venueData = {
             name: selectedVenue.name,
-            address: address, // Ensure this is correctly constructed
-            latitude: selectedVenue.geometry.location.lat(), // Ensure these methods are called to get the value
+            address: address,
+            latitude: selectedVenue.geometry.location.lat(),
             longitude: selectedVenue.geometry.location.lng(),
         };
 
