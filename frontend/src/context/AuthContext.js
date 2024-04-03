@@ -19,8 +19,16 @@ export const AuthProvider = ({ children }) => {
         setIsAuthenticated(false);
     };
 
+    // Add a method to get the user's ID
+    const getUserId = () => {
+        const token = localStorage.getItem('token');
+        // Assuming the token is a JWT and contains the user ID in its payload
+        const payload = JSON.parse(atob(token.split('.')[1]));
+        return payload.userId;
+    };
+
     return (
-        <AuthContext.Provider value={{ isAuthenticated, login, logout }}>
+        <AuthContext.Provider value={{ isAuthenticated, login, logout, getUserId }}>
             {children}
         </AuthContext.Provider>
     );

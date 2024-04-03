@@ -1,14 +1,15 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useDatabaseData } from '../../context/DatabaseContext';
+import { useAuth } from '../../context/AuthContext';
 
 function CreateEvent() {
     const [newEventName, setNewEventName] = useState('');
     const [newEventDateTime, setNewEventDateTime] = useState('');
     const [selectedVenue, setSelectedVenue] = useState(null);
     const [additionalInfo, setAdditionalInfo] = useState('');
-    const [hostId, setHostId] = useState('');
     const autocompleteInputRef = useRef(null);
     const { updateDatabaseData, databaseData } = useDatabaseData();
+    const { getUserId } = useAuth();
 
     const initializeAutocomplete = () => {
         console.log("Attempting to initialize Autocomplete");
@@ -50,7 +51,8 @@ function CreateEvent() {
 
         let venueId = await checkOrCreateVenue(selectedVenue);
 
-        console.log('Sending event data:', { name: newEventName, venue_id: venueId, date_time: newEventDateTime, additional_info: additionalInfo, host_id: hostId }); // Modified line
+        const hostId = getUserId();
+        console.log('Sending event data:', { name: newEventName, venue_id: venueId, date_time: newEventDateTime, additional_info: additionalInfo, host_id: hostId });
 
         try {
             const response = await fetch('/api/events', {
@@ -72,7 +74,6 @@ function CreateEvent() {
             setNewEventDateTime('');
             setSelectedVenue(null);
             setAdditionalInfo('');
-            setHostId('');
         } catch (error) {
             console.error('Error creating event:', error);
         }
@@ -134,12 +135,6 @@ function CreateEvent() {
                 placeholder="Additional Info"
                 value={additionalInfo}
                 onChange={(e) => setAdditionalInfo(e.target.value)}
-            />
-            <input
-                type="number"
-                placeholder="Host ID"
-                value={hostId}
-                onChange={(e) => setHostId(e.target.value)}
             />
             <button className="submit-button" onClick={handleCreateEvent}>Submit</button>
         </div>
