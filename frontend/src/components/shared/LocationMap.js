@@ -7,7 +7,7 @@ const LocationMap = ({ latitude, longitude, showMarker = true }) => {
 
   useEffect(() => {
     const initializeMap = () => {
-      const center = { lat: latitude || 0, lng: longitude || 0 };
+      const center = { lat: Number(latitude) || 0, lng: Number(longitude) || 0 };
       const zoomLevel = showMarker && latitude && longitude ? 16 : 2;
 
       if (!map.current) {
