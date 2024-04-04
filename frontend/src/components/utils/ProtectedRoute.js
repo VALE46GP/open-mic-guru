@@ -1,11 +1,13 @@
 import React from 'react';
+import Cookies from 'js-cookie';
 import { Navigate } from 'react-router-dom';
-import { useAuth } from '../../hooks/useAuth';
 
-const ProtectedRoute = ({ element: Element, ...rest }) => {
-    const { isAuthenticated } = useAuth();
+const ProtectedRoute = ({ element, ...rest }) => {
+    const isAuthenticated = !!Cookies.get('token');
 
-    return isAuthenticated ? Element : <Navigate to="/login" />;
+    console.log('isAuthenticated:', isAuthenticated); // TODO: remove this
+
+    return isAuthenticated ? element : <Navigate to="/login" />;
 };
 
 export default ProtectedRoute;

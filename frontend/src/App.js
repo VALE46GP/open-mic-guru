@@ -6,6 +6,7 @@ import { DatabaseDataProvider } from './context/DatabaseContext';
 import { AuthProvider } from './context/AuthContext';
 import ProtectedRoute from './components/utils/ProtectedRoute';
 import LoginPage from './pages/Login/LoginPage';
+import CreateEventPage from './pages/Event/CreateEventPage'; // Added import for CreateEventPage
 
 function App() {
   return (
@@ -16,6 +17,7 @@ function App() {
             <Routes>
               <Route path="/login" element={<LoginPage />} />
               <Route path="/testdb" element={<ProtectedRoute element={<TestDbPage />} />} />
+              <Route path="/create-event" element={<ProtectedRoute element={<CreateEventPage />} />} /> {/* Added route for CreateEventPage */}
             </Routes>
           </AuthProvider>
         </DatabaseDataProvider>
