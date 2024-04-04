@@ -3,6 +3,7 @@ import { useDatabaseData } from '../../context/DatabaseContext';
 import { useAuth } from '../../hooks/useAuth';
 import VenueAutocomplete from '../shared/VenueAutocomplete';
 import TextInput from '../shared/TextInput';
+import LocationMap from '../shared/LocationMap';
 
 function CreateEvent() {
     const [newEventName, setNewEventName] = useState('');
@@ -117,6 +118,10 @@ function CreateEvent() {
                 placeholder="Additional Info"
                 value={additionalInfo}
                 onChange={(e) => setAdditionalInfo(e.target.value)}
+            />
+            <LocationMap
+                latitude={selectedVenue ? selectedVenue.geometry.location.lat() : null}
+                longitude={selectedVenue ? selectedVenue.geometry.location.lng() : null}
             />
             <button className="submit-button" onClick={handleCreateEvent}>Submit</button>
         </div>
