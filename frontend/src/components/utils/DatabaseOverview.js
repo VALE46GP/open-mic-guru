@@ -1,5 +1,6 @@
 import React from 'react';
 import { useDatabaseContext } from '../../hooks/useDatabaseContext';
+import { Link } from 'react-router-dom';
 
 function DatabaseOverview() {
     const { databaseData } = useDatabaseContext();
@@ -46,7 +47,7 @@ function DatabaseOverview() {
                 <tbody>
                     {databaseData.events.map((event) => (
                         <tr key={`event-${event.id}`}>
-                            <td>{event.id}</td>
+                            <td><Link to={`/events/${event.id}`}>{event.id}</Link></td>
                             <td>{event.name}</td>
                             <td>{event.additional_info}</td>
                             <td>{new Date(event.date_time).toLocaleString()}</td>

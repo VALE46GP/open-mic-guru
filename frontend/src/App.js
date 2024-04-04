@@ -1,5 +1,5 @@
 import React from 'react';
-import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
+import { BrowserRouter as Router, Route, Routes, Link } from 'react-router-dom';
 import TestDbPage from './pages/TestDb/TestDbPage';
 import './App.sass';
 import { DatabaseDataProvider } from './context/DatabaseContext';
@@ -13,6 +13,10 @@ function App() {
   return (
     <Router>
       <div className="App">
+        <div className="navigation">
+          <Link to="/testdb">Test Database</Link>
+          <Link to="/create-event">Create Event</Link>
+        </div>
         <DatabaseDataProvider>
           <AuthProvider>
             <Routes>
