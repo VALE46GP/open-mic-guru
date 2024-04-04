@@ -1,7 +1,7 @@
 import React from 'react';
 import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
 import TestDbPage from './pages/TestDb/TestDbPage';
-import './App.css';
+import './App.sass';
 import { DatabaseDataProvider } from './context/DatabaseContext';
 import { AuthProvider } from './context/AuthContext';
 import ProtectedRoute from './components/utils/ProtectedRoute';

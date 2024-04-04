@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import LocationMap from '../../components/shared/LocationMap';
-import './EventPage.css';
+import './EventPage.sass';
 import { useDatabaseContext } from '../../hooks/useDatabaseContext';
 
 function EventPage() {
@@ -13,7 +13,12 @@ function EventPage() {
     if (databaseData && databaseData.events && databaseData.venues) {
       const event = databaseData.events.find(e => e.id === Number(eventId));
       const venue = databaseData.venues.find(v => v.id === event.venue_id);
-      setEventDetails({ ...event, venue }); // Combine event and venue data
+      if (venue) {
+          // Ensure latitude and longitude are parsed as numbers
+          venue.latitude = parseFloat(venue.latitude);
+          venue.longitude = parseFloat(venue.longitude);
+          setEventDetails({ ...event, venue }); // Combine event and venue data
+      }
     }
   }, [databaseData, eventId]);
 

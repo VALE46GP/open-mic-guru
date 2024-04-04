@@ -53,7 +53,7 @@ const LocationMap = ({ latitude, longitude, showMarker = true }) => {
     }
   }, [latitude, longitude, showMarker]);
 
-  return <div ref={mapRef} style={{ width: '100%', height: '500px' }} />;
+  return <div ref={mapRef} style={{ width: '100%', maxWidth: '500px', height: '400px' }} />;
 };
 
 export default LocationMap;
