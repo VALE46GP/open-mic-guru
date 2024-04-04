@@ -2,8 +2,8 @@ import React, { useEffect, useRef } from 'react';
 
 const LocationMap = ({ latitude, longitude, showMarker = true }) => {
   const mapRef = useRef(null);
-  const map = useRef(null); // To hold the map instance
-  const marker = useRef(null); // To hold the marker instance
+  const map = useRef(null);
+  const marker = useRef(null);
 
   useEffect(() => {
     const initializeMap = () => {

@@ -38,7 +38,7 @@ router.get('/:eventId', async (req, res) => {
               additional_info: eventData.additional_info,
           },
           venue: {
-              id: eventData.venue_id, // Assuming venue_id and id should be the same for venue
+              id: eventData.venue_id,
               name: eventData.name,
               address: eventData.address,
               latitude: eventData.latitude,

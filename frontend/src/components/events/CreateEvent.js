@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useDatabaseContext } from '../../hooks/useDatabaseContext';
 import { useAuth } from '../../hooks/useAuth';
-import { useNavigate } from 'react-router-dom'; // Added import for useNavigate
+import { useNavigate } from 'react-router-dom';
 import VenueAutocomplete from '../shared/VenueAutocomplete';
 import TextInput from '../shared/TextInput';
 import LocationMap from '../shared/LocationMap';
@@ -14,7 +14,7 @@ function CreateEvent() {
     const [resetTrigger, setResetTrigger] = useState(false);
     const { updateDatabaseData, databaseData } = useDatabaseContext();
     const { getUserId } = useAuth();
-    const navigate = useNavigate(); // Added useNavigate hook
+    const navigate = useNavigate();
 
     useEffect(() => {
         const checkGoogleMapsLoaded = setInterval(() => {
