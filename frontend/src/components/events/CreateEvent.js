@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useDatabaseContext } from '../../hooks/useDatabaseContext';
 import { useAuth } from '../../hooks/useAuth';
+import { useNavigate } from 'react-router-dom'; // Added import for useNavigate
 import VenueAutocomplete from '../shared/VenueAutocomplete';
 import TextInput from '../shared/TextInput';
 import LocationMap from '../shared/LocationMap';
@@ -13,6 +14,7 @@ function CreateEvent() {
     const [resetTrigger, setResetTrigger] = useState(false);
     const { updateDatabaseData, databaseData } = useDatabaseContext();
     const { getUserId } = useAuth();
+    const navigate = useNavigate(); // Added useNavigate hook
 
     useEffect(() => {
         const checkGoogleMapsLoaded = setInterval(() => {
@@ -58,6 +60,8 @@ function CreateEvent() {
             setSelectedVenue(null);
             setAdditionalInfo('');
             setResetTrigger(true); // Trigger reset after form submission
+
+            navigate(`/events/${newEvent.id}`); // Navigate to the new event's page
         } catch (error) {
             console.error('Error creating event:', error);
         }

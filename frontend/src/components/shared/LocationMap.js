@@ -21,7 +21,7 @@ const LocationMap = ({ latitude, longitude }) => {
       const loadMap = (lat, lng) => {
         const center = lat && lng ? new window.google.maps.LatLng(lat, lng) : new window.google.maps.LatLng(35.1495, -90.0490); // Memphis coordinates as default
         const mapOptions = {
-          zoom: lat && lng ? 16 : 5, // Closer zoom if coordinates are provided, else zoomed out
+          zoom: lat && lng ? 16 : 3,
           center: center,
         };
         const map = new window.google.maps.Map(mapRef.current, mapOptions);
