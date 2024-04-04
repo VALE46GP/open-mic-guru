@@ -4,6 +4,7 @@ const VenueAutocomplete = ({ onPlaceSelected, resetTrigger, onResetComplete }) =
     const autocompleteInputRef = useRef(null);
     const [inputValue, setInputValue] = useState("");
 
+    // Initialize Google Places Autocomplete
     useEffect(() => {
         const initializeAutocomplete = () => {
             if (!autocompleteInputRef.current) return;
@@ -14,28 +15,47 @@ const VenueAutocomplete = ({ onPlaceSelected, resetTrigger, onResetComplete }) =
             autocomplete.setFields(['place_id', 'name', 'address_components', 'geometry']);
             autocomplete.addListener('place_changed', () => {
                 const place = autocomplete.getPlace();
+                if (!place.geometry) {
+                    // If no place is selected (e.g., clear the input), do not update the place
+                    setInputValue(""); // Clear the input field
+                    onPlaceSelected(null); // Reset selected place
+                    return;
+                }
                 const address = place.address_components.map(component => `${component.short_name}`).join(', ');
                 onPlaceSelected(place);
                 setInputValue(`${place.name}, ${address}`); // Include both name and address
             });
         };
 
-        const checkGoogleMapsLoaded = setInterval(() => {
-            if (window.google && window.google.maps) {
-                clearInterval(checkGoogleMapsLoaded);
-                initializeAutocomplete();
-            }
-        }, 100);
+        if (window.google && window.google.maps) {
+            initializeAutocomplete();
+        } else {
+            const checkGoogleMapsLoaded = setInterval(() => {
+                if (window.google && window.google.maps) {
+                    clearInterval(checkGoogleMapsLoaded);
+                    initializeAutocomplete();
+                }
+            }, 100);
 
-        return () => clearInterval(checkGoogleMapsLoaded);
-    }, [onPlaceSelected, resetTrigger]);
+            return () => clearInterval(checkGoogleMapsLoaded);
+        }
+    }, [onPlaceSelected]);
 
+    // Handle resetTrigger changes
     useEffect(() => {
         if (resetTrigger) {
-            setInputValue(""); // Clear input value when resetTrigger changes
+            setInputValue(""); // Clear input value
+            onPlaceSelected(null); // Reset selected place since the input is cleared
             if (onResetComplete) onResetComplete(); // Notify parent component that reset is complete
         }
-    }, [resetTrigger, onResetComplete]);
+    }, [resetTrigger, onResetComplete, onPlaceSelected]);
+
+    // Monitor inputValue changes and clear selection if input is manually cleared
+    useEffect(() => {
+        if (inputValue === "") {
+            onPlaceSelected(null); // Call onPlaceSelected with null when input is cleared
+        }
+    }, [inputValue, onPlaceSelected]);
 
     return (
         <input

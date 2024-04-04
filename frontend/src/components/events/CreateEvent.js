@@ -110,7 +110,11 @@ function CreateEvent() {
                 value={newEventName}
                 onChange={(e) => setNewEventName(e.target.value)}
             />
-            <VenueAutocomplete onPlaceSelected={setSelectedVenue} resetTrigger={resetTrigger} onResetComplete={handleResetComplete} />
+            <VenueAutocomplete
+                onPlaceSelected={(place) => setSelectedVenue(place)}
+                resetTrigger={resetTrigger}
+                onResetComplete={() => handleResetComplete()}
+            />
             <TextInput
                 type="datetime-local"
                 placeholder="Event Date and Time"
@@ -126,6 +130,7 @@ function CreateEvent() {
             <LocationMap
                 latitude={selectedVenue ? selectedVenue.geometry.location.lat() : null}
                 longitude={selectedVenue ? selectedVenue.geometry.location.lng() : null}
+                showMarker={!!selectedVenue}
             />
             <button className="submit-button" onClick={handleCreateEvent}>Submit</button>
         </div>
