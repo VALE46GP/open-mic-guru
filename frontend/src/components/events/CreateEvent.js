@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useDatabaseData } from '../../context/DatabaseContext';
+import { useDatabaseContext } from '../../hooks/useDatabaseContext';
 import { useAuth } from '../../hooks/useAuth';
 import VenueAutocomplete from '../shared/VenueAutocomplete';
 import TextInput from '../shared/TextInput';
@@ -11,7 +11,7 @@ function CreateEvent() {
     const [selectedVenue, setSelectedVenue] = useState(null);
     const [additionalInfo, setAdditionalInfo] = useState('');
     const [resetTrigger, setResetTrigger] = useState(false);
-    const { updateDatabaseData, databaseData } = useDatabaseData();
+    const { updateDatabaseData, databaseData } = useDatabaseContext();
     const { getUserId } = useAuth();
 
     useEffect(() => {

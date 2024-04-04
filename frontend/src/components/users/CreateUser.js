@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
-import { useDatabaseData } from '../../context/DatabaseContext';
+import { useDatabaseContext } from '../../hooks/useDatabaseContext';
 
 function CreateUser() {
     const [newUserName, setNewUserName] = useState('');
-    const { updateDatabaseData, databaseData } = useDatabaseData();
+    const { updateDatabaseData, databaseData } = useDatabaseContext();
 
     const handleCreateUser = async () => {
         try {

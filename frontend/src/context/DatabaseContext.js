@@ -1,8 +1,6 @@
-import React, { createContext, useState, useContext, useEffect } from 'react';
+import React, { createContext, useState, useEffect } from 'react';
 
-const DatabaseDataContext = createContext();
-
-export const useDatabaseData = () => useContext(DatabaseDataContext);
+export const DatabaseDataContext = createContext();
 
 export const DatabaseDataProvider = ({ children }) => {
     const [databaseData, setDatabaseData] = useState({ users: [], events: [], venues: [] });

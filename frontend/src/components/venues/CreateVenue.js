@@ -1,9 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useDatabaseData } from '../../context/DatabaseContext';
+import { useDatabaseContext } from '../../hooks/useDatabaseContext';
 
 function CreateVenue() {
     const [selectedVenue, setSelectedVenue] = useState(null);
-    const { updateDatabaseData, databaseData } = useDatabaseData();
+    const { updateDatabaseData, databaseData } = useDatabaseContext();
     const autocompleteInputRef = useRef(null);
 
     useEffect(() => {

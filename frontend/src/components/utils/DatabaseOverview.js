@@ -1,8 +1,8 @@
 import React from 'react';
-import { useDatabaseData } from '../../context/DatabaseContext';
+import { useDatabaseContext } from '../../hooks/useDatabaseContext';
 
 function DatabaseOverview() {
-    const { databaseData } = useDatabaseData();
+    const { databaseData } = useDatabaseContext();
 
     if (!databaseData) return <div>Loading...</div>;
     console.log('databaseData: ', databaseData);

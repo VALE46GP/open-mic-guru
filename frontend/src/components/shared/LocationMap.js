@@ -18,34 +18,22 @@ const LocationMap = ({ latitude, longitude }) => {
 
   useEffect(() => {
     if (mapLoaded) {
-      // Define loadMap function
-      const loadMap = (lat, lng, zoomLevel) => {
-        const center = new window.google.maps.LatLng(lat, lng);
+      const loadMap = (lat, lng) => {
+        const center = lat && lng ? new window.google.maps.LatLng(lat, lng) : new window.google.maps.LatLng(35.1495, -90.0490); // Memphis coordinates as default
         const mapOptions = {
-          zoom: zoomLevel,
+          zoom: lat && lng ? 16 : 5, // Closer zoom if coordinates are provided, else zoomed out
           center: center,
         };
-        new window.google.maps.Map(mapRef.current, mapOptions);
+        const map = new window.google.maps.Map(mapRef.current, mapOptions);
+        new window.google.maps.Marker({
+          position: center,
+          map: map,
+        });
       };
 
-      // Function to handle successful geolocation
-      const handleGeoSuccess = (position) => {
-        loadMap(position.coords.latitude, position.coords.longitude, 15);
-      };
-
-      // Function to handle geolocation errors or when geolocation is not supported
-      const handleGeoError = () => {
-        // Memphis coordinates as fallback
-        loadMap(35.1495, -90.0490, 3);
-      };
-
-      if ("geolocation" in navigator) {
-        navigator.geolocation.getCurrentPosition(handleGeoSuccess, handleGeoError);
-      } else {
-        handleGeoError(); // Fallback if geolocation is not supported
-      }
+      loadMap(latitude, longitude);
     }
-  }, [mapLoaded]); // This effect depends on the mapLoaded state
+  }, [mapLoaded, latitude, longitude]);
 
   return <div ref={mapRef} style={{ width: '500px', height: '400px' }} />;
 };
