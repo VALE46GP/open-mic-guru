@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useDatabaseData } from '../../context/DatabaseContext';
-import { useAuth } from '../../context/AuthContext';
+import { useAuth } from '../../hooks/useAuth';
 import VenueAutocomplete from '../shared/VenueAutocomplete';
 import TextInput from '../shared/TextInput';
 
