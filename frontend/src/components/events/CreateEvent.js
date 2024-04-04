@@ -9,6 +9,7 @@ function CreateEvent() {
     const [newEventDateTime, setNewEventDateTime] = useState('');
     const [selectedVenue, setSelectedVenue] = useState(null);
     const [additionalInfo, setAdditionalInfo] = useState('');
+    const [resetTrigger, setResetTrigger] = useState(false);
     const { updateDatabaseData, databaseData } = useDatabaseData();
     const { getUserId } = useAuth();
 
@@ -55,9 +56,14 @@ function CreateEvent() {
             setNewEventDateTime('');
             setSelectedVenue(null);
             setAdditionalInfo('');
+            setResetTrigger(true); // Trigger reset after form submission
         } catch (error) {
             console.error('Error creating event:', error);
         }
+    };
+
+    const handleResetComplete = () => {
+        setResetTrigger(false);
     };
 
     async function checkOrCreateVenue(selectedVenue) {
@@ -99,7 +105,7 @@ function CreateEvent() {
                 value={newEventName}
                 onChange={(e) => setNewEventName(e.target.value)}
             />
-            <VenueAutocomplete onPlaceSelected={setSelectedVenue} />
+            <VenueAutocomplete onPlaceSelected={setSelectedVenue} resetTrigger={resetTrigger} onResetComplete={handleResetComplete} />
             <TextInput
                 type="datetime-local"
                 placeholder="Event Date and Time"

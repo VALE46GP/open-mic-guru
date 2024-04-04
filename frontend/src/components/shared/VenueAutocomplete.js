@@ -1,7 +1,8 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 
-const VenueAutocomplete = ({ onPlaceSelected }) => {
+const VenueAutocomplete = ({ onPlaceSelected, resetTrigger, onResetComplete }) => {
     const autocompleteInputRef = useRef(null);
+    const [inputValue, setInputValue] = useState("");
 
     useEffect(() => {
         const initializeAutocomplete = () => {
@@ -13,7 +14,9 @@ const VenueAutocomplete = ({ onPlaceSelected }) => {
             autocomplete.setFields(['place_id', 'name', 'address_components', 'geometry']);
             autocomplete.addListener('place_changed', () => {
                 const place = autocomplete.getPlace();
+                const address = place.address_components.map(component => `${component.short_name}`).join(', ');
                 onPlaceSelected(place);
+                setInputValue(`${place.name}, ${address}`); // Include both name and address
             });
         };
 
@@ -25,13 +28,22 @@ const VenueAutocomplete = ({ onPlaceSelected }) => {
         }, 100);
 
         return () => clearInterval(checkGoogleMapsLoaded);
-    }, [onPlaceSelected]);
+    }, [onPlaceSelected, resetTrigger]);
+
+    useEffect(() => {
+        if (resetTrigger) {
+            setInputValue(""); // Clear input value when resetTrigger changes
+            if (onResetComplete) onResetComplete(); // Notify parent component that reset is complete
+        }
+    }, [resetTrigger, onResetComplete]);
 
     return (
         <input
             ref={autocompleteInputRef}
             type="text"
             placeholder="Location"
+            value={inputValue}
+            onChange={(e) => setInputValue(e.target.value)}
         />
     );
 };
