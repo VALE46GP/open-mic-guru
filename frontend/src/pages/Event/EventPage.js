@@ -21,7 +21,7 @@ function EventPage() {
   return (
     <div className="event-details-container">
       <h1>{eventDetails?.event?.name}</h1>
-      <p>Date and Time: {new Date(eventDetails?.event?.date_time).toLocaleString()}</p>
+      <p>Date and Time: {new Date(eventDetails?.event?.start_time).toLocaleString()} - {new Date(eventDetails?.event?.end_time).toLocaleString()}</p>
       <p>Location: {eventDetails?.venue?.name}, {eventDetails?.venue?.address}</p>
       <p>Hosted by: {eventDetails?.host?.name}</p>
       <p>Additional Info: {eventDetails?.event?.additional_info}</p>
@@ -31,6 +31,27 @@ function EventPage() {
           longitude={eventDetails.venue.longitude}
         />
       )}
+      <div className="lineup-container">
+        <h2>Lineup</h2>
+        <table>
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Start Time</th>
+              <th>Artist</th>
+            </tr>
+          </thead>
+          <tbody>
+            {eventDetails.lineup.map((slot, index) => (
+              <tr key={index}>
+                <td>{index + 1}</td>
+                <td>{new Date(slot.slot_start_time).toLocaleTimeString()}</td>
+                <td>{slot.user_id ? slot.user_name : "Open"}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 }

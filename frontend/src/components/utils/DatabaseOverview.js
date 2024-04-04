@@ -2,8 +2,8 @@ import React from 'react';
 import { useDatabaseContext } from '../../hooks/useDatabaseContext';
 import { Link } from 'react-router-dom';
 
-function DatabaseOverview() {
-    const { databaseData } = useDatabaseContext();
+function DatabaseOverview({ databaseData }) {
+    // const { databaseData } = useDatabaseContext();
 
     if (!databaseData) return <div>Loading...</div>;
     console.log('databaseData: ', databaseData);
@@ -39,7 +39,9 @@ function DatabaseOverview() {
                         <th>id</th>
                         <th>name</th>
                         <th>additional_info</th>
-                        <th>date_time</th>
+                        <th>start_time</th>
+                        <th>end_time</th>
+                        <th>slot_duration</th>
                         <th>venue_id</th>
                         <th>host_id</th>
                     </tr>
@@ -50,7 +52,9 @@ function DatabaseOverview() {
                             <td><Link to={`/events/${event.id}`}>{event.id}</Link></td>
                             <td>{event.name}</td>
                             <td>{event.additional_info}</td>
-                            <td>{new Date(event.date_time).toLocaleString()}</td>
+                            <td>{new Date(event.start_time).toLocaleString()}</td>
+                            <td>{new Date(event.end_time).toLocaleString()}</td>
+                            <td>{event.slot_duration}</td>
                             <td>{event.venue_id}</td>
                             <td>{event.host_id}</td>
                         </tr>

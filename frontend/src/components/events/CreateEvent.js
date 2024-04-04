@@ -1,18 +1,19 @@
 import React, { useState, useEffect } from 'react';
-import { useDatabaseContext } from '../../hooks/useDatabaseContext';
 import { useAuth } from '../../hooks/useAuth';
 import { useNavigate } from 'react-router-dom';
 import VenueAutocomplete from '../shared/VenueAutocomplete';
 import TextInput from '../shared/TextInput';
 import LocationMap from '../shared/LocationMap';
+import './CreateEvent.sass';
 
 function CreateEvent() {
     const [newEventName, setNewEventName] = useState('');
-    const [newEventDateTime, setNewEventDateTime] = useState('');
+    const [startTime, setStartTime] = useState('');
+    const [endTime, setEndTime] = useState('');
+    const [slotDuration, setSlotDuration] = useState('');
     const [selectedVenue, setSelectedVenue] = useState(null);
     const [additionalInfo, setAdditionalInfo] = useState('');
     const [resetTrigger, setResetTrigger] = useState(false);
-    const { updateDatabaseData, databaseData } = useDatabaseContext();
     const { getUserId } = useAuth();
     const navigate = useNavigate();
 
@@ -37,7 +38,7 @@ function CreateEvent() {
         let venueId = await checkOrCreateVenue(selectedVenue);
 
         const hostId = getUserId();
-        console.log('Sending event data:', { name: newEventName, venue_id: venueId, date_time: newEventDateTime, additional_info: additionalInfo, host_id: hostId });
+        console.log('Sending event data:', { name: newEventName, venue_id: venueId, start_time: startTime, end_time: endTime, slot_duration: slotDuration, additional_info: additionalInfo, host_id: hostId });
 
         try {
             const response = await fetch('/api/events', {
@@ -48,19 +49,14 @@ function CreateEvent() {
                 body: JSON.stringify({
                     name: newEventName,
                     venue_id: venueId,
-                    date_time: newEventDateTime,
+                    start_time: startTime,
+                    end_time: endTime,
+                    slot_duration: slotDuration,
                     additional_info: additionalInfo,
                     host_id: hostId,
                 }),
             });
             const newEvent = await response.json();
-            updateDatabaseData({ events: [...databaseData.events, newEvent] });
-            setNewEventName('');
-            setNewEventDateTime('');
-            setSelectedVenue(null);
-            setAdditionalInfo('');
-            setResetTrigger(true); // Trigger reset after form submission
-
             navigate(`/events/${newEvent.id}`); // Navigate to the new event's page
         } catch (error) {
             console.error('Error creating event:', error);
@@ -103,7 +99,7 @@ function CreateEvent() {
     }
 
     return (
-        <div>
+        <div className="create-event-container">
             <h2>Create a New Event</h2>
             <TextInput
                 placeholder="Event Name"
@@ -115,11 +111,25 @@ function CreateEvent() {
                 resetTrigger={resetTrigger}
                 onResetComplete={() => handleResetComplete()}
             />
+            <label htmlFor="start-time">Start Time</label>
             <TextInput
+                id="start-time"
                 type="datetime-local"
-                placeholder="Event Date and Time"
-                value={newEventDateTime}
-                onChange={(e) => setNewEventDateTime(e.target.value)}
+                value={startTime}
+                onChange={(e) => setStartTime(e.target.value)}
+            />
+            <label htmlFor="end-time">End Time</label>
+            <TextInput
+                id="end-time"
+                type="datetime-local"
+                value={endTime}
+                onChange={(e) => setEndTime(e.target.value)}
+            />
+            <TextInput
+                type="number"
+                placeholder="Slot Duration (minutes)"
+                value={slotDuration}
+                onChange={(e) => setSlotDuration(e.target.value)}
             />
             <textarea
                 className="input-style"
