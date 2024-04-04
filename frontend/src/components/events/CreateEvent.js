@@ -38,7 +38,7 @@ function CreateEvent() {
         let venueId = await checkOrCreateVenue(selectedVenue);
 
         const hostId = getUserId();
-        console.log('Sending event data:', { name: newEventName, venue_id: venueId, start_time: startTime, end_time: endTime, slot_duration: slotDuration, additional_info: additionalInfo, host_id: hostId });
+        console.log('Sending event data:', { name: newEventName, venue_id: venueId, start_time: startTime, end_time: endTime, slot_duration: slotDuration * 60, additional_info: additionalInfo, host_id: hostId });
 
         try {
             const response = await fetch('/api/events', {
@@ -51,7 +51,7 @@ function CreateEvent() {
                     venue_id: venueId,
                     start_time: startTime,
                     end_time: endTime,
-                    slot_duration: slotDuration,
+                    slot_duration: slotDuration * 60, // Convert minutes to seconds
                     additional_info: additionalInfo,
                     host_id: hostId,
                 }),
