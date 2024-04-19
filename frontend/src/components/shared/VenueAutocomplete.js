@@ -1,8 +1,8 @@
 import React, { useEffect, useRef, useState } from 'react';
 
-const VenueAutocomplete = ({ onPlaceSelected, resetTrigger, onResetComplete }) => {
+const VenueAutocomplete = ({ onPlaceSelected, resetTrigger, onResetComplete, initialValue }) => {
     const autocompleteInputRef = useRef(null);
-    const [inputValue, setInputValue] = useState("");
+    const [inputValue, setInputValue] = useState(initialValue || "");
 
     // Initialize Google Places Autocomplete
     useEffect(() => {
@@ -56,6 +56,11 @@ const VenueAutocomplete = ({ onPlaceSelected, resetTrigger, onResetComplete }) =
             onPlaceSelected(null); // Call onPlaceSelected with null when input is cleared
         }
     }, [inputValue, onPlaceSelected]);
+
+    // Set initial value for the input
+    useEffect(() => {
+        setInputValue(initialValue);
+    }, [initialValue]);
 
     return (
         <input

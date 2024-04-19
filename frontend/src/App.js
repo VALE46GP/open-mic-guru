@@ -25,6 +25,7 @@ function App() {
               <Route path="/create-event" element={<ProtectedRoute element={<CreateEventPage />} />} />
               <Route path="/events/:eventId" element={<ProtectedRoute element={<EventPage />} />} />
               <Route path="/users/:userId" element={<ProtectedRoute element={<UserPage />} />} />
+              <Route path="/events/edit-event/:eventId" element={<ProtectedRoute element={<CreateEventPage />} />} />
             </Routes>
         </AuthProvider>
       </div>

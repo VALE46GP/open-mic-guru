@@ -1,16 +1,22 @@
 import React, { useEffect, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import LocationMap from '../../components/shared/LocationMap';
+import { useAuth } from '../../hooks/useAuth';
 import './EventPage.sass';
 
 function EventPage() {
   const { eventId } = useParams();
+  const navigate = useNavigate();
   const [eventDetails, setEventDetails] = useState(null);
+  const { getUserId } = useAuth();
+  const userId = getUserId();
 
   useEffect(() => {
     const fetchEventDetails = async () => {
       const response = await fetch(`/api/events/${eventId}`);
       const data = await response.json();
+      console.log('>>>>>>>>>>>>>>>>>>>>> eventId = ', eventId)
+      console.log('>>>>>>>>>>>>>>>>>>>>> data = ', data)
       setEventDetails(data);
     };
     fetchEventDetails();
@@ -18,7 +24,6 @@ function EventPage() {
 
   if (!eventDetails) return <div>Loading...</div>;
 
-  // Function to generate all slots based on event details
   const generateAllSlots = () => {
     if (!eventDetails.event || !eventDetails.lineup) {
       console.error("Event details or lineup missing");
@@ -70,6 +75,10 @@ function EventPage() {
           latitude={eventDetails.venue.latitude}
           longitude={eventDetails.venue.longitude}
         />
+      )}
+      {/* Add an Edit button for the host */}
+      {eventDetails?.host?.id === userId && (
+        <button onClick={() => navigate(`/events/edit-event/${eventDetails.event.id}`)}>Edit</button>
       )}
       <div className="lineup-container">
         <h2>Lineup</h2>
