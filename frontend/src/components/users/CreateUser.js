@@ -1,9 +1,7 @@
 import React, { useState } from 'react';
-import { useDatabaseContext } from '../../hooks/useDatabaseContext';
 
 function CreateUser() {
     const [newUserName, setNewUserName] = useState('');
-    const { updateDatabaseData, databaseData } = useDatabaseContext();
 
     const handleCreateUser = async () => {
         try {
@@ -14,12 +12,13 @@ function CreateUser() {
                 },
                 body: JSON.stringify({ name: newUserName }),
             });
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
             const data = await response.json();
-            updateDatabaseData({
-              ...databaseData,
-              users: [...databaseData.users, data]
-            });
-            setNewUserName('');
+            // Handle the response data as needed, e.g., display a success message
+            console.log(data);
+            setNewUserName(''); // Reset the input field on successful creation
         } catch (error) {
             console.error('Error creating user:', error);
         }
