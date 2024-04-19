@@ -1,39 +1,64 @@
 import React, { useState } from 'react';
+import { useAuth } from '../../hooks/useAuth';
+import { useNavigate } from 'react-router-dom';
 
 function CreateUser() {
-    const [newUserName, setNewUserName] = useState('');
+    const [registerEmail, setRegisterEmail] = useState('');
+    const [registerPassword, setRegisterPassword] = useState('');
+    const [registerName, setRegisterName] = useState('');
+    const { login } = useAuth();
+    const navigate = useNavigate();
 
-    const handleCreateUser = async () => {
+    const handleRegister = async (e) => {
+        e.preventDefault();
         try {
-            const response = await fetch('/api/users', {
+            const response = await fetch('/api/users/register', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({ name: newUserName }),
+                body: JSON.stringify({
+                    email: registerEmail,
+                    password: registerPassword,
+                    name: registerName,
+                }),
             });
-            if (!response.ok) {
-                throw new Error('Network response was not ok');
-            }
             const data = await response.json();
-            // Handle the response data as needed, e.g., display a success message
-            console.log(data);
-            setNewUserName(''); // Reset the input field on successful creation
+            if (data.token) {
+                login(data.token);
+                navigate('/testdb'); // Redirect to a protected route after registration
+            } else {
+                alert('Registration failed');
+            }
         } catch (error) {
-            console.error('Error creating user:', error);
+            console.error('Registration error:', error);
         }
     };
 
     return (
         <div>
-            <h2>Create a New User</h2>
-            <input
-                type="text"
-                placeholder="Name"
-                value={newUserName}
-                onChange={(e) => setNewUserName(e.target.value)}
-            />
-            <button className="submit-button" onClick={handleCreateUser}>Submit</button>
+            <h2>Register</h2>
+            <form onSubmit={handleRegister}>
+                <input
+                    type="email"
+                    placeholder="Email"
+                    value={registerEmail}
+                    onChange={(e) => setRegisterEmail(e.target.value)}
+                />
+                <input
+                    type="password"
+                    placeholder="Password"
+                    value={registerPassword}
+                    onChange={(e) => setRegisterPassword(e.target.value)}
+                />
+                <input
+                    type="text"
+                    placeholder="Name"
+                    value={registerName}
+                    onChange={(e) => setRegisterName(e.target.value)}
+                />
+                <button type="submit">Register</button>
+            </form>
         </div>
     );
 }

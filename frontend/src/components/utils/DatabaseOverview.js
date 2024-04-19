@@ -1,12 +1,19 @@
 import React from 'react';
-import { useDatabaseContext } from '../../hooks/useDatabaseContext';
 import { Link } from 'react-router-dom';
 
 function DatabaseOverview({ databaseData }) {
-    // const { databaseData } = useDatabaseContext();
 
     if (!databaseData) return <div>Loading...</div>;
     console.log('databaseData: ', databaseData);
+
+    function parseInterval(interval) {
+        let totalMinutes = 0;
+        if (interval.hours) totalMinutes += interval.hours * 60;
+        if (interval.minutes) totalMinutes += interval.minutes;
+        if (interval.seconds) totalMinutes += interval.seconds / 60;
+
+        return `${totalMinutes} minutes`;
+    }
 
     return (
         <div>
@@ -25,7 +32,7 @@ function DatabaseOverview({ databaseData }) {
                     {databaseData.users.map((user) => (
                         <tr key={`user-${user.id}`}>
                             <td>{user.id}</td>
-                            <td>{user.name}</td>
+                            <td><Link to={`/users/${user.id}`}>{user.name}</Link></td>
                             <td>{user.email}</td>
                             <td>{user.password}</td>
                         </tr>
@@ -54,7 +61,7 @@ function DatabaseOverview({ databaseData }) {
                             <td>{event.additional_info}</td>
                             <td>{new Date(event.start_time).toLocaleString()}</td>
                             <td>{new Date(event.end_time).toLocaleString()}</td>
-                            <td>{event.slot_duration}</td>
+                            <td>{parseInterval(event.slot_duration)}</td>
                             <td>{event.venue_id}</td>
                             <td>{event.host_id}</td>
                         </tr>
@@ -84,7 +91,6 @@ function DatabaseOverview({ databaseData }) {
                     ))}
                 </tbody>
             </table>
-            {/* Repeat for other data types like venues, etc. */}
         </div>
     );
 }

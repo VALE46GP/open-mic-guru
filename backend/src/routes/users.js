@@ -73,4 +73,29 @@ router.post('/login', async (req, res) => {
     }
 });
 
+// GET user details and their events
+router.get('/:userId', async (req, res) => {
+    try {
+        const { userId } = req.params;
+        const userDetails = await db.query('SELECT * FROM users WHERE id = $1', [userId]);
+        if (userDetails.rows.length === 0) {
+            return res.status(404).json({ error: 'User not found' });
+        }
+        const userEvents = await db.query(`
+            SELECT e.id, e.name, e.start_time, e.end_time, e.slot_duration
+            FROM events e
+            JOIN user_roles ur ON e.id = ur.event_id
+            JOIN users u ON ur.user_id = u.id
+            WHERE u.id = $1
+        `, [userId]);
+        res.json({
+            user: userDetails.rows[0],
+            events: userEvents.rows
+        });
+    } catch (err) {
+        console.error(err);
+        res.status(500).send('Server error');
+    }
+});
+
 module.exports = router;
