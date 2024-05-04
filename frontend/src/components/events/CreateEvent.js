@@ -67,11 +67,16 @@ function CreateEvent() {
     }, []);
 
     useEffect(() => {
-        if (selectedVenue) {
-            const address = `${selectedVenue.name}, ${selectedVenue.address}`;
-            // Assuming you have a state named inputValue for VenueAutocomplete, update it here
-            // This is a placeholder action. You need to ensure VenueAutocomplete can accept and update its value based on this.
-            // setInputValue(address); // This function should update the state in VenueAutocomplete
+        if (selectedVenue && selectedVenue.address_components) {
+            const formattedAddress = selectedVenue.address_components.map(ac => ac.short_name).join(', ');
+            const latitude = selectedVenue.geometry.location.lat();
+            const longitude = selectedVenue.geometry.location.lng();
+            setSelectedVenue({
+                name: selectedVenue?.name || '',
+                address: formattedAddress || '',
+                latitude: latitude || 0,
+                longitude: longitude || 0
+            });
         }
     }, [selectedVenue]);
 
@@ -117,7 +122,7 @@ function CreateEvent() {
         console.log('location: ', selectedVenue.location)
         console.log('latitude: ', selectedVenue.latitude)
 
-        const address = selectedVenue.address_components.map(component => component.short_name).join(', ');
+        const address = selectedVenue.address_components ? selectedVenue.address_components.map(component => component.short_name).join(', ') : '';
 
         const venueData = {
             name: selectedVenue.name,
