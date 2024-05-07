@@ -40,7 +40,7 @@ function UserPage() {
                             <td>{event.additional_info}</td>
                             <td>{new Date(event.start_time).toLocaleString()}</td>
                             <td>{new Date(event.end_time).toLocaleString()}</td>
-                            <td>{event.slot_duration} minutes</td>
+                            <td>{event.slot_duration.minutes} minutes</td>
                         </tr>
                     ))}
                 </tbody>
