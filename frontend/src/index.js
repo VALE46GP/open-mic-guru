@@ -3,6 +3,7 @@ import ReactDOM from 'react-dom/client';
 import './index.sass';
 import App from './App';
 import reportWebVitals from './reportWebVitals';
+import 'bootstrap/dist/css/bootstrap.min.css';
 
 // Set Google API Key to global variable
 window.REACT_APP_GOOGLE_API_KEY = process.env.REACT_APP_GOOGLE_API_KEY;
