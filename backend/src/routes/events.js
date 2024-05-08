@@ -45,7 +45,7 @@ router.get('/:eventId', async (req, res) => {
     }
 
     const eventData = eventQuery.rows[0];
-    const lineupQuery = await db.query('SELECT * FROM lineup_slots WHERE event_id = $1 ORDER BY slot_start_time ASC', [eventId]);
+    const lineupQuery = await db.query('SELECT * FROM lineup_slots WHERE event_id = $1 ORDER BY slot_number ASC', [eventId]);
     const lineup = lineupQuery.rows;
       const eventDetails = {
           event: {
@@ -73,7 +73,7 @@ router.get('/:eventId', async (req, res) => {
     res.json(eventDetails);
   } catch (err) {
     console.error(err);
-    res.status(500).send('Server error');
+    res.status(500).json({ error: 'Server error', details: err.message });
   }
 });
 

@@ -4,10 +4,15 @@ const db = require('../db');
 
 // POST a new lineup slot
 router.post('/', async (req, res) => {
-    const { event_id, user_id, slot_number, slot_start_time } = req.body;
+    const { event_id, user_id, slot_number } = req.body;
     try {
-        const result = await db.query('INSERT INTO lineup_slots (event_id, user_id, slot_number, slot_start_time) VALUES ($1, $2, $3, $4) RETURNING *', [event_id, user_id, slot_number, slot_start_time]);
-        res.status(201).json(result.rows[0]);
+        let result = await db.query('UPDATE lineup_slots SET user_id = $2 WHERE event_id = $1 AND slot_number = $3 AND user_id IS NULL RETURNING *', [event_id, user_id, slot_number]);
+        
+        if (result.rows.length === 0) {
+            result = await db.query('INSERT INTO lineup_slots (event_id, user_id, slot_number) VALUES ($1, $2, $3) RETURNING *', [event_id, user_id, slot_number]);
+        }
+        
+        res.json(result.rows[0]);
     } catch (err) {
         console.error(err);
         res.status(500).json({ error: 'Server error', details: err.message });
@@ -27,3 +32,4 @@ router.get('/:eventId', async (req, res) => {
 });
 
 module.exports = router;
+

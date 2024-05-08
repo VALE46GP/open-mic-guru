@@ -26,50 +26,55 @@ function EventPage() {
 
   const generateAllSlots = () => {
     if (!eventDetails.event || !eventDetails.lineup) {
-      console.error("Event details or lineup missing");
-      return [];
+        console.error("Event details or lineup missing");
+        return [];
     }
     const startTime = new Date(eventDetails.event.start_time).getTime();
     const endTime = new Date(eventDetails.event.end_time).getTime();
     const slotDuration = eventDetails.event.slot_duration.minutes * 60000;
-    if(isNaN(startTime) || isNaN(endTime) || isNaN(slotDuration)) {
-        console.error("Invalid event details for slot calculation");
-        return [];
-    }
     const totalSlots = Math.ceil((endTime - startTime) / slotDuration);
 
-    let allSlots = [];
-    for (let i = 0; i < totalSlots; i++) {
-      const slotStartTime = new Date(startTime + i * slotDuration);
-      // Find if there is a matching slot in eventDetails.lineup
-      const matchingSlot = eventDetails.lineup.find(slot =>
-        new Date(slot.slot_start_time).getTime() === slotStartTime.getTime()
-      );
+    return Array.from({ length: totalSlots }, (_, index) => {
+        const slotStartTime = new Date(startTime + index * slotDuration);
+        const matchingSlot = eventDetails.lineup.find(slot => slot.slot_number === index + 1);
 
-      if (matchingSlot) {
-        allSlots.push({
-          ...matchingSlot,
-          slot_start_time: slotStartTime,
-          user_name: matchingSlot.user_id ? matchingSlot.user_name : "Open"
-        });
-      } else {
-        // If there's no matching slot, create an empty slot
-        allSlots.push({
-          slot_start_time: slotStartTime,
-          user_name: ""
-        });
-      }
+        return {
+            slot_number: index + 1,
+            slot_start_time: slotStartTime,
+            user_name: matchingSlot ? matchingSlot.user_name : "Open"
+        };
+    });
+  };
+
+  const handleSlotSignUp = async (slotNumber) => {
+    const response = await fetch('/api/lineup_slots/', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            event_id: eventId,
+            user_id: userId,
+            slot_number: slotNumber,
+        }),
+    });
+    if (!response.ok) {
+        const errorData = await response.json();
+        alert(`Error: ${errorData.error}`);
+        return;
     }
-    return allSlots;
+    const data = await response.json();
+    // Refresh slots or handle errors
   };
 
   return (
     <div className="event-details-container">
       <h1>{eventDetails?.event?.name}</h1>
       <p>Date and Time: {new Date(eventDetails?.event?.start_time).toLocaleString()} - {new Date(eventDetails?.event?.end_time).toLocaleString()}</p>
-      <p>Location: {eventDetails?.venue?.name}, {eventDetails?.venue?.address}</p>
       <p>Hosted by: {eventDetails?.host?.name}</p>
+      <p>Slot Duration: {eventDetails?.event?.slot_duration?.minutes} minutes</p>
       <p>Additional Info: {eventDetails?.event?.additional_info}</p>
+      <p>Location: {eventDetails?.venue?.name}, {eventDetails?.venue?.address}</p>
       {eventDetails?.venue?.latitude && eventDetails?.venue?.longitude && (
         <LocationMap
           latitude={eventDetails.venue.latitude}
@@ -91,11 +96,18 @@ function EventPage() {
             </tr>
           </thead>
           <tbody>
+            {console.log("Slots to render: ", generateAllSlots())}
             {generateAllSlots().map((slot, index) => (
               <tr key={index}>
-                <td>{index + 1}</td>
-                <td>{new Date(slot.slot_start_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</td>
-                <td>{slot.user_name}</td>
+                <td>{slot.slot_number}</td>
+                <td>{slot.slot_start_time.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</td>
+                <td>
+                  {slot.user_name !== "Open" ? slot.user_name : (
+                    <button onClick={() => handleSlotSignUp(slot.slot_number)}>
+                      Sign Up
+                    </button>
+                  )}
+                </td>
               </tr>
             ))}
           </tbody>
