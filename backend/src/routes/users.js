@@ -82,7 +82,7 @@ router.get('/:userId', async (req, res) => {
             return res.status(404).json({ error: 'User not found' });
         }
         const userEvents = await db.query(`
-            SELECT e.id, e.name, e.start_time, e.end_time, e.slot_duration
+            SELECT e.id, e.name, e.start_time, e.end_time, e.slot_duration, e.additional_info
             FROM events e
             JOIN user_roles ur ON e.id = ur.event_id
             JOIN users u ON ur.user_id = u.id

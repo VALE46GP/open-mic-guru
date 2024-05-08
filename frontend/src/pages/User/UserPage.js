@@ -37,7 +37,7 @@ function UserPage() {
                         <tr key={`event-${event.id}`}>
                             <td><Link to={`/events/${event.id}`}>{event.id}</Link></td>
                             <td>{event.name}</td>
-                            <td>{event.additional_info}</td>
+                            <td>{event?.additional_info}</td>
                             <td>{new Date(event.start_time).toLocaleString()}</td>
                             <td>{new Date(event.end_time).toLocaleString()}</td>
                             <td>{event.slot_duration.minutes} minutes</td>
