@@ -81,6 +81,9 @@ router.get('/:eventId', async (req, res) => {
 router.post('/', async (req, res) => {
     try {
         const { venue_id, start_time, end_time, slot_duration, name, additional_info, host_id } = req.body;
+        if (new Date(start_time) >= new Date(end_time)) {
+            return res.status(400).json({ error: 'Start time must be before end time' });
+        }
         const result = await db.query('INSERT INTO events (venue_id, start_time, end_time, slot_duration, name, additional_info) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *', [venue_id, start_time, end_time, slot_duration, name, additional_info]);
         const eventId = result.rows[0].id;
         await db.query('INSERT INTO user_roles (user_id, event_id, role) VALUES ($1, $2, \'host\')', [host_id, eventId]);
@@ -97,6 +100,10 @@ router.patch('/:eventId', async (req, res) => {
     const { name, start_time, end_time, slot_duration, venue_id, additional_info } = req.body;
 
     try {
+        if (new Date(start_time) >= new Date(end_time)) {
+            return res.status(400).json({ error: 'Start time must be before end time' });
+        }
+
         // Update the event in the database
         const result = await db.query(
             'UPDATE events SET name = $1, start_time = $2, end_time = $3, slot_duration = $4, venue_id = $5, additional_info = $6 WHERE id = $7 RETURNING *',

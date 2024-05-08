@@ -86,6 +86,11 @@ function CreateEvent() {
             return;
         }
 
+        if (new Date(startTime) >= new Date(endTime)) {
+            alert("Start time must be before end time.");
+            return;
+        }
+
         let venueId = await checkOrCreateVenue(selectedVenue);
 
         const hostId = getUserId();
@@ -180,7 +185,7 @@ function CreateEvent() {
             <TextInput
                 id="end-time"
                 type="datetime-local"
-                value={endTime}
+                value={endTime || startTime} // Set to startTime if endTime is not set
                 onChange={(e) => setEndTime(e.target.value)}
             />
             <TextInput

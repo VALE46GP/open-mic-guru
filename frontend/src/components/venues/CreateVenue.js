@@ -1,9 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useDatabaseContext } from '../../hooks/useDatabaseContext';
 
 function CreateVenue() {
     const [selectedVenue, setSelectedVenue] = useState(null);
-    const { updateDatabaseData, databaseData } = useDatabaseContext();
     const autocompleteInputRef = useRef(null);
 
     useEffect(() => {
@@ -23,17 +21,9 @@ function CreateVenue() {
     }, []);
 
     const handleCreateVenue = async () => {
-        const venueExists = databaseData.venues.some(venue => venue.name === selectedVenue.name && venue.address === selectedVenue.address);
-        if (venueExists) {
-            alert("This venue has already been saved.");
-            return;
-        }
-
-        const address = selectedVenue.address_components.map(component => component.short_name).join(', ');
-
         const venueData = {
             name: selectedVenue.name,
-            address: address,
+            address: selectedVenue.address,
             latitude: selectedVenue.geometry.location.lat(),
             longitude: selectedVenue.geometry.location.lng(),
         };
@@ -47,10 +37,11 @@ function CreateVenue() {
                 body: JSON.stringify(venueData),
             });
             const data = await response.json();
-            updateDatabaseData({ venues: [...databaseData.venues, data] });
-            // Reset form fields
+            if (data.venueId) {
+                alert('Venue already exists or was just created with ID: ' + data.venueId);
+            }
         } catch (error) {
-            console.error('Error creating venue:', error);
+            console.error('Error creating or checking venue:', error);
         }
     };
 
