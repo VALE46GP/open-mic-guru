@@ -23,7 +23,13 @@ router.post('/', async (req, res) => {
 router.get('/:eventId', async (req, res) => {
     const { eventId } = req.params;
     try {
-        const result = await db.query('SELECT * FROM lineup_slots WHERE event_id = $1', [eventId]);
+        const result = await db.query(`
+            SELECT ls.slot_number, u.name AS user_name, u.id AS user_id
+            FROM lineup_slots ls
+            LEFT JOIN users u ON ls.user_id = u.id
+            WHERE ls.event_id = $1
+            ORDER BY ls.slot_number ASC
+        `, [eventId]);
         res.json(result.rows);
     } catch (err) {
         console.error(err);

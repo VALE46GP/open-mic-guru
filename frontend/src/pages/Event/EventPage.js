@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, Link } from 'react-router-dom';
 import LocationMap from '../../components/shared/LocationMap';
 import { useAuth } from '../../hooks/useAuth';
 import './EventPage.sass';
@@ -41,7 +41,8 @@ function EventPage() {
         return {
             slot_number: index + 1,
             slot_start_time: slotStartTime,
-            user_name: matchingSlot ? matchingSlot.user_name : "Open"
+            user_name: matchingSlot ? matchingSlot.user_name : "Open",
+            user_id: matchingSlot ? matchingSlot.user_id : null
         };
     });
   };
@@ -96,16 +97,15 @@ function EventPage() {
             </tr>
           </thead>
           <tbody>
-            {console.log("Slots to render: ", generateAllSlots())}
             {generateAllSlots().map((slot, index) => (
               <tr key={index}>
                 <td>{slot.slot_number}</td>
                 <td>{slot.slot_start_time.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</td>
                 <td>
-                  {slot.user_name !== "Open" ? slot.user_name : (
-                    <button onClick={() => handleSlotSignUp(slot.slot_number)}>
-                      Sign Up
-                    </button>
+                  {slot.user_name === "Open" ? (
+                    <button onClick={() => handleSlotSignUp(slot.slot_number)}>Sign Up</button>
+                  ) : (
+                    <Link to={`/users/${slot.user_id}`}>{slot.user_name}</Link>
                   )}
                 </td>
               </tr>
