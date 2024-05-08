@@ -20,6 +20,7 @@ function CreateEvent() {
     const navigate = useNavigate();
     const isEditMode = !!eventId;
     const [isGoogleMapsLoaded, setIsGoogleMapsLoaded] = useState(false);
+    const [isEditingLocation, setIsEditingLocation] = useState(false);
 
     useEffect(() => {
         if (eventId) {
@@ -35,7 +36,7 @@ function CreateEvent() {
                     setEndTime(data.event?.end_time ? new Date(data.event.end_time).toISOString().slice(0, 16) : '');
                     setSlotDuration(data.event?.slot_duration?.minutes ? data.event.slot_duration.minutes.toString() : '0');
                     console.log('Venue data before setting state:', data.venue);
-                    if (data.venue && isGoogleMapsLoaded && (!selectedVenue || (selectedVenue.name !== data.venue.name || selectedVenue.address !== data.venue.address))) {
+                    if (data.venue && isGoogleMapsLoaded) {
                         setSelectedVenue({
                             name: data.venue?.name || '',
                             address: data.venue?.address || '',
@@ -57,7 +58,7 @@ function CreateEvent() {
 
     useEffect(() => {
         const checkGoogleMapsLoaded = setInterval(() => {
-            if (window.google && window.google.maps) {
+            if (window.google && window.google.maps && !isGoogleMapsLoaded) {
                 console.log("Google Maps API is fully loaded");
                 clearInterval(checkGoogleMapsLoaded);
                 setIsGoogleMapsLoaded(true);
@@ -65,7 +66,7 @@ function CreateEvent() {
         }, 100); // Check every 100 milliseconds
 
         return () => clearInterval(checkGoogleMapsLoaded); // Cleanup on unmount
-    }, []);
+    }, [isGoogleMapsLoaded]);
 
     useEffect(() => {
         if (selectedVenue && selectedVenue.address_components) {
@@ -162,18 +163,12 @@ function CreateEvent() {
     console.log('SelectedVenue before passing to VenueAutocomplete:', selectedVenue);
 
     return (
-        <div className="create-event-container">
+        <div className="create-event">
             <h1>{isEditMode ? 'Edit Your Event' : 'Create a New Event'}</h1>
             <TextInput
                 placeholder="Event Name"
                 value={newEventName}
                 onChange={(e) => setNewEventName(e.target.value)}
-            />
-            <VenueAutocomplete
-                onPlaceSelected={(place) => setSelectedVenue(place)}
-                resetTrigger={resetTrigger}
-                onResetComplete={() => handleResetComplete()}
-                initialValue={selectedVenue ? `${selectedVenue.name}, ${selectedVenue.address}` : ''}
             />
             <label htmlFor="start-time">Start Time</label>
             <TextInput
@@ -201,11 +196,32 @@ function CreateEvent() {
                 value={additionalInfo}
                 onChange={(e) => setAdditionalInfo(e.target.value)}
             />
-            <LocationMap
-                latitude={selectedVenue?.latitude ?? null}
-                longitude={selectedVenue?.longitude ?? null}
-                showMarker={!!selectedVenue}
-            />
+            <div className="create-event__map-container">
+                <LocationMap
+                        latitude={selectedVenue?.latitude}
+                        longitude={selectedVenue?.longitude}
+                        showMarker={true}
+                />
+            </div>
+            {isEditMode && !isEditingLocation && (
+                <>
+                    <p className="create-event__text">Location: {selectedVenue?.name}, {selectedVenue?.address}</p>
+                    <button onClick={() => setIsEditingLocation(true)}>Edit Location</button>
+                </>
+            )}
+            {(!isEditMode || isEditingLocation) && (
+                <>
+                    <VenueAutocomplete
+                        onPlaceSelected={(place) => {
+                            setSelectedVenue(place);
+                            setIsEditingLocation(false);
+                        }}
+                        resetTrigger={resetTrigger}
+                        onResetComplete={() => handleResetComplete()}
+                        initialValue={selectedVenue ? `${selectedVenue.name}, ${selectedVenue.address}` : ''}
+                    />
+                </>
+            )}
             <button className="submit-button" onClick={handleSubmit}>{isEditMode ? 'Save' : 'Submit'}</button>
             {isEditMode && <button className="cancel-button" onClick={() => navigate(-1)}>Cancel</button>}
         </div>
@@ -213,3 +229,4 @@ function CreateEvent() {
 }
 
 export default CreateEvent;
+

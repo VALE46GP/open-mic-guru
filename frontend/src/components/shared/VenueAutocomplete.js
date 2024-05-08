@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
+import './VenueAutocomplete.sass';
 
 const VenueAutocomplete = ({ onPlaceSelected, resetTrigger, onResetComplete, initialValue }) => {
     const autocompleteInputRef = useRef(null);
@@ -6,7 +7,7 @@ const VenueAutocomplete = ({ onPlaceSelected, resetTrigger, onResetComplete, ini
 
     // Initialize Google Places Autocomplete
     useEffect(() => {
-        const initializeAutocomplete = (initialValue) => {
+        const initializeAutocomplete = () => {
             if (!autocompleteInputRef.current) return;
             const autocomplete = new window.google.maps.places.Autocomplete(
                 autocompleteInputRef.current,
@@ -30,18 +31,18 @@ const VenueAutocomplete = ({ onPlaceSelected, resetTrigger, onResetComplete, ini
         };
 
         if (window.google && window.google.maps) {
-            initializeAutocomplete(initialValue);
+            initializeAutocomplete();
         } else {
             const checkGoogleMapsLoaded = setInterval(() => {
                 if (window.google && window.google.maps) {
                     clearInterval(checkGoogleMapsLoaded);
-                    initializeAutocomplete(initialValue);
+                    initializeAutocomplete();
                 }
             }, 100);
 
             return () => clearInterval(checkGoogleMapsLoaded);
         }
-    }, [onPlaceSelected, initialValue]);
+    }, [initialValue]);
 
     // Handle resetTrigger changes
     useEffect(() => {
@@ -65,13 +66,16 @@ const VenueAutocomplete = ({ onPlaceSelected, resetTrigger, onResetComplete, ini
     }, [initialValue]);
 
     return (
-        <input
-            ref={autocompleteInputRef}
-            type="text"
-            placeholder="Location"
-            value={inputValue}
-            onChange={(e) => setInputValue(e.target.value)}
-        />
+        <div className="venue-autocomplete">
+            <input
+                ref={autocompleteInputRef}
+                type="text"
+                placeholder="Location"
+                value={inputValue}
+                onChange={(e) => setInputValue(e.target.value)}
+                className="venue-autocomplete__input"
+            />
+        </div>
     );
 };
 
