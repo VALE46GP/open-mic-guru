@@ -21,6 +21,7 @@ function App() {
             <Route path="/testdb" element={<ProtectedRoute element={<TestDbPage />} />} />
             <Route path="/create-event" element={<ProtectedRoute element={<CreateEventPage />} />} />
             <Route path="/events/:eventId" element={<ProtectedRoute element={<EventPage />} />} />
+            <Route path="/events/:eventId/edit" element={<ProtectedRoute element={<CreateEventPage />} />} />
             <Route path="/users/:userId" element={<ProtectedRoute element={<UserPage />} />} />
           </Routes>
         </AuthProvider>

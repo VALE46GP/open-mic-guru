@@ -78,7 +78,7 @@ function EventPage() {
       )}
       {/* Add an Edit button for the host */}
       {eventDetails?.host?.id === userId && (
-        <button onClick={() => navigate(`/events/edit-event/${eventDetails.event.id}`)}>Edit</button>
+        <button onClick={() => navigate(`/events/${eventDetails.event.id}/edit`)}>Edit</button>
       )}
       <div className="lineup-container">
         <h2>Lineup</h2>
