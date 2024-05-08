@@ -94,8 +94,8 @@ router.post('/', async (req, res) => {
     }
 });
 
-// PATCH an existing event
-router.patch('/:eventId', async (req, res) => {
+// PUT an existing event
+router.put('/:eventId', async (req, res) => {
     const { eventId } = req.params;
     const { name, start_time, end_time, slot_duration, venue_id, additional_info } = req.body;
 

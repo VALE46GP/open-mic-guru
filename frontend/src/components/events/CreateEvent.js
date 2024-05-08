@@ -19,6 +19,7 @@ function CreateEvent() {
     const { getUserId } = useAuth();
     const navigate = useNavigate();
     const isEditMode = !!eventId;
+    const [isGoogleMapsLoaded, setIsGoogleMapsLoaded] = useState(false);
 
     useEffect(() => {
         if (eventId) {
@@ -34,7 +35,7 @@ function CreateEvent() {
                     setEndTime(data.event?.end_time ? new Date(data.event.end_time).toISOString().slice(0, 16) : '');
                     setSlotDuration(data.event?.slot_duration?.minutes ? data.event.slot_duration.minutes.toString() : '0');
                     console.log('Venue data before setting state:', data.venue);
-                    if (data.venue) {
+                    if (data.venue && isGoogleMapsLoaded && (!selectedVenue || (selectedVenue.name !== data.venue.name || selectedVenue.address !== data.venue.address))) {
                         setSelectedVenue({
                             name: data.venue?.name || '',
                             address: data.venue?.address || '',
@@ -42,7 +43,7 @@ function CreateEvent() {
                             longitude: data.venue?.longitude || 0
                         });
                     } else {
-                        console.log('No venue data available');
+                        console.log('No venue data available or Google Maps not loaded');
                     }
                     setAdditionalInfo(data.event?.additional_info || '');
                 } catch (error) {
@@ -52,14 +53,14 @@ function CreateEvent() {
 
             fetchEventDetails();
         }
-    }, [eventId]);
+    }, [eventId, isGoogleMapsLoaded]);
 
     useEffect(() => {
         const checkGoogleMapsLoaded = setInterval(() => {
             if (window.google && window.google.maps) {
                 console.log("Google Maps API is fully loaded");
                 clearInterval(checkGoogleMapsLoaded);
-                console.log('Google object:', window.google);
+                setIsGoogleMapsLoaded(true);
             }
         }, 100); // Check every 100 milliseconds
 
@@ -162,7 +163,7 @@ function CreateEvent() {
 
     return (
         <div className="create-event-container">
-            <h2>{isEditMode ? 'Edit Your Event' : 'Create a New Event'}</h2>
+            <h1>{isEditMode ? 'Edit Your Event' : 'Create a New Event'}</h1>
             <TextInput
                 placeholder="Event Name"
                 value={newEventName}

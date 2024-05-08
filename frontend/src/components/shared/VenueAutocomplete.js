@@ -6,7 +6,7 @@ const VenueAutocomplete = ({ onPlaceSelected, resetTrigger, onResetComplete, ini
 
     // Initialize Google Places Autocomplete
     useEffect(() => {
-        const initializeAutocomplete = () => {
+        const initializeAutocomplete = (initialValue) => {
             if (!autocompleteInputRef.current) return;
             const autocomplete = new window.google.maps.places.Autocomplete(
                 autocompleteInputRef.current,
@@ -16,30 +16,32 @@ const VenueAutocomplete = ({ onPlaceSelected, resetTrigger, onResetComplete, ini
             autocomplete.addListener('place_changed', () => {
                 const place = autocomplete.getPlace();
                 if (!place.geometry) {
-                    // If no place is selected (e.g., clear the input), do not update the place
-                    setInputValue(""); // Clear the input field
-                    onPlaceSelected(null); // Reset selected place
+                    setInputValue("");
+                    onPlaceSelected(null);
                     return;
                 }
                 const address = place.address_components.map(component => `${component.short_name}`).join(', ');
                 onPlaceSelected(place);
-                setInputValue(`${place.name}, ${address}`); // Include both name and address
+                setInputValue(`${place.name}, ${address}`);
             });
+            if (initialValue) {
+                setInputValue(initialValue);
+            }
         };
 
         if (window.google && window.google.maps) {
-            initializeAutocomplete();
+            initializeAutocomplete(initialValue);
         } else {
             const checkGoogleMapsLoaded = setInterval(() => {
                 if (window.google && window.google.maps) {
                     clearInterval(checkGoogleMapsLoaded);
-                    initializeAutocomplete();
+                    initializeAutocomplete(initialValue);
                 }
             }, 100);
 
             return () => clearInterval(checkGoogleMapsLoaded);
         }
-    }, [onPlaceSelected]);
+    }, [onPlaceSelected, initialValue]);
 
     // Handle resetTrigger changes
     useEffect(() => {
