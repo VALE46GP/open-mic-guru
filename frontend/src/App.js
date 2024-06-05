@@ -1,12 +1,12 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import './App.sass';
 import Navigation from './components/navigation/Navigation';
 import TestDbPage from './pages/TestDb/TestDbPage';
 import LoginPage from './pages/Login/LoginPage';
 import CreateEventPage from './pages/Event/CreateEventPage';
 import EventPage from './pages/Event/EventPage';
 import UserPage from './pages/User/UserPage';
-import './App.sass';
 import { AuthProvider } from './context/AuthContext';
 import ProtectedRoute from './components/utils/ProtectedRoute';
 

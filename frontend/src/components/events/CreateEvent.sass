@@ -1,7 +1,16 @@
+@import '../../styles/extensions'
+
 .create-event
+    &__container
+        @extend %border-box
+        max-width: 600px
+
+    &__title
+        text-align: center
 
     &__map-container
-        margin-top: 1rem
+        display: flex
+        justify-content: center
 
     &__text
         margin-top: 1rem

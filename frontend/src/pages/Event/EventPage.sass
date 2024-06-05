@@ -1,11 +1,9 @@
+@import '../../styles/extensions'
+
 .event-details
     &__container
+        @extend %border-box
         max-width: 600px
-        margin: 2rem auto
-        padding: 20px
-        border: 1px solid black
-        border-radius: 20px
-        position: relative
 
     &__title
         color: #333
@@ -62,3 +60,4 @@
 
     tr
         text-align: left
+

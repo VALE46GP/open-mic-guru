@@ -4,6 +4,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import VenueAutocomplete from '../shared/VenueAutocomplete';
 import TextInput from '../shared/TextInput';
 import LocationMap from '../shared/LocationMap';
+import { ReactComponent as EditIcon } from "../../assets/icons/edit.svg";
 import './CreateEvent.sass';
 
 function CreateEvent() {
@@ -167,61 +168,67 @@ function CreateEvent() {
 
     return (
         <div className="create-event">
-            <h1>{isEditMode ? 'Edit Your Event' : 'Create a New Event'}</h1>
-            <label htmlFor="end-time">Event Name</label>
-            <TextInput
-                placeholder="Event Name"
-                value={newEventName}
-                onChange={(e) => setNewEventName(e.target.value)}
-            />
-            <label htmlFor="start-time">Start Time</label>
-            <TextInput
-                id="start-time"
-                type="datetime-local"
-                value={startTime}
-                onChange={(e) => setStartTime(e.target.value)}
-            />
-            <label htmlFor="end-time">End Time</label>
-            <TextInput
-                id="end-time"
-                type="datetime-local"
-                value={endTime || startTime} // Set to startTime if endTime is not set
-                onChange={(e) => setEndTime(e.target.value)}
-            />
-            <label htmlFor="end-time">Slot Duration (minutes)</label>
-            <TextInput
-                type="number"
-                placeholder="Slot Duration (minutes)"
-                value={slotDuration || ''}
-                onChange={(e) => setSlotDuration(e.target.value)}
-            />
-            <label htmlFor="end-time">Setup Duration (minutes)</label>
-            <TextInput
-                type="number"
-                placeholder="Setup Duration (minutes)"
-                value={setupDuration || ''}
-                onChange={(e) => setSetupDuration(e.target.value)}
-            />
-            <label htmlFor="end-time">Additional Information</label>
-            <textarea
-                className="input-style"
-                placeholder="Additional Info"
-                value={additionalInfo}
-                onChange={(e) => setAdditionalInfo(e.target.value)}
-            />
-            <div className="create-event__map-container">
-                <LocationMap
-                        latitude={selectedVenue?.latitude}
-                        longitude={selectedVenue?.longitude}
-                        showMarker={true}
+            <h1 className="create-event__title">{isEditMode ? 'Edit Your Event' : 'Create a New Event'}</h1>
+            <div className="create-event__container">
+                <label htmlFor="end-time">Event Name</label>
+                <TextInput
+                    placeholder="Event Name"
+                    value={newEventName}
+                    onChange={(e) => setNewEventName(e.target.value)}
+                />
+                <label htmlFor="start-time">Start Time</label>
+                <TextInput
+                    id="start-time"
+                    type="datetime-local"
+                    value={startTime}
+                    onChange={(e) => setStartTime(e.target.value)}
+                />
+                <label htmlFor="end-time">End Time</label>
+                <TextInput
+                    id="end-time"
+                    type="datetime-local"
+                    value={endTime || startTime} // Set to startTime if endTime is not set
+                    onChange={(e) => setEndTime(e.target.value)}
+                />
+                <label htmlFor="end-time">Slot Duration (minutes)</label>
+                <TextInput
+                    type="number"
+                    placeholder="Slot Duration (minutes)"
+                    value={slotDuration || ''}
+                    onChange={(e) => setSlotDuration(e.target.value)}
+                />
+                <label htmlFor="end-time">Setup Duration (minutes)</label>
+                <TextInput
+                    type="number"
+                    placeholder="Setup Duration (minutes)"
+                    value={setupDuration || ''}
+                    onChange={(e) => setSetupDuration(e.target.value)}
+                />
+                <label htmlFor="end-time">Additional Information</label>
+                <textarea
+                    className="input-style"
+                    placeholder="Additional Info"
+                    value={additionalInfo}
+                    onChange={(e) => setAdditionalInfo(e.target.value)}
                 />
             </div>
-            {isEditMode && !isEditingLocation && (
-                <>
-                    <p className="create-event__text">Location: {selectedVenue?.name}, {selectedVenue?.address}</p>
-                    <button onClick={() => setIsEditingLocation(true)}>Edit Location</button>
-                </>
-            )}
+            <div className="create-event__container">
+                <button className="event-details__edit" onClick={() => setIsEditingLocation(true)}>
+                    <EditIcon />
+                </button>
+                <div className="create-event__map-container">
+                    <LocationMap
+                            latitude={selectedVenue?.latitude}
+                            longitude={selectedVenue?.longitude}
+                            showMarker={true}
+                    />
+                </div>
+                {isEditMode && !isEditingLocation && (
+                    <>
+                        <p className="create-event__text">Location: {selectedVenue?.name}, {selectedVenue?.address}</p>
+                    </>
+                )}
+            </div>
             {(!isEditMode || isEditingLocation) && (
                 <>
                     <VenueAutocomplete
@@ -237,6 +244,7 @@ function CreateEvent() {
             )}
             <button className="submit-button" onClick={handleSubmit}>{isEditMode ? 'Save' : 'Submit'}</button>
             {isEditMode && <button className="cancel-button" onClick={() => navigate(-1)}>Cancel</button>}
+
         </div>
     );
 }
