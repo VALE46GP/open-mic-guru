@@ -170,6 +170,7 @@ function CreateEvent() {
         <div className="create-event">
             <h1 className="create-event__title">{isEditMode ? 'Edit Your Event' : 'Create a New Event'}</h1>
             <div className="create-event__container">
+                <h2 className="create-event__title">Details</h2>
                 <label htmlFor="end-time">Event Name</label>
                 <TextInput
                     placeholder="Event Name"
@@ -213,6 +214,7 @@ function CreateEvent() {
                 />
             </div>
             <div className="create-event__container">
+                <h2 className="create-event__title">Location</h2>
                 <button className="event-details__edit" onClick={() => setIsEditingLocation(true)}>
                     <EditIcon />
                 </button>
