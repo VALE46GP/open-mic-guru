@@ -106,16 +106,18 @@ function EventPage() {
                 <p className="event-details__info">Slot Duration: {eventDetails?.event?.slot_duration?.minutes} minutes</p>
                 <p className="event-details__info">Additional Info: {eventDetails?.event?.additional_info}</p>
                 <p className="event-details__info">Location: {eventDetails?.venue?.name}, {eventDetails?.venue?.address}</p>
-                {eventDetails?.venue?.latitude && eventDetails?.venue?.longitude && (
-                    <LocationMap
-                        latitude={eventDetails.venue.latitude}
-                        longitude={eventDetails.venue.longitude}
-                    />
-                )}
+                <div className="event-details__map-container">
+                    {eventDetails?.venue?.latitude && eventDetails?.venue?.longitude && (
+                        <LocationMap
+                            latitude={eventDetails.venue.latitude}
+                            longitude={eventDetails.venue.longitude}
+                        />
+                    )}
+                </div>
             </div>
             <div className="event-details__container">
                 <div className="event-details__lineup">
-                    <h2>Lineup</h2>
+                    <h2 className="event-details__title">Lineup</h2>
                     {showModal && (
                         <div className="event-details__modal" onClick={handleOverlayClick}>
                             <div className="event-details__modal-content" onClick={e => e.stopPropagation()}>
