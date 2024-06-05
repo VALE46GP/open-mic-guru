@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import LocationMap from '../../components/shared/LocationMap';
 import { useAuth } from '../../hooks/useAuth';
+import { ReactComponent as EditIcon } from '../../assets/icons/edit.svg';
 import './EventPage.sass';
 
 function EventPage() {
@@ -87,76 +88,81 @@ function EventPage() {
     };
 
     return (
-        <div className="event-details__container">
-            <h1 className="event-details__title">{eventDetails?.event?.name}</h1>
-            <p className="event-details__info">
-            {new Date(eventDetails?.event?.start_time).toLocaleString([], { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' })} -
-            {new Date(eventDetails?.event?.start_time).toDateString() === new Date(eventDetails?.event?.end_time).toDateString() ?
-                new Date(eventDetails?.event?.end_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) :
-                new Date(eventDetails?.event?.end_time).toLocaleString([], { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
-            </p>
-            <p className="event-details__info">Hosted by: {eventDetails?.host?.name}</p>
-            <p className="event-details__info">Slot Duration: {eventDetails?.event?.slot_duration?.minutes} minutes</p>
-            <p className="event-details__info">Additional Info: {eventDetails?.event?.additional_info}</p>
-            <p className="event-details__info">Location: {eventDetails?.venue?.name}, {eventDetails?.venue?.address}</p>
-            {eventDetails?.venue?.latitude && eventDetails?.venue?.longitude && (
-                <LocationMap
-                    latitude={eventDetails.venue.latitude}
-                    longitude={eventDetails.venue.longitude}
-                />
-            )}
-            {/* Add an Edit button for the host */}
-            {eventDetails?.host?.id === userId && (
-                <button onClick={() => navigate(`/events/${eventDetails.event.id}/edit`)}>Edit</button>
-            )}
-            <div className="event-details__lineup">
-                <h2>Lineup</h2>
-                {showModal && (
-                    <div className="event-details__modal" onClick={handleOverlayClick}>
-                        <div className="event-details__modal-content" onClick={e => e.stopPropagation()}>
-                            <p>Slot #{currentSlot.slot_number} is currently open.</p>
-                            <p>Estimated start time: {new Date(currentSlot.slot_start_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
-                            <input
-                                type="text"
-                                placeholder="Enter a name to sign up."
-                                value={currentSlotName}
-                                onChange={(e) => setCurrentSlotName(e.target.value)}
-                            />
-                            <button onClick={handleConfirmSignUp} disabled={!currentSlotName.trim() || currentSlotName === "Open"}>Sign Up</button>
-                            <button onClick={() => setShowModal(false)}>Cancel</button>
-                        </div>
-                    </div>
+        <div className="event-details">
+            <div className="event-details__container">
+                {eventDetails?.host?.id === userId && (
+                    <button className="event-details__edit" onClick={() => navigate(`/events/${eventDetails.event.id}/edit`)}>
+                        <EditIcon />
+                    </button>
                 )}
-                <table>
-                    <thead>
-                        <tr>
-                            <th>#</th>
-                            <th>Start Time</th>
-                            <th>Artist</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {generateAllSlots().map((slot, index) => (
-                            <tr key={index}
-                                className={`event-details__lineup__row ${currentSlot === slot.slot_number ? 'event-details__lineup__row--selected' : ''}`}
-                                onClick={() => {
-                                console.log("Slot clicked", slot);
-                                if (slot.slot_name === "Open") {
-                                    setCurrentSlot(slot);
-                                    setShowModal(true);
-                                }
-                            }}>
-                            <td>{slot.slot_number}</td>
-                            <td>{slot.slot_start_time.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</td>
-                            <td>
-                                {slot.user_id ? (
-                                    <Link to={`/users/${slot.user_id}`}>{slot.slot_name}</Link>
-                                ) : "Open"}
-                            </td>
+                <h1 className="event-details__title">{eventDetails?.event?.name}</h1>
+                <p className="event-details__info">
+                {new Date(eventDetails?.event?.start_time).toLocaleString([], { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' })} -
+                {new Date(eventDetails?.event?.start_time).toDateString() === new Date(eventDetails?.event?.end_time).toDateString() ?
+                    new Date(eventDetails?.event?.end_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) :
+                    new Date(eventDetails?.event?.end_time).toLocaleString([], { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                </p>
+                <p className="event-details__info">Hosted by: {eventDetails?.host?.name}</p>
+                <p className="event-details__info">Slot Duration: {eventDetails?.event?.slot_duration?.minutes} minutes</p>
+                <p className="event-details__info">Additional Info: {eventDetails?.event?.additional_info}</p>
+                <p className="event-details__info">Location: {eventDetails?.venue?.name}, {eventDetails?.venue?.address}</p>
+                {eventDetails?.venue?.latitude && eventDetails?.venue?.longitude && (
+                    <LocationMap
+                        latitude={eventDetails.venue.latitude}
+                        longitude={eventDetails.venue.longitude}
+                    />
+                )}
+            </div>
+            <div className="event-details__container">
+                <div className="event-details__lineup">
+                    <h2>Lineup</h2>
+                    {showModal && (
+                        <div className="event-details__modal" onClick={handleOverlayClick}>
+                            <div className="event-details__modal-content" onClick={e => e.stopPropagation()}>
+                                <p>Slot #{currentSlot.slot_number} is currently open.</p>
+                                <p>Estimated start time: {new Date(currentSlot.slot_start_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
+                                <input
+                                    type="text"
+                                    placeholder="Enter a name to sign up."
+                                    value={currentSlotName}
+                                    onChange={(e) => setCurrentSlotName(e.target.value)}
+                                />
+                                <button onClick={handleConfirmSignUp} disabled={!currentSlotName.trim() || currentSlotName === "Open"}>Sign Up</button>
+                                <button onClick={() => setShowModal(false)}>Cancel</button>
+                            </div>
+                        </div>
+                    )}
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>Start Time</th>
+                                <th>Artist</th>
                             </tr>
-                        ))}
-                    </tbody>
-                </table>
+                        </thead>
+                        <tbody>
+                            {generateAllSlots().map((slot, index) => (
+                                <tr key={index}
+                                    className={`event-details__lineup__row ${currentSlot === slot.slot_number ? 'event-details__lineup__row--selected' : ''}`}
+                                    onClick={() => {
+                                    console.log("Slot clicked", slot);
+                                    if (slot.slot_name === "Open") {
+                                        setCurrentSlot(slot);
+                                        setShowModal(true);
+                                    }
+                                }}>
+                                <td>{slot.slot_number}</td>
+                                <td>{slot.slot_start_time.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</td>
+                                <td>
+                                    {slot.user_id ? (
+                                        <Link to={`/users/${slot.user_id}`}>{slot.slot_name}</Link>
+                                    ) : "Open"}
+                                </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </div>
     );
