@@ -34,7 +34,7 @@ function EventPage() {
     }
     const startTime = new Date(eventDetails.event.start_time).getTime();
     const endTime = new Date(eventDetails.event.end_time).getTime();
-    const slotDuration = eventDetails.event.slot_duration.minutes * 60000;
+    const slotDuration = (eventDetails.event.slot_duration.minutes + eventDetails.event.setup_duration.minutes) * 60000;
     const totalSlots = Math.ceil((endTime - startTime) / slotDuration);
 
     return Array.from({ length: totalSlots }, (_, index) => {
@@ -89,7 +89,12 @@ function EventPage() {
   return (
     <div className="event-details__container">
       <h1 className="event-details__title">{eventDetails?.event?.name}</h1>
-      <p className="event-details__info">Date and Time: {new Date(eventDetails?.event?.start_time).toLocaleString()} - {new Date(eventDetails?.event?.end_time).toLocaleString()}</p>
+      <p className="event-details__info">
+        Date and Time: {new Date(eventDetails?.event?.start_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} - 
+        {new Date(eventDetails?.event?.start_time).toDateString() === new Date(eventDetails?.event?.end_time).toDateString() ?
+          new Date(eventDetails?.event?.end_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) :
+          new Date(eventDetails?.event?.end_time).toLocaleString([], { hour: '2-digit', minute: '2-digit' })}
+      </p>
       <p className="event-details__info">Hosted by: {eventDetails?.host?.name}</p>
       <p className="event-details__info">Slot Duration: {eventDetails?.event?.slot_duration?.minutes} minutes</p>
       <p className="event-details__info">Additional Info: {eventDetails?.event?.additional_info}</p>
@@ -158,4 +163,3 @@ function EventPage() {
 }
 
 export default EventPage;
-

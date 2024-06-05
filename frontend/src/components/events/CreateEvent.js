@@ -13,6 +13,7 @@ function CreateEvent() {
     const [startTime, setStartTime] = useState('');
     const [endTime, setEndTime] = useState('');
     const [slotDuration, setSlotDuration] = useState('0'); // Initialize with '0' to avoid NaN
+    const [setupDuration, setSetupDuration] = useState('5'); // Initialize with '5' to avoid NaN
     const [selectedVenue, setSelectedVenue] = useState(null);
     const [additionalInfo, setAdditionalInfo] = useState('');
     const [resetTrigger, setResetTrigger] = useState(false);
@@ -35,6 +36,7 @@ function CreateEvent() {
                     setStartTime(data.event?.start_time ? new Date(data.event.start_time).toISOString().slice(0, 16) : '');
                     setEndTime(data.event?.end_time ? new Date(data.event.end_time).toISOString().slice(0, 16) : '');
                     setSlotDuration(data.event?.slot_duration?.minutes ? data.event.slot_duration.minutes.toString() : '0');
+                    setSetupDuration(data.event?.setup_duration?.minutes ? data.event.setup_duration.minutes.toString() : '5'); // Default to 5 if not set
                     console.log('Venue data before setting state:', data.venue);
                     if (data.venue && isGoogleMapsLoaded) {
                         setSelectedVenue({
@@ -96,7 +98,7 @@ function CreateEvent() {
         let venueId = await checkOrCreateVenue(selectedVenue);
 
         const hostId = getUserId();
-        console.log('Sending event data:', { name: newEventName, venue_id: venueId, start_time: startTime, end_time: endTime, slot_duration: slotDuration * 60, additional_info: additionalInfo, host_id: hostId });
+        console.log('Sending event data:', { name: newEventName, venue_id: venueId, start_time: startTime, end_time: endTime, slot_duration: slotDuration * 60, setup_duration: setupDuration * 60, additional_info: additionalInfo, host_id: hostId });
 
         try {
             const response = await fetch(isEditMode ? `/api/events/${eventId}` : '/api/events', {
@@ -110,6 +112,7 @@ function CreateEvent() {
                     start_time: startTime,
                     end_time: endTime,
                     slot_duration: slotDuration * 60, // Convert minutes to seconds
+                    setup_duration: setupDuration * 60, // Convert minutes to seconds
                     additional_info: additionalInfo,
                     host_id: hostId,
                 }),
@@ -184,11 +187,19 @@ function CreateEvent() {
                 value={endTime || startTime} // Set to startTime if endTime is not set
                 onChange={(e) => setEndTime(e.target.value)}
             />
+            <label htmlFor="end-time">Slot Duration (minutes)</label>
             <TextInput
                 type="number"
                 placeholder="Slot Duration (minutes)"
-                value={slotDuration || ''} // Ensure value is not NaN
+                value={slotDuration || ''}
                 onChange={(e) => setSlotDuration(e.target.value)}
+            />
+            <label htmlFor="end-time">Setup Duration (minutes)</label>
+            <TextInput
+                type="number"
+                placeholder="Setup Duration (minutes)"
+                value={setupDuration || ''}
+                onChange={(e) => setSetupDuration(e.target.value)}
             />
             <textarea
                 className="input-style"
@@ -229,4 +240,3 @@ function CreateEvent() {
 }
 
 export default CreateEvent;
-

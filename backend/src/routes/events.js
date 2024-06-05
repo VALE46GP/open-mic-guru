@@ -24,6 +24,7 @@ router.get('/:eventId', async (req, res) => {
             e.start_time,
             e.end_time,
             e.slot_duration,
+            e.setup_duration,
             e.additional_info,
             v.id AS venue_id,
             v.name AS venue_name,
@@ -60,6 +61,7 @@ router.get('/:eventId', async (req, res) => {
               start_time: eventData.start_time,
               end_time: eventData.end_time,
               slot_duration: eventData.slot_duration,
+              setup_duration: eventData.setup_duration,
               additional_info: eventData.additional_info,
           },
           venue: {
@@ -86,11 +88,11 @@ router.get('/:eventId', async (req, res) => {
 // POST a new event
 router.post('/', async (req, res) => {
     try {
-        const { venue_id, start_time, end_time, slot_duration, name, additional_info, host_id } = req.body;
+        const { venue_id, start_time, end_time, slot_duration, setup_duration = 5, name, additional_info, host_id } = req.body;
         if (new Date(start_time) >= new Date(end_time)) {
             return res.status(400).json({ error: 'Start time must be before end time' });
         }
-        const result = await db.query('INSERT INTO events (venue_id, start_time, end_time, slot_duration, name, additional_info) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *', [venue_id, start_time, end_time, slot_duration, name, additional_info]);
+        const result = await db.query('INSERT INTO events (venue_id, start_time, end_time, slot_duration, setup_duration, name, additional_info) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *', [venue_id, start_time, end_time, slot_duration, setup_duration, name, additional_info]);
         const eventId = result.rows[0].id;
         await db.query('INSERT INTO user_roles (user_id, event_id, role) VALUES ($1, $2, \'host\')', [host_id, eventId]);
         res.status(201).json(result.rows[0]);
@@ -103,7 +105,7 @@ router.post('/', async (req, res) => {
 // PUT an existing event
 router.put('/:eventId', async (req, res) => {
     const { eventId } = req.params;
-    const { name, start_time, end_time, slot_duration, venue_id, additional_info } = req.body;
+    const { name, start_time, end_time, slot_duration, setup_duration, venue_id, additional_info } = req.body;
 
     try {
         if (new Date(start_time) >= new Date(end_time)) {
@@ -112,8 +114,8 @@ router.put('/:eventId', async (req, res) => {
 
         // Update the event in the database
         const result = await db.query(
-            'UPDATE events SET name = $1, start_time = $2, end_time = $3, slot_duration = $4, venue_id = $5, additional_info = $6 WHERE id = $7 RETURNING *',
-            [name, start_time, end_time, slot_duration, venue_id, additional_info, eventId]
+            'UPDATE events SET name = $1, start_time = $2, end_time = $3, slot_duration = $4, setup_duration = $5, venue_id = $6, additional_info = $7 WHERE id = $8 RETURNING *',
+            [name, start_time, end_time, slot_duration, setup_duration, venue_id, additional_info, eventId]
         );
 
         if (result.rows.length === 0) {

@@ -38,8 +38,8 @@ function UserPage() {
                             <td><Link to={`/events/${event.id}`}>{event.id}</Link></td>
                             <td>{event.name}</td>
                             <td>{event?.additional_info}</td>
-                            <td>{new Date(event.start_time).toLocaleString()}</td>
-                            <td>{new Date(event.end_time).toLocaleString()}</td>
+                            <td>{new Date(event.start_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</td>
+                            <td>{new Date(event.end_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</td>
                             <td>{event.slot_duration.minutes} minutes</td>
                         </tr>
                     ))}
