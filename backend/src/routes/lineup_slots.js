@@ -4,15 +4,9 @@ const db = require('../db');
 
 // POST a new lineup slot
 router.post('/', async (req, res) => {
-    const { event_id, user_id, slot_number } = req.body;
+    const { event_id, user_id, slot_number, slot_name } = req.body;
     try {
-        let result = await db.query('UPDATE lineup_slots SET user_id = $2 WHERE event_id = $1 AND slot_number = $3 AND user_id IS NULL RETURNING *', [event_id, user_id, slot_number]);
-        
-        if (result.rows.length === 0) {
-            result = await db.query('INSERT INTO lineup_slots (event_id, user_id, slot_number) VALUES ($1, $2, $3) RETURNING *', [event_id, user_id, slot_number]);
-        }
-        
-        res.json(result.rows[0]);
+        const result = await db.query('INSERT INTO lineup_slots (event_id, user_id, slot_number, slot_name) VALUES ($1, $2, $3, $4) RETURNING *', [event_id, user_id, slot_number, slot_name]);        res.status(201).json(result.rows[0]);
     } catch (err) {
         console.error(err);
         res.status(500).json({ error: 'Server error', details: err.message });
@@ -24,7 +18,7 @@ router.get('/:eventId', async (req, res) => {
     const { eventId } = req.params;
     try {
         const result = await db.query(`
-            SELECT ls.slot_number, u.name AS user_name, u.id AS user_id
+            SELECT ls.id AS slot_id, ls.slot_number, u.name AS user_name, u.id AS user_id, ls.slot_name
             FROM lineup_slots ls
             LEFT JOIN users u ON ls.user_id = u.id
             WHERE ls.event_id = $1
@@ -37,5 +31,15 @@ router.get('/:eventId', async (req, res) => {
     }
 });
 
-module.exports = router;
+router.delete('/:slotId', async (req, res) => {
+    const { slotId } = req.params;
+    try {
+        await db.query('DELETE FROM lineup_slots WHERE id = $1', [slotId]);
+        res.status(204).send();
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: 'Server error', details: err.message });
+    }
+});
 
+module.exports = router;

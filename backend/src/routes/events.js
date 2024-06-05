@@ -46,7 +46,7 @@ router.get('/:eventId', async (req, res) => {
 
     const eventData = eventQuery.rows[0];
     const lineupQuery = await db.query(`
-        SELECT ls.slot_number, u.name AS user_name, u.id AS user_id
+        SELECT ls.id AS slot_id, ls.slot_number, u.name AS user_name, u.id AS user_id, ls.slot_name
         FROM lineup_slots ls
         LEFT JOIN users u ON ls.user_id = u.id
         WHERE ls.event_id = $1

@@ -10,6 +10,9 @@ function EventPage() {
   const [eventDetails, setEventDetails] = useState(null);
   const { getUserId } = useAuth();
   const userId = getUserId();
+  const [showModal, setShowModal] = useState(false);
+  const [currentSlot, setCurrentSlot] = useState(null);
+  const [currentSlotName, setCurrentSlotName] = useState('');
 
   useEffect(() => {
     const fetchEventDetails = async () => {
@@ -39,16 +42,24 @@ function EventPage() {
         const matchingSlot = eventDetails.lineup.find(slot => slot.slot_number === index + 1);
 
         return {
+            slot_id: matchingSlot ? matchingSlot.slot_id : null,
             slot_number: index + 1,
             slot_start_time: slotStartTime,
-            user_name: matchingSlot ? matchingSlot.user_name : "Open",
+            slot_name: matchingSlot ? (matchingSlot.slot_name || matchingSlot.user_name) : "Open",
             user_id: matchingSlot ? matchingSlot.user_id : null
         };
     });
   };
 
-  const handleSlotSignUp = async (slotNumber) => {
-    const response = await fetch('/api/lineup_slots/', {
+  const handleConfirmSignUp = async () => {
+    if (!currentSlot) {
+        console.error("No slot selected");
+        return;
+    } else if (currentSlot.slot_id || (currentSlot.slot_name && currentSlot.slot_name !== "Open")) {
+        console.error("Slot already taken");
+        return;
+    }
+      const response = await fetch('/api/lineup_slots/', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
@@ -56,26 +67,33 @@ function EventPage() {
         body: JSON.stringify({
             event_id: eventId,
             user_id: userId,
-            slot_number: slotNumber,
+            slot_number: currentSlot.slot_number,
+            slot_name: currentSlotName
         }),
     });
-    if (!response.ok) {
-        const errorData = await response.json();
-        alert(`Error: ${errorData.error}`);
-        return;
+      const data = await response.json();
+    if (response.ok) {
+        setEventDetails(prevDetails => ({
+            ...prevDetails,
+            lineup: [...prevDetails.lineup, data]
+        }));
     }
-    const data = await response.json();
-    // Refresh slots or handle errors
+    setShowModal(false);
+  };
+
+  const handleOverlayClick = () => {
+    setShowModal(false);
+    setCurrentSlot(null); // Unselect the slot
   };
 
   return (
-    <div className="event-details-container">
-      <h1>{eventDetails?.event?.name}</h1>
-      <p>Date and Time: {new Date(eventDetails?.event?.start_time).toLocaleString()} - {new Date(eventDetails?.event?.end_time).toLocaleString()}</p>
-      <p>Hosted by: {eventDetails?.host?.name}</p>
-      <p>Slot Duration: {eventDetails?.event?.slot_duration?.minutes} minutes</p>
-      <p>Additional Info: {eventDetails?.event?.additional_info}</p>
-      <p>Location: {eventDetails?.venue?.name}, {eventDetails?.venue?.address}</p>
+    <div className="event-details__container">
+      <h1 className="event-details__title">{eventDetails?.event?.name}</h1>
+      <p className="event-details__info">Date and Time: {new Date(eventDetails?.event?.start_time).toLocaleString()} - {new Date(eventDetails?.event?.end_time).toLocaleString()}</p>
+      <p className="event-details__info">Hosted by: {eventDetails?.host?.name}</p>
+      <p className="event-details__info">Slot Duration: {eventDetails?.event?.slot_duration?.minutes} minutes</p>
+      <p className="event-details__info">Additional Info: {eventDetails?.event?.additional_info}</p>
+      <p className="event-details__info">Location: {eventDetails?.venue?.name}, {eventDetails?.venue?.address}</p>
       {eventDetails?.venue?.latitude && eventDetails?.venue?.longitude && (
         <LocationMap
           latitude={eventDetails.venue.latitude}
@@ -86,8 +104,24 @@ function EventPage() {
       {eventDetails?.host?.id === userId && (
         <button onClick={() => navigate(`/events/${eventDetails.event.id}/edit`)}>Edit</button>
       )}
-      <div className="lineup-container">
+      <div className="event-details__lineup">
         <h2>Lineup</h2>
+        {showModal && (
+            <div className="event-details__modal" onClick={handleOverlayClick}>
+                <div className="event-details__modal-content" onClick={e => e.stopPropagation()}>
+                    <p>Slot #{currentSlot.slot_number} is currently open.</p>
+                    <p>Estimated start time: {new Date(currentSlot.slot_start_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
+                    <input
+                      type="text"
+                      placeholder="Enter a name to sign up."
+                      value={currentSlotName}
+                      onChange={(e) => setCurrentSlotName(e.target.value)}
+                    />
+                    <button onClick={handleConfirmSignUp} disabled={!currentSlotName.trim() || currentSlotName === "Open"}>Sign Up</button>
+                    <button onClick={() => setShowModal(false)}>Cancel</button>
+                </div>
+            </div>
+        )}
         <table>
           <thead>
             <tr>
@@ -98,15 +132,21 @@ function EventPage() {
           </thead>
           <tbody>
             {generateAllSlots().map((slot, index) => (
-              <tr key={index}>
+              <tr key={index} 
+                  className={`event-details__lineup__row ${currentSlot === slot.slot_number ? 'event-details__lineup__row--selected' : ''}`}
+                  onClick={() => {
+                    console.log("Slot clicked", slot);
+                    if (slot.slot_name === "Open") {
+                        setCurrentSlot(slot);
+                        setShowModal(true);
+                    }
+                  }}>
                 <td>{slot.slot_number}</td>
                 <td>{slot.slot_start_time.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</td>
                 <td>
-                  {slot.user_name === "Open" ? (
-                    <button onClick={() => handleSlotSignUp(slot.slot_number)}>Sign Up</button>
-                  ) : (
-                    <Link to={`/users/${slot.user_id}`}>{slot.user_name}</Link>
-                  )}
+                  {slot.user_id ? (
+                    <Link to={`/users/${slot.user_id}`}>{slot.slot_name}</Link>
+                  ) : "Open"}
                 </td>
               </tr>
             ))}
@@ -118,3 +158,4 @@ function EventPage() {
 }
 
 export default EventPage;
+
