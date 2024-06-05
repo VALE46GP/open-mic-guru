@@ -106,9 +106,14 @@ function EventPage() {
         <div className="event-details">
             <div className="event-details__container">
                 {eventDetails?.host?.id === userId && (
-                    <button className="event-details__edit" onClick={() => navigate(`/events/${eventDetails.event.id}/edit`)}>
-                        <EditIcon />
-                    </button>
+                    <div className="event-details__top-buttons">
+                            <button className="event-details__edit" onClick={() => navigate(`/events/${eventDetails.event.id}/edit`)}>
+                                <EditIcon />
+                            </button>
+                            <button className="event-details__edit event-details__edit--delete">
+                                <DeleteIcon />
+                            </button>
+                    </div>
                 )}
                 <h1 className="event-details__title">{eventDetails?.event?.name}</h1>
                 <p className="event-details__info">
@@ -174,9 +179,14 @@ function EventPage() {
                                     {slot.user_id ? (
                                         <div className="event-details__td">
                                             <Link to={`/users/${slot.user_id}`}>{slot.slot_name}</Link>
-                                            <button className="event-details__delete" onClick={() => handleUnsign(slot.slot_id)}>
-                                                <DeleteIcon />
-                                            </button>
+                                            <div className="event-details__buttons">
+                                                <button className="event-details__button event-details__button--edit">
+                                                    <EditIcon />
+                                                </button>
+                                                <button className="event-details__button event-details__button--delete" onClick={() => handleUnsign(slot.slot_id)}>
+                                                    <DeleteIcon />
+                                                </button>
+                                            </div>
                                         </div>
                                     ) : "Open"}
                                 </td>
