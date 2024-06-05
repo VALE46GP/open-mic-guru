@@ -3,6 +3,7 @@ import { useParams, useNavigate, Link } from 'react-router-dom';
 import LocationMap from '../../components/shared/LocationMap';
 import { useAuth } from '../../hooks/useAuth';
 import { ReactComponent as EditIcon } from '../../assets/icons/edit.svg';
+import { ReactComponent as DeleteIcon } from '../../assets/icons/delete.svg';
 import './EventPage.sass';
 
 function EventPage() {
@@ -87,6 +88,20 @@ function EventPage() {
         setCurrentSlot(null); // Unselect the slot
     };
 
+    const handleUnsign = async (slotId) => {
+        const response = await fetch(`/api/lineup_slots/${slotId}`, {
+            method: 'DELETE'
+        });
+        if (response.ok) {
+            setEventDetails(prevDetails => ({
+                ...prevDetails,
+                lineup: prevDetails.lineup.filter(slot => slot.slot_id !== slotId)
+            }));
+        } else {
+            console.error('Failed to unsign');
+        }
+    };
+
     return (
         <div className="event-details">
             <div className="event-details__container">
@@ -157,7 +172,12 @@ function EventPage() {
                                 <td>{slot.slot_start_time.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</td>
                                 <td>
                                     {slot.user_id ? (
-                                        <Link to={`/users/${slot.user_id}`}>{slot.slot_name}</Link>
+                                        <div className="event-details__td">
+                                            <Link to={`/users/${slot.user_id}`}>{slot.slot_name}</Link>
+                                            <button className="event-details__delete" onClick={() => handleUnsign(slot.slot_id)}>
+                                                <DeleteIcon />
+                                            </button>
+                                        </div>
                                     ) : "Open"}
                                 </td>
                                 </tr>
