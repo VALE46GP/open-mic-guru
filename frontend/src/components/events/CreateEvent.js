@@ -168,6 +168,7 @@ function CreateEvent() {
     return (
         <div className="create-event">
             <h1>{isEditMode ? 'Edit Your Event' : 'Create a New Event'}</h1>
+            <label htmlFor="end-time">Event Name</label>
             <TextInput
                 placeholder="Event Name"
                 value={newEventName}
@@ -201,6 +202,7 @@ function CreateEvent() {
                 value={setupDuration || ''}
                 onChange={(e) => setSetupDuration(e.target.value)}
             />
+            <label htmlFor="end-time">Additional Information</label>
             <textarea
                 className="input-style"
                 placeholder="Additional Info"

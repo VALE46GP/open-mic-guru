@@ -90,10 +90,10 @@ function EventPage() {
     <div className="event-details__container">
       <h1 className="event-details__title">{eventDetails?.event?.name}</h1>
       <p className="event-details__info">
-        Date and Time: {new Date(eventDetails?.event?.start_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} - 
+        {new Date(eventDetails?.event?.start_time).toLocaleString([], { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' })} - 
         {new Date(eventDetails?.event?.start_time).toDateString() === new Date(eventDetails?.event?.end_time).toDateString() ?
           new Date(eventDetails?.event?.end_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) :
-          new Date(eventDetails?.event?.end_time).toLocaleString([], { hour: '2-digit', minute: '2-digit' })}
+          new Date(eventDetails?.event?.end_time).toLocaleString([], { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
       </p>
       <p className="event-details__info">Hosted by: {eventDetails?.host?.name}</p>
       <p className="event-details__info">Slot Duration: {eventDetails?.event?.slot_duration?.minutes} minutes</p>
