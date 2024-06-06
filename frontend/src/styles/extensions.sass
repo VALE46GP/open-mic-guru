@@ -1,7 +1,12 @@
+@import './mixins'
+
 %border-box
+    @media (min-width: $lg)
+        border-radius: 20px
+        padding: 2rem 3rem
     align-items: center
     margin: 2rem auto
-    padding: 2rem 3rem
+    padding: 1rem
     border: 1px solid black
-    border-radius: 20px
+    border-radius: 10px
     position: relative

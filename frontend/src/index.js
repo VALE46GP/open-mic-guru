@@ -1,3 +1,4 @@
+import './styles/mixins.sass'
 import './styles/extensions.sass'
 import './index.sass';
 import React from 'react';

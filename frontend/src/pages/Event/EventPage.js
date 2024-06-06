@@ -15,6 +15,7 @@ function EventPage() {
     const [showModal, setShowModal] = useState(false);
     const [currentSlot, setCurrentSlot] = useState(null);
     const [currentSlotName, setCurrentSlotName] = useState('');
+    const [showDeleteConfirmModal, setShowDeleteConfirmModal] = useState(false);
 
     useEffect(() => {
         const fetchEventDetails = async () => {
@@ -102,6 +103,27 @@ function EventPage() {
         }
     };
 
+    const handleDeleteEvent = async (eventId) => {
+        if (window.confirm("Are you sure you want to delete this event?")) {
+            try {
+                const response = await fetch(`/api/events/${eventId}`, {
+                    method: 'DELETE'
+                });
+                if (response.ok) {
+                    navigate('/events'); // Redirect to events list after deletion
+                } else {
+                    console.error('Failed to delete the event');
+                }
+            } catch (error) {
+                console.error('Error deleting event:', error);
+            }
+        }
+    };
+
+    const toggleDeleteConfirmModal = () => {
+        setShowDeleteConfirmModal(!showDeleteConfirmModal);
+    };
+
     return (
         <div className="event-details">
             <div className="event-details__container">
@@ -110,7 +132,7 @@ function EventPage() {
                             <button className="event-details__edit" onClick={() => navigate(`/events/${eventDetails.event.id}/edit`)}>
                                 <EditIcon />
                             </button>
-                            <button className="event-details__edit event-details__edit--delete">
+                            <button className="event-details__edit event-details__edit--delete" onClick={toggleDeleteConfirmModal}>
                                 <DeleteIcon />
                             </button>
                     </div>
@@ -196,6 +218,15 @@ function EventPage() {
                     </table>
                 </div>
             </div>
+            {showDeleteConfirmModal && (
+                <div className="modal">
+                    <div className="modal-content">
+                        <h4>Are you sure you want to delete this event?</h4>
+                        <button onClick={() => handleDeleteEvent(eventDetails.event.id)}>Confirm</button>
+                        <button onClick={toggleDeleteConfirmModal}>Cancel</button>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

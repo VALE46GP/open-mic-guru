@@ -1,0 +1,20 @@
+// breakpoints
+$xxs: 375px
+$xs: 430px
+$sm: 576px
+$md: 768px
+$lg: 992px
+$xl: 1200px
+$xxl: 1400px
+
+=media-up($breakpoint)
+    @media (min-width: $breakpoint)
+        @content
+
+=media-down($breakpoint)
+    @media (max-width: $breakpoint)
+        @content
+
+=media-between($breakpoint-min, $breakpoint-max)
+    @media (min-width: $breakpoint-min) and (max-width: $breakpoint-max)
+        @content
