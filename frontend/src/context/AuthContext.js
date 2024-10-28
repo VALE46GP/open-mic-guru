@@ -5,36 +5,45 @@ export const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
     const [isAuthenticated, setIsAuthenticated] = useState(false);
+    const [userName, setUserName] = useState('');
 
-    // Function to set the token in local storage and update state
     const login = (token) => {
-        Cookies.set('token', token, { expires: 7 }); // Set a cookie for 7 days
+        Cookies.set('token', token, { expires: 7 });
         setIsAuthenticated(true);
+        fetchUserDetails(token);
     };
 
-    // Function to clear the token from local storage and update state
+    const fetchUserDetails = async (token) => {
+        const payload = JSON.parse(atob(token.split('.')[1]));
+        const userId = payload.userId;
+        const response = await fetch(`/api/users/${userId}`);
+        const data = await response.json();
+        setUserName(data.user.name);
+    };
+
     const logout = () => {
         Cookies.remove('token');
         setIsAuthenticated(false);
+        setUserName('');
     };
 
     useEffect(() => {
         const token = Cookies.get('token');
         if (token) {
             setIsAuthenticated(true);
+            fetchUserDetails(token);
         }
     }, []);
 
-    // Add a method to get the user's ID
     const getUserId = () => {
         const token = Cookies.get('token');
-        // Assuming the token is a JWT and contains the user ID in its payload
+        if (!token) return null;
         const payload = JSON.parse(atob(token.split('.')[1]));
         return payload.userId;
     };
 
     return (
-        <AuthContext.Provider value={{ isAuthenticated, login, logout, getUserId }}>
+        <AuthContext.Provider value={{ isAuthenticated, login, logout, getUserId, userName }}>
             {children}
         </AuthContext.Provider>
     );

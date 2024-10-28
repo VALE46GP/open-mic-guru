@@ -77,24 +77,54 @@ router.post('/login', async (req, res) => {
 router.get('/:userId', async (req, res) => {
     try {
         const { userId } = req.params;
-        const userDetails = await db.query('SELECT * FROM users WHERE id = $1', [userId]);
-        if (userDetails.rows.length === 0) {
+        
+        // Fetch user details
+        const userQuery = await db.query('SELECT * FROM users WHERE id = $1', [userId]);
+        if (userQuery.rows.length === 0) {
             return res.status(404).json({ error: 'User not found' });
         }
-        const userEvents = await db.query(`
-            SELECT e.id, e.name, e.start_time, e.end_time, e.slot_duration, e.additional_info
+        const user = userQuery.rows[0];
+
+        // Fetch events hosted by the user, including venue_id
+        const eventsQuery = await db.query(`
+            SELECT 
+                e.id AS event_id,
+                e.name AS event_name,
+                e.start_time,
+                e.end_time,
+                e.slot_duration,
+                e.additional_info,
+                v.id AS venue_id
             FROM events e
-            JOIN user_roles ur ON e.id = ur.event_id
-            JOIN users u ON ur.user_id = u.id
-            WHERE u.id = $1
+            JOIN venues v ON e.venue_id = v.id
+            JOIN user_roles ur ON e.id = ur.event_id AND ur.role = 'host'
+            WHERE ur.user_id = $1
         `, [userId]);
-        res.json({
-            user: userDetails.rows[0],
-            events: userEvents.rows
-        });
+
+        const events = eventsQuery.rows;
+
+        res.json({ user, events });
     } catch (err) {
         console.error(err);
         res.status(500).send('Server error');
+    }
+});
+
+// DELETE a user
+router.delete('/:userId', verifyToken, async (req, res) => {
+    const { userId } = req.params;
+    const requesterId = req.user.id; // Assuming req.user is populated by authentication middleware
+
+    if (userId !== requesterId) {
+        return res.status(403).json({ error: 'You can only delete your own account' });
+    }
+
+    try {
+        await db.query('DELETE FROM users WHERE id = $1', [userId]);
+        res.status(204).send();
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: 'Server error', details: err.message });
     }
 });
 

@@ -6,7 +6,27 @@ const verifyToken = require('../middleware/verifyToken');
 // GET all events
 router.get('/', async (req, res) => {
     try {
-        const result = await db.query('SELECT * FROM events');
+        const result = await db.query(`
+            SELECT
+                e.id AS event_id,
+                e.name AS event_name,
+                e.start_time,
+                e.end_time,
+                e.slot_duration,
+                e.setup_duration,
+                e.additional_info,
+                v.id AS venue_id,
+                v.name AS venue_name,
+                v.address AS venue_address,
+                v.latitude AS venue_latitude,
+                v.longitude AS venue_longitude,
+                u.id AS host_id,
+                u.name AS host_name
+            FROM events e
+            JOIN venues v ON e.venue_id = v.id
+            LEFT JOIN user_roles ur ON e.id = ur.event_id AND ur.role = 'host'
+            LEFT JOIN users u ON ur.user_id = u.id
+        `);
         res.json(result.rows);
     } catch (err) {
         console.error(err);

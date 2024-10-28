@@ -43,6 +43,7 @@
   },
   "description": "frontend for open-mic-guru",
   "devDependencies": {
-    "http-proxy-middleware": "^2.0.6"
+    "http-proxy-middleware": "^2.0.6",
+    "jest-fetch-mock": "^3.0.3"
   }
 }

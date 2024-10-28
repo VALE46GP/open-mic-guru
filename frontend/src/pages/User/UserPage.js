@@ -30,17 +30,19 @@ function UserPage() {
                         <th>start_time</th>
                         <th>end_time</th>
                         <th>slot_duration</th>
+                        <th>venue_id</th>
                     </tr>
                 </thead>
                 <tbody>
                     {userData.events.map((event) => (
-                        <tr key={`event-${event.id}`}>
-                            <td><Link to={`/events/${event.id}`}>{event.id}</Link></td>
-                            <td>{event.name}</td>
+                        <tr key={`event-${event.event_id}`}>
+                            <td><Link to={`/events/${event.event_id}`}>{event.event_id}</Link></td>
+                            <td>{event.event_name}</td>
                             <td>{event?.additional_info}</td>
                             <td>{new Date(event.start_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</td>
                             <td>{new Date(event.end_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</td>
                             <td>{event.slot_duration.minutes} minutes</td>
+                            <td><Link to={`/venues/${event.venue_id}`}>{event.venue_id}</Link></td>
                         </tr>
                     ))}
                 </tbody>
