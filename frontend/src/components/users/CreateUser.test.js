@@ -1,37 +1,133 @@
 import React from 'react';
-import { render, screen, fireEvent } from '@testing-library/react';
-import { MemoryRouter } from 'react-router-dom';
 import { AuthProvider } from '../../context/AuthContext';
+import { render, screen, fireEvent, waitFor, act } from '@testing-library/react';
+import { MemoryRouter } from 'react-router-dom';
 import CreateUser from './CreateUser';
 
 describe('CreateUser Component', () => {
-  beforeEach(() => {
-    fetch.resetMocks();
-  });
+    afterEach(() => {
+        global.fetch.mockRestore();
+    });
 
-  test('deletes a user successfully', async () => {
-    // Mock the user creation response
-    fetch.mockResponseOnce(JSON.stringify({ userId: '12345' }));
+    test('displays error message on registration failure', async () => {
+        // Set up fetch mock to return a failure
+        global.fetch = jest.fn().mockResolvedValueOnce({
+            ok: false,
+            json: async () => ({ error: 'Registration failed' }),
+        });
 
-    // Mock the user deletion response
-    fetch.mockResponseOnce('', { status: 204 });
+        render(<CreateUser />);
 
-    render(
-      <AuthProvider>
-        <MemoryRouter>
-          <CreateUser />
-        </MemoryRouter>
-      </AuthProvider>
-    );
+        fireEvent.change(screen.getByTestId('email-input'), { target: { value: 'test@example.com' } });
+        fireEvent.change(screen.getByTestId('password-input'), { target: { value: 'password123' } });
+        fireEvent.change(screen.getByTestId('name-input'), { target: { value: 'Test User' } });
 
-    // Simulate user input and form submission
-    fireEvent.change(screen.getByPlaceholderText(/Email/i), { target: { value: 'testdelete@example.com' } });
-    fireEvent.change(screen.getByPlaceholderText(/Password/i), { target: { value: 'password123' } });
-    fireEvent.change(screen.getByPlaceholderText(/Name/i), { target: { value: 'Test Delete' } });
-    fireEvent.click(screen.getByRole('button', { name: /Register/i }));
+        await act(async () => {
+            fireEvent.click(screen.getByTestId('register-button'));
+        });
 
-    // Verify the user is deleted
-    const response = await fetch(`/api/users/12345`, { method: 'DELETE' });
-    expect(response.status).toBe(204); // Expecting 204 for successful deletion
-  });
+        await waitFor(() => {
+            expect(screen.getByTestId('error-message')).toHaveTextContent('Registration failed');
+        });
+    });
+
+    test('handles registration failure', async () => {
+        global.fetch = jest.fn().mockResolvedValueOnce({
+            ok: false,
+            json: async () => ({ error: 'Registration failed' })
+        });
+
+        render(
+            <AuthProvider>
+                <MemoryRouter>
+                    <CreateUser />
+                </MemoryRouter>
+            </AuthProvider>
+        );
+
+        fireEvent.change(screen.getByTestId('email-input'), { target: { value: 'test@example.com' } });
+        fireEvent.change(screen.getByTestId('password-input'), { target: { value: 'password123' } });
+        fireEvent.change(screen.getByTestId('name-input'), { target: { value: 'Test User' } });
+
+        await act(async () => {
+            fireEvent.click(screen.getByTestId('register-button'));
+        });
+
+        await waitFor(() => {
+            expect(screen.getByTestId('error-message')).toBeInTheDocument();
+            expect(screen.getByTestId('error-message')).toHaveTextContent('Registration failed');
+        });
+
+        global.fetch.mockRestore();
+    });
+
+    test('displays success message on registration success', async () => {
+        // Set up fetch mock to return a success
+        global.fetch = jest.fn().mockResolvedValueOnce({
+            ok: true,
+            json: async () => ({ token: 'sampleToken' }),
+        });
+
+        render(<CreateUser />);
+
+        fireEvent.change(screen.getByTestId('email-input'), { target: { value: 'test@example.com' } });
+        fireEvent.change(screen.getByTestId('password-input'), { target: { value: 'password123' } });
+        fireEvent.change(screen.getByTestId('name-input'), { target: { value: 'Test User' } });
+
+        await act(async () => {
+            fireEvent.click(screen.getByTestId('register-button'));
+        });
+
+        await waitFor(() => {
+            expect(screen.getByTestId('success-message')).toBeInTheDocument();
+        });
+    });
+
+    test('handles input changes', () => {
+        render(
+            <AuthProvider>
+                <MemoryRouter>
+                    <CreateUser />
+                </MemoryRouter>
+            </AuthProvider>
+        );
+
+        fireEvent.change(screen.getByTestId('email-input'), { target: { value: 'test@example.com' } });
+        fireEvent.change(screen.getByTestId('password-input'), { target: { value: 'password123' } });
+        fireEvent.change(screen.getByTestId('name-input'), { target: { value: 'Test User' } });
+
+        expect(screen.getByTestId('email-input')).toHaveValue('test@example.com');
+        expect(screen.getByTestId('password-input')).toHaveValue('password123');
+        expect(screen.getByTestId('name-input')).toHaveValue('Test User');
+    });
+
+    test('submits the form and handles success', async () => {
+        global.fetch = jest.fn()
+            .mockResolvedValueOnce({
+                ok: true,
+                json: async () => ({ token: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiIxMjM0NTYifQ.signature' })
+            });
+
+        render(
+            <AuthProvider>
+                <MemoryRouter>
+                    <CreateUser />
+                </MemoryRouter>
+            </AuthProvider>
+        );
+
+        fireEvent.change(screen.getByTestId('email-input'), { target: { value: 'test@example.com' } });
+        fireEvent.change(screen.getByTestId('password-input'), { target: { value: 'password123' } });
+        fireEvent.change(screen.getByTestId('name-input'), { target: { value: 'Test User' } });
+
+        await act(async () => {
+            fireEvent.click(screen.getByTestId('register-button'));
+        });
+
+        await waitFor(() => {
+            expect(screen.getByTestId('success-message')).toBeInTheDocument();
+        });
+
+        global.fetch.mockRestore();
+    });
 });

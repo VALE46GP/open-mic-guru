@@ -8,6 +8,7 @@ export const AuthProvider = ({ children }) => {
     const [userName, setUserName] = useState('');
 
     const login = (token) => {
+        if (!token) return;  // Avoid calling fetchUserDetails if no token is provided
         Cookies.set('token', token, { expires: 7 });
         setIsAuthenticated(true);
         fetchUserDetails(token);
@@ -18,7 +19,10 @@ export const AuthProvider = ({ children }) => {
         const userId = payload.userId;
         const response = await fetch(`/api/users/${userId}`);
         const data = await response.json();
-        setUserName(data.user.name);
+
+        if (data.user && data.user.name) {
+            setUserName(data.user.name);
+        }
     };
 
     const logout = () => {

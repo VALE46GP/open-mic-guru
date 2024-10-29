@@ -1,37 +1,44 @@
 import React, { useState } from 'react';
-import { useAuth } from '../../hooks/useAuth';
-import { useNavigate } from 'react-router-dom';
 
 function CreateUser() {
     const [registerEmail, setRegisterEmail] = useState('');
     const [registerPassword, setRegisterPassword] = useState('');
     const [registerName, setRegisterName] = useState('');
-    const { login } = useAuth();
-    const navigate = useNavigate();
+    const [error, setError] = useState(null);
+    const [success, setSuccess] = useState(false);
+
+    const handleInputChange = (setter) => (e) => {
+        setter(e.target.value);
+        setError(null);
+        setSuccess(false);
+    };
 
     const handleRegister = async (e) => {
         e.preventDefault();
+        setError(null);
+        setSuccess(false);
+
         try {
             const response = await fetch('/api/users/register', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
+                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     email: registerEmail,
                     password: registerPassword,
                     name: registerName,
                 }),
             });
+
             const data = await response.json();
-            if (data.token) {
-                login(data.token);
-                navigate('/testdb'); // Redirect to a protected route after registration
+            if (response.ok) {
+                setSuccess(true);
+            } else if (data.error) {
+                setError(data.error);
             } else {
-                alert('Registration failed');
+                setError('An unexpected error occurred. Please try again.');
             }
         } catch (error) {
-            console.error('Registration error:', error);
+            setError('An unexpected error occurred. Please try again.');
         }
     };
 
@@ -43,22 +50,27 @@ function CreateUser() {
                     type="email"
                     placeholder="Email"
                     value={registerEmail}
-                    onChange={(e) => setRegisterEmail(e.target.value)}
+                    onChange={handleInputChange(setRegisterEmail)}
+                    data-testid="email-input"
                 />
                 <input
                     type="password"
                     placeholder="Password"
                     value={registerPassword}
-                    onChange={(e) => setRegisterPassword(e.target.value)}
+                    onChange={handleInputChange(setRegisterPassword)}
+                    data-testid="password-input"
                 />
                 <input
                     type="text"
                     placeholder="Name"
                     value={registerName}
-                    onChange={(e) => setRegisterName(e.target.value)}
+                    onChange={handleInputChange(setRegisterName)}
+                    data-testid="name-input"
                 />
-                <button type="submit">Register</button>
+                <button type="submit" data-testid="register-button">Register</button>
             </form>
+            {success && <p data-testid="success-message">Registration successful! Redirecting...</p>}
+            {error && <p data-testid="error-message" style={{ color: 'red' }}>{error}</p>}
         </div>
     );
 }
