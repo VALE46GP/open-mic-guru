@@ -1,24 +1,17 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import CreateUser from '../../components/users/CreateUser';
-import { useAuth } from '../../hooks/useAuth'; // Assuming you have a useAuth hook
+import { useAuth } from '../../hooks/useAuth';
 
 function EditUserPage() {
     const { userId } = useParams();
     const [userData, setUserData] = useState(null);
-    const { user } = useAuth(); // Get the logged-in user
+    const { user } = useAuth();
     const navigate = useNavigate();
 
     useEffect(() => {
-        // Debugging logs
-        console.log('Logged-in user:', user);
-        console.log('Logged-in user ID:', user?.id);
-        console.log('Profile user ID:', userId);
-        console.log('Type of logged-in user ID:', typeof user?.id);
-        console.log('Type of profile user ID:', typeof userId);
-
         if (!user || String(user.id) !== String(userId)) {
-            navigate('/'); // Redirect if the user is trying to access another user's page
+            navigate('/');
             return;
         }
 

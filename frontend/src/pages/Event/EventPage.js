@@ -21,8 +21,8 @@ function EventPage() {
         const fetchEventDetails = async () => {
             const response = await fetch(`/api/events/${eventId}`);
             const data = await response.json();
-            console.log('>>>>>>>>>>>>>>>>>>>>> eventId = ', eventId)
-            console.log('>>>>>>>>>>>>>>>>>>>>> data = ', data)
+            // console.log('>>>>>>>>>>>>>>>>>>>>> eventId = ', eventId)
+            // console.log('>>>>>>>>>>>>>>>>>>>>> data = ', data)
             setEventDetails(data);
         };
         fetchEventDetails();
