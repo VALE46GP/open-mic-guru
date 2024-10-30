@@ -5,8 +5,7 @@ import { useAuth } from '../../hooks/useAuth';
 import './Navigation.sass';
 
 const Navigation = () => {
-    const { getUserId, isAuthenticated, userName } = useAuth();
-    const userId = getUserId();
+    const { isAuthenticated, user } = useAuth();
 
     return (
         <Navbar bg="light" expand="lg" className="w-100">
@@ -23,7 +22,7 @@ const Navigation = () => {
                 </Nav>
                 {isAuthenticated && (
                     <Nav className="ms-auto">
-                        <Nav.Link as={Link} to={`/users/${userId}`}>{userName}</Nav.Link>
+                        <Nav.Link as={Link} to={`/users/${user.id}`}>{user.name}</Nav.Link>
                     </Nav>
                 )}
             </Navbar.Collapse>

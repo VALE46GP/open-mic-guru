@@ -63,7 +63,9 @@ function DatabaseOverview({ databaseData }) {
                             <td>{new Date(event.end_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</td>
                             <td>{parseInterval(event.slot_duration)}</td>
                             <td>{event.venue_id}</td>
-                            <td>{event.host_id}</td>
+                            <td>
+                                <Link to={`/users/${event.host_id}`}>{event.host_id}</Link>
+                            </td>
                         </tr>
                     ))}
                 </tbody>
