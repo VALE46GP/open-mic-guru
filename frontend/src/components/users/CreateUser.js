@@ -20,6 +20,8 @@ function CreateUser({ initialData }) {
             setRegisterEmail(initialData.email);
             setRegisterName(initialData.name);
             setProfilePhoto(initialData.image || defaultImageUrl);
+        } else {
+            setProfilePhoto(defaultImageUrl); // Set default image if no initial data
         }
     }, [initialData]);
 
@@ -110,7 +112,7 @@ function CreateUser({ initialData }) {
             <h2 className='create-user__title'>{initialData ? 'Edit Profile' : 'Register'}</h2>
             <div className='create-user__image-wrapper'>
                 <img
-                    src={profilePhoto instanceof File ? URL.createObjectURL(profilePhoto) : profilePhoto}
+                    src={profilePhoto instanceof File ? URL.createObjectURL(profilePhoto) : profilePhoto || defaultImageUrl}
                     alt='Profile Preview'
                     className='create-user__profile-image'
                 />

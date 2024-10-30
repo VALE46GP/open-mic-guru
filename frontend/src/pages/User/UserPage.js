@@ -8,6 +8,8 @@ function UserPage() {
     const { user } = useAuth(); // Get the logged-in user
     const navigate = useNavigate();
 
+    const defaultImageUrl = 'https://open-mic-guru.s3.us-west-1.amazonaws.com/users/user-default.jpg';
+
     useEffect(() => {
         const fetchUserData = async () => {
             const response = await fetch(`/api/users/${userId}`);
@@ -19,20 +21,17 @@ function UserPage() {
 
     if (!userData) return <div>Loading...</div>;
 
-    // Debugging logs
-    // console.log('Logged-in user:', user);
-    // console.log('Logged-in user ID:', user?.id);
-    // console.log('Profile user ID:', userId);
-    // console.log('Type of logged-in user ID:', typeof user?.id);
-    // console.log('Type of profile user ID:', typeof userId);
-
     return (
         <div>
             {user && String(user.id) === String(userId) && (
                 <button onClick={() => navigate(`/users/${userId}/edit`)}>Edit Profile</button>
             )}
             <h1>User: {userData.user.name}</h1>
-            {userData.user.image && <img src={userData.user.image} alt={`${userData.user.name}'s profile`} style={{ width: '150px', height: '150px', borderRadius: '50%' }} />}
+            <img
+                src={userData.user.image || defaultImageUrl}
+                alt={`${userData.user.name}'s profile`}
+                style={{ width: '150px', height: '150px', borderRadius: '50%' }}
+            />
             <p>Email: {userData.user.email}</p>
             <h2>Events:</h2>
             <table>
