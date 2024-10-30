@@ -40,28 +40,27 @@ router.post('/register', [
     }
 
     try {
-        const { email, password, name } = req.body;
+        const { email, password, name, photoUrl, isUpdate, userId } = req.body;
         let hashedPassword = null;
 
         if (password) {
             hashedPassword = await bcrypt.hash(password, 10);
         }
 
-        // Insert or update user in the database based on the presence of `initialData`
-        if (req.body.isUpdate) {
-            // Perform update if `isUpdate` flag is set
+        if (isUpdate) {
+            // Update user if it's an update request
             const query = hashedPassword
-                ? 'UPDATE users SET email = $1, password = $2, name = $3 WHERE id = $4 RETURNING *'
-                : 'UPDATE users SET email = $1, name = $2 WHERE id = $3 RETURNING *';
+                ? 'UPDATE users SET email = $1, password = $2, name = $3, image = $4 WHERE id = $5 RETURNING *'
+                : 'UPDATE users SET email = $1, name = $2, image = $3 WHERE id = $4 RETURNING *';
             const values = hashedPassword
-                ? [email, hashedPassword, name, req.body.userId]
-                : [email, name, req.body.userId];
+                ? [email, hashedPassword, name, photoUrl, userId]
+                : [email, name, photoUrl, userId];
 
             const result = await db.query(query, values);
             res.status(200).json({ user: result.rows[0] });
         } else {
             // Insert a new user
-            const result = await db.query('INSERT INTO users (email, password, name) VALUES ($1, $2, $3) RETURNING *', [email, hashedPassword, name]);
+            const result = await db.query('INSERT INTO users (email, password, name, image) VALUES ($1, $2, $3, $4) RETURNING *', [email, hashedPassword, name, photoUrl]);
             const user = result.rows[0];
 
             // Generate a JWT token
@@ -155,10 +154,11 @@ router.delete('/:userId', verifyToken, async (req, res) => {
 });
 
 router.post('/upload', async (req, res) => {
-  const { fileName, fileType } = req.body;
+  const { fileName, fileType, userId } = req.body;
+  const uniqueFileName = `${userId}-${fileName}`;
   const s3Params = {
     Bucket: process.env.S3_BUCKET_NAME,
-    Key: `users/${fileName}`,
+    Key: `users/${uniqueFileName}`,
     Expires: 60,
     ContentType: fileType
   };

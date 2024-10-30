@@ -37,7 +37,8 @@ function CreateUser({ initialData }) {
             try {
                 const { data } = await axios.post('/api/users/upload', {
                     fileName: profilePhoto.name,
-                    fileType: profilePhoto.type
+                    fileType: profilePhoto.type,
+                    userId: initialData?.id // Pass user ID if it's an update
                 });
     
                 console.log('Upload URL:', data.uploadURL);
@@ -49,7 +50,7 @@ function CreateUser({ initialData }) {
                     }
                 });
     
-                photoUrl = data.uploadURL.split('?')[0];
+                photoUrl = data.uploadURL.split('?')[0]; // Get the URL of the uploaded image
             } catch (error) {
                 setError('An unexpected error occurred while uploading the photo. Please try again.');
                 console.error('Upload error:', error.response?.data || error);
@@ -61,7 +62,7 @@ function CreateUser({ initialData }) {
             const payload = {
                 email: registerEmail,
                 name: registerName,
-                photoUrl,
+                photoUrl, // Include the image URL in the payload
                 isUpdate: !!initialData, // Indicates if this is an update request
                 userId: initialData?.id // Pass user ID if it's an update
             };
@@ -125,6 +126,11 @@ function CreateUser({ initialData }) {
             </form>
             {success && <p data-testid="success-message">{initialData ? 'Profile updated successfully!' : 'Registration successful!'}</p>}
             {error && <p data-testid="error-message" style={{ color: 'red' }}>{error}</p>}
+            {profilePhoto && (
+                <div>
+                    <img src={URL.createObjectURL(profilePhoto)} alt="Profile Preview" style={{ width: '150px', height: '150px', borderRadius: '50%' }} />
+                </div>
+            )}
         </div>
     );
 }

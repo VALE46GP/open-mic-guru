@@ -32,6 +32,7 @@ function UserPage() {
                 <button onClick={() => navigate(`/users/${userId}/edit`)}>Edit Profile</button>
             )}
             <h1>User: {userData.user.name}</h1>
+            {userData.user.image && <img src={userData.user.image} alt={`${userData.user.name}'s profile`} style={{ width: '150px', height: '150px', borderRadius: '50%' }} />}
             <p>Email: {userData.user.email}</p>
             <h2>Events:</h2>
             <table>
