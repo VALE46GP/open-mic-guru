@@ -31,8 +31,8 @@ function DatabaseOverview({ databaseData }) {
                 <tbody>
                     {databaseData.users.map((user) => (
                         <tr key={`user-${user.id}`}>
-                            <td>{user.id}</td>
-                            <td><Link to={`/users/${user.id}`}>{user.name}</Link></td>
+                            <td><Link to={`/users/${user.id}`}>{user.id}</Link></td>
+                            <td>{user.name}</td>
                             <td>{user.email}</td>
                             <td>{user.password}</td>
                         </tr>
