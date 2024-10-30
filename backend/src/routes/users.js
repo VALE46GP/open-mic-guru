@@ -5,6 +5,16 @@ const verifyToken = require('../middleware/verifyToken');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const { body, validationResult } = require('express-validator');
+const AWS = require('aws-sdk');
+
+// Configure AWS SDK
+AWS.config.update({
+  accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+  secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+  region: process.env.AWS_REGION
+});
+
+const s3 = new AWS.S3();
 
 // GET all users
 router.get('/', verifyToken, async (req, res) => {
@@ -17,11 +27,11 @@ router.get('/', verifyToken, async (req, res) => {
     }
 });
 
-// POST a new user
+// POST a new user OR edit an existing user
 router.post('/register', [
-  // Validate and sanitize fields.
-  body('email').trim().isEmail().withMessage('Email is required and must be valid.'),
-  body('password').isLength({ min: 5 }).withMessage('Password must be at least 5 characters long.'),
+    body('email').trim().isEmail().withMessage('Email is required and must be valid.'),
+    // Only validate password if it's provided (for updates without password change)
+    body('password').optional({ checkFalsy: true }).isLength({ min: 5 }).withMessage('Password must be at least 5 characters long.'),
 ], async (req, res) => {
     // Check for validation errors.
     const errors = validationResult(req);
@@ -31,17 +41,33 @@ router.post('/register', [
 
     try {
         const { email, password, name } = req.body;
-        const hashedPassword = await bcrypt.hash(password, 10);
+        let hashedPassword = null;
 
-        // Insert the user into the database
-        const result = await db.query('INSERT INTO users (email, password, name) VALUES ($1, $2, $3) RETURNING *', [email, hashedPassword, name]); // Include name in the query
+        if (password) {
+            hashedPassword = await bcrypt.hash(password, 10);
+        }
 
-        // Generate a JWT token
-        const user = result.rows[0];
-        const token = jwt.sign({ userId: user.id }, process.env.JWT_SECRET, { expiresIn: '24h' });
+        // Insert or update user in the database based on the presence of `initialData`
+        if (req.body.isUpdate) {
+            // Perform update if `isUpdate` flag is set
+            const query = hashedPassword
+                ? 'UPDATE users SET email = $1, password = $2, name = $3 WHERE id = $4 RETURNING *'
+                : 'UPDATE users SET email = $1, name = $2 WHERE id = $3 RETURNING *';
+            const values = hashedPassword
+                ? [email, hashedPassword, name, req.body.userId]
+                : [email, name, req.body.userId];
 
-        // Return the token to the client
-        res.status(201).json({ token });
+            const result = await db.query(query, values);
+            res.status(200).json({ user: result.rows[0] });
+        } else {
+            // Insert a new user
+            const result = await db.query('INSERT INTO users (email, password, name) VALUES ($1, $2, $3) RETURNING *', [email, hashedPassword, name]);
+            const user = result.rows[0];
+
+            // Generate a JWT token
+            const token = jwt.sign({ userId: user.id }, process.env.JWT_SECRET, { expiresIn: '24h' });
+            res.status(201).json({ token });
+        }
     } catch (err) {
         console.error(err);
         res.status(500).send('Server error');
@@ -126,6 +152,24 @@ router.delete('/:userId', verifyToken, async (req, res) => {
         console.error(err);
         res.status(500).json({ error: 'Server error', details: err.message });
     }
+});
+
+router.post('/upload', async (req, res) => {
+  const { fileName, fileType } = req.body;
+  const s3Params = {
+    Bucket: process.env.S3_BUCKET_NAME,
+    Key: `users/${fileName}`,
+    Expires: 60,
+    ContentType: fileType
+  };
+
+  try {
+    const uploadURL = await s3.getSignedUrlPromise('putObject', s3Params);
+    res.json({ uploadURL });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Error generating upload URL' });
+  }
 });
 
 module.exports = router;

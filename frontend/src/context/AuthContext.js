@@ -5,30 +5,34 @@ export const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
     const [isAuthenticated, setIsAuthenticated] = useState(false);
-    const [userName, setUserName] = useState('');
+    const [user, setUser] = useState(null);
 
     const login = (token) => {
-        if (!token) return;  // Avoid calling fetchUserDetails if no token is provided
+        if (!token) return;
         Cookies.set('token', token, { expires: 7 });
         setIsAuthenticated(true);
         fetchUserDetails(token);
     };
 
     const fetchUserDetails = async (token) => {
-        const payload = JSON.parse(atob(token.split('.')[1]));
-        const userId = payload.userId;
-        const response = await fetch(`/api/users/${userId}`);
-        const data = await response.json();
+        try {
+            const payload = JSON.parse(atob(token.split('.')[1]));
+            const userId = payload.userId;
+            const response = await fetch(`/api/users/${userId}`);
+            const data = await response.json();
 
-        if (data.user && data.user.name) {
-            setUserName(data.user.name);
+            if (data.user) {
+                setUser(data.user);
+            }
+        } catch (error) {
+            console.error('Error fetching user details:', error);
         }
     };
 
     const logout = () => {
         Cookies.remove('token');
         setIsAuthenticated(false);
-        setUserName('');
+        setUser(null);
     };
 
     useEffect(() => {
@@ -40,14 +44,11 @@ export const AuthProvider = ({ children }) => {
     }, []);
 
     const getUserId = () => {
-        const token = Cookies.get('token');
-        if (!token) return null;
-        const payload = JSON.parse(atob(token.split('.')[1]));
-        return payload.userId;
+        return user ? user.id : null;
     };
 
     return (
-        <AuthContext.Provider value={{ isAuthenticated, login, logout, getUserId, userName }}>
+        <AuthContext.Provider value={{ isAuthenticated, login, logout, getUserId, user }}>
             {children}
         </AuthContext.Provider>
     );

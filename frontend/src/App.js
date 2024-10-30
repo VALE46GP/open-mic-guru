@@ -7,6 +7,7 @@ import LoginPage from './pages/Login/LoginPage';
 import CreateEventPage from './pages/Event/CreateEventPage';
 import EventPage from './pages/Event/EventPage';
 import UserPage from './pages/User/UserPage';
+import EditUserPage from './pages/EditUser/EditUserPage';
 import { AuthProvider } from './context/AuthContext';
 import ProtectedRoute from './components/utils/ProtectedRoute';
 import EventsPage from './pages/Events/EventsPage';
@@ -25,6 +26,7 @@ function App() {
             <Route path="/events/:eventId" element={<ProtectedRoute element={<EventPage />} />} />
             <Route path="/events/:eventId/edit" element={<ProtectedRoute element={<CreateEventPage />} />} />
             <Route path="/users/:userId" element={<ProtectedRoute element={<UserPage />} />} />
+            <Route path="/users/:userId/edit" element={<EditUserPage />} />
             <Route path="/events" element={<ProtectedRoute element={<EventsPage />} />} />
           </Routes>
         </div>

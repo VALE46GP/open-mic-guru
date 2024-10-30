@@ -1,9 +1,12 @@
 import React, { useEffect, useState } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useNavigate } from 'react-router-dom';
+import { useAuth } from '../../hooks/useAuth';
 
 function UserPage() {
     const { userId } = useParams();
     const [userData, setUserData] = useState(null);
+    const { user } = useAuth(); // Get the logged-in user
+    const navigate = useNavigate();
 
     useEffect(() => {
         const fetchUserData = async () => {
@@ -16,8 +19,18 @@ function UserPage() {
 
     if (!userData) return <div>Loading...</div>;
 
+    // Debugging logs
+    console.log('Logged-in user:', user);
+    console.log('Logged-in user ID:', user?.id);
+    console.log('Profile user ID:', userId);
+    console.log('Type of logged-in user ID:', typeof user?.id);
+    console.log('Type of profile user ID:', typeof userId);
+
     return (
         <div>
+            {user && String(user.id) === String(userId) && (
+                <button onClick={() => navigate(`/users/${userId}/edit`)}>Edit Profile</button>
+            )}
             <h1>User: {userData.user.name}</h1>
             <p>Email: {userData.user.email}</p>
             <h2>Events:</h2>
