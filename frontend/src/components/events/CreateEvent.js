@@ -228,7 +228,7 @@ function CreateEvent() {
             {(!isEditMode || isEditingLocation) && (
                 <VenueAutocomplete
                     onPlaceSelected={(place) => {
-                        console.log("selected place: ", place)
+                        // console.log("selected place: ", place)
                         setSelectedVenue(place);
                         setIsEditingLocation(false);
                     }}

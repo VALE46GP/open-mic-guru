@@ -20,7 +20,7 @@ const Navigation = () => {
                         <Nav.Link as={Link} to="/login">Login</Nav.Link>
                     )}
                 </Nav>
-                {isAuthenticated && (
+                {isAuthenticated && user && (
                     <Nav className="ms-auto">
                         <Nav.Link as={Link} to={`/users/${user.id}`}>{user.name}</Nav.Link>
                     </Nav>

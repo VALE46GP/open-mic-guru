@@ -4,7 +4,7 @@ import { Link } from 'react-router-dom';
 function DatabaseOverview({ databaseData }) {
 
     if (!databaseData) return <div>Loading...</div>;
-    console.log('databaseData: ', databaseData);
+    // console.log('databaseData: ', databaseData);
 
     function parseInterval(interval) {
         let totalMinutes = 0;
