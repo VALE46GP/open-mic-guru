@@ -20,11 +20,11 @@ function UserPage() {
     if (!userData) return <div>Loading...</div>;
 
     // Debugging logs
-    console.log('Logged-in user:', user);
-    console.log('Logged-in user ID:', user?.id);
-    console.log('Profile user ID:', userId);
-    console.log('Type of logged-in user ID:', typeof user?.id);
-    console.log('Type of profile user ID:', typeof userId);
+    // console.log('Logged-in user:', user);
+    // console.log('Logged-in user ID:', user?.id);
+    // console.log('Profile user ID:', userId);
+    // console.log('Type of logged-in user ID:', typeof user?.id);
+    // console.log('Type of profile user ID:', typeof userId);
 
     return (
         <div>

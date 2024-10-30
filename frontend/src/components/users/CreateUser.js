@@ -91,10 +91,8 @@ function CreateUser({ initialData }) {
             const result = await response.json();
             if (response.ok) {
                 setSuccess(true);
-            } else if (result.errors) {
-                setError(result.errors[0].msg);
             } else {
-                setError('An unexpected error occurred. Please try again.');
+                setError(result.errors?.[0]?.msg || 'Registration failed');
             }
         } catch (error) {
             setError('An unexpected error occurred. Please try again.');
@@ -152,10 +150,16 @@ function CreateUser({ initialData }) {
                     onChange={handleFileChange}
                     style={{ display: 'none' }}
                 />
-                <button type='submit' className='create-user__submit-button'>{initialData ? 'Update' : 'Register'}</button>
+                <button
+                    className="create-user__submit-button"
+                    type="submit"
+                    data-testid="register-button"
+                >
+                    Register
+                </button>
             </form>
-            {success && <p className='create-user__success-message'>{initialData ? 'Profile updated successfully!' : 'Registration successful!'}</p>}
-            {error && <p className='create-user__error-message'>{error}</p>}
+            {success && <p className='create-user__success-message' data-testid='success-message'>{initialData ? 'Profile updated successfully!' : 'Registration successful!'}</p>}
+            {error && <p className='create-user__error-message' data-testid='error-message'>{error}</p>}
         </div>
     );
 }

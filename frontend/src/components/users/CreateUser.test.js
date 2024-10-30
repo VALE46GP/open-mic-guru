@@ -13,7 +13,7 @@ describe('CreateUser Component', () => {
         // Set up fetch mock to return a failure
         global.fetch = jest.fn().mockResolvedValueOnce({
             ok: false,
-            json: async () => ({ error: 'Registration failed' }),
+            json: async () => ({ errors: [{ msg: 'Registration failed' }] }), // Mock error format to match component expectations
         });
 
         render(<CreateUser />);
@@ -34,7 +34,7 @@ describe('CreateUser Component', () => {
     test('handles registration failure', async () => {
         global.fetch = jest.fn().mockResolvedValueOnce({
             ok: false,
-            json: async () => ({ error: 'Registration failed' })
+            json: async () => ({ errors: [{ msg: 'Registration failed' }] }), // Match component's expected error format
         });
 
         render(
