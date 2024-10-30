@@ -5,7 +5,7 @@ import { useAuth } from '../../hooks/useAuth';
 function UserPage() {
     const { userId } = useParams();
     const [userData, setUserData] = useState(null);
-    const { user } = useAuth(); // Get the logged-in user
+    const { user, logout } = useAuth(); // Add logout to the destructured values
     const navigate = useNavigate();
 
     const defaultImageUrl = 'https://open-mic-guru.s3.us-west-1.amazonaws.com/users/user-default.jpg';
@@ -19,12 +19,20 @@ function UserPage() {
         fetchUserData();
     }, [userId]);
 
+    const handleLogout = () => {
+        logout();
+        navigate('/login');
+    };
+
     if (!userData) return <div>Loading...</div>;
 
     return (
         <div>
             {user && String(user.id) === String(userId) && (
-                <button onClick={() => navigate(`/users/${userId}/edit`)}>Edit Profile</button>
+                <div>
+                    <button onClick={() => navigate(`/users/${userId}/edit`)}>Edit Profile</button>
+                    <button onClick={handleLogout}>Logout</button>
+                </div>
             )}
             <h1>User: {userData.user.name}</h1>
             <img
