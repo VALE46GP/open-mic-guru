@@ -59,6 +59,12 @@ router.post('/register', [
             const result = await db.query(query, values);
             res.status(200).json({ user: result.rows[0] });
         } else {
+            // Check if email already exists
+            const emailCheck = await db.query('SELECT * FROM users WHERE email = $1', [email]);
+            if (emailCheck.rows.length > 0) {
+                return res.status(400).json({ errors: [{ msg: 'Email is already in use' }] });
+            }
+
             // Insert a new user
             const result = await db.query('INSERT INTO users (email, password, name, image) VALUES ($1, $2, $3, $4) RETURNING *', [email, hashedPassword, name, photoUrl]);
             const user = result.rows[0];

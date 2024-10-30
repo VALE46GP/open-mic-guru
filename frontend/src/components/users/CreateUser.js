@@ -92,7 +92,13 @@ function CreateUser({ initialData }) {
             if (response.ok) {
                 setSuccess(true);
             } else {
-                setError(result.errors?.[0]?.msg || 'Registration failed');
+                // Check for specific error message
+                const emailError = result.errors?.find(err => err.msg === 'Email is already in use');
+                if (emailError) {
+                    setError('This email is already registered. Please use a different email.');
+                } else {
+                    setError(result.errors?.[0]?.msg || 'Registration failed');
+                }
             }
         } catch (error) {
             setError('An unexpected error occurred. Please try again.');

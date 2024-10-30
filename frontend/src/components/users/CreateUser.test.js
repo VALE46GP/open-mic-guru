@@ -130,4 +130,33 @@ describe('CreateUser Component', () => {
 
         global.fetch.mockRestore();
     });
+
+    test('displays specific error message when email is already in use', async () => {
+        global.fetch = jest.fn().mockResolvedValueOnce({
+            ok: false,
+            json: async () => ({ errors: [{ msg: 'Email is already in use' }] }),
+        });
+
+        render(
+            <AuthProvider>
+                <MemoryRouter>
+                    <CreateUser />
+                </MemoryRouter>
+            </AuthProvider>
+        );
+
+        fireEvent.change(screen.getByTestId('email-input'), { target: { value: 'test@example.com' } });
+        fireEvent.change(screen.getByTestId('password-input'), { target: { value: 'password123' } });
+        fireEvent.change(screen.getByTestId('name-input'), { target: { value: 'Test User' } });
+
+        await act(async () => {
+            fireEvent.click(screen.getByTestId('register-button'));
+        });
+
+        await waitFor(() => {
+            expect(screen.getByTestId('error-message')).toHaveTextContent('Email is already in use');
+        });
+
+        global.fetch.mockRestore();
+    });
 });
