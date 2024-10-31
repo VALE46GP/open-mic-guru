@@ -7,10 +7,13 @@ const BorderBox = ({
     children,
     onEdit,
     onDelete,
-    className = ''
+    className = '',
+    maxWidth
 }) => {
+    const style = maxWidth ? { maxWidth } : {};
+    
     return (
-        <div className={`border-box ${className}`}>
+        <div className={`border-box ${className}`} style={style}>
             {(onEdit || onDelete) && (
                 <div className="border-box__icons">
                     {onEdit && (

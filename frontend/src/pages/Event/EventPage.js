@@ -4,6 +4,7 @@ import LocationMap from '../../components/shared/LocationMap';
 import { useAuth } from '../../hooks/useAuth';
 import { ReactComponent as EditIcon } from '../../assets/icons/edit.svg';
 import { ReactComponent as DeleteIcon } from '../../assets/icons/delete.svg';
+import BorderBox from '../../components/shared/BorderBox/BorderBox';
 import './EventPage.sass';
 
 function EventPage() {
@@ -145,23 +146,17 @@ function EventPage() {
 
     return (
         <div className="event-details">
-            <div className="event-details__container">
-                {eventDetails?.host?.id === userId && (
-                    <div className="event-details__top-buttons">
-                            <button className="event-details__edit" onClick={() => navigate(`/events/${eventDetails.event.id}/edit`)}>
-                                <EditIcon />
-                            </button>
-                            <button className="event-details__edit event-details__edit--delete" onClick={toggleDeleteConfirmModal}>
-                                <DeleteIcon />
-                            </button>
-                    </div>
-                )}
+            <BorderBox
+                onEdit={eventDetails?.host?.id === userId ? () => navigate(`/events/${eventDetails.event.id}/edit`) : null}
+                onDelete={eventDetails?.host?.id === userId ? toggleDeleteConfirmModal : null}
+                maxWidth="600px"
+            >
                 <h1 className="event-details__title">{eventDetails?.event?.name}</h1>
                 <p className="event-details__info">
-                {new Date(eventDetails?.event?.start_time).toLocaleString([], { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' })} -
-                {new Date(eventDetails?.event?.start_time).toDateString() === new Date(eventDetails?.event?.end_time).toDateString() ?
-                    new Date(eventDetails?.event?.end_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) :
-                    new Date(eventDetails?.event?.end_time).toLocaleString([], { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                    {new Date(eventDetails?.event?.start_time).toLocaleString([], { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' })} -
+                    {new Date(eventDetails?.event?.start_time).toDateString() === new Date(eventDetails?.event?.end_time).toDateString() ?
+                        new Date(eventDetails?.event?.end_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) :
+                        new Date(eventDetails?.event?.end_time).toLocaleString([], { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
                 </p>
                 <p className="event-details__info">Hosted by: {eventDetails?.host?.name}</p>
                 <p className="event-details__info">Slot Duration: {eventDetails?.event?.slot_duration?.minutes} minutes</p>
@@ -175,40 +170,39 @@ function EventPage() {
                         />
                     )}
                 </div>
-            </div>
-            <div className="event-details__container">
-                <div className="event-details__lineup">
-                    <h2 className="event-details__title">Lineup</h2>
-                    {showModal && (
-                        <div className="event-details__modal" onClick={handleOverlayClick}>
-                            <div className="event-details__modal-content" onClick={e => e.stopPropagation()}>
-                                <p>Slot #{currentSlot.slot_number} is currently open.</p>
-                                <p>Estimated start time: {new Date(currentSlot.slot_start_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
-                                <input
-                                    type="text"
-                                    placeholder="Enter a name to sign up."
-                                    value={currentSlotName}
-                                    onChange={(e) => setCurrentSlotName(e.target.value)}
-                                />
-                                <button onClick={handleConfirmSignUp} disabled={!currentSlotName.trim() || currentSlotName === "Open"}>Sign Up</button>
-                                <button onClick={() => setShowModal(false)}>Cancel</button>
-                            </div>
+            </BorderBox>
+
+            <BorderBox maxWidth="600px">
+                <h2 className="event-details__title">Lineup</h2>
+                {showModal && (
+                    <div className="event-details__modal" onClick={handleOverlayClick}>
+                        <div className="event-details__modal-content" onClick={e => e.stopPropagation()}>
+                            <p>Slot #{currentSlot.slot_number} is currently open.</p>
+                            <p>Estimated start time: {new Date(currentSlot.slot_start_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
+                            <input
+                                type="text"
+                                placeholder="Enter a name to sign up."
+                                value={currentSlotName}
+                                onChange={(e) => setCurrentSlotName(e.target.value)}
+                            />
+                            <button onClick={handleConfirmSignUp} disabled={!currentSlotName.trim() || currentSlotName === "Open"}>Sign Up</button>
+                            <button onClick={() => setShowModal(false)}>Cancel</button>
                         </div>
-                    )}
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>#</th>
-                                <th>Start Time</th>
-                                <th>Artist</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {generateAllSlots().map((slot, index) => (
-                                <tr key={index}
-                                    className={`event-details__lineup__row ${currentSlot === slot.slot_number ? 'event-details__lineup__row--selected' : ''}`}
-                                    onClick={() => {
-                                    console.log("Slot clicked", slot);
+                    </div>
+                )}
+                <table>
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Start Time</th>
+                            <th>Artist</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {generateAllSlots().map((slot, index) => (
+                            <tr key={index}
+                                className={`event-details__lineup__row ${currentSlot === slot.slot_number ? 'event-details__lineup__row--selected' : ''}`}
+                                onClick={() => {
                                     if (slot.slot_name === "Open") {
                                         setCurrentSlot(slot);
                                         setShowModal(true);
@@ -221,9 +215,9 @@ function EventPage() {
                                         <div className="event-details__td">
                                             <Link to={`/users/${slot.user_id}`}>{slot.slot_name}</Link>
                                             <div className="event-details__buttons">
-                                                <button className="event-details__button event-details__button--edit">
+                                                {/* <button className="event-details__button event-details__button--edit">
                                                     <EditIcon />
-                                                </button>
+                                                </button> */}
                                                 <button className="event-details__button event-details__button--delete" onClick={() => handleUnsign(slot.slot_id)}>
                                                     <DeleteIcon />
                                                 </button>
@@ -231,12 +225,12 @@ function EventPage() {
                                         </div>
                                     ) : "Open"}
                                 </td>
-                                </tr>
-                            ))}
-                        </tbody>
-                    </table>
-                </div>
-            </div>
+                            </tr>
+                        ))}
+                    </tbody>
+                </table>
+            </BorderBox>
+
             {showDeleteConfirmModal && (
                 <div className="modal">
                     <div className="modal-content">
