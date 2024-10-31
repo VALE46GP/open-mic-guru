@@ -8,6 +8,7 @@ import TextInput from '../shared/TextInput';
 import LocationMap from '../shared/LocationMap';
 import { ReactComponent as EditIcon } from "../../assets/icons/edit.svg";
 import './CreateEvent.sass';
+import BorderBox from '../shared/BorderBox/BorderBox';
 
 function CreateEvent() {
     const { eventId } = useParams();
@@ -162,81 +163,84 @@ function CreateEvent() {
         <div className="create-event">
             <h1 className="create-event__title">{isEditMode ? 'Edit Your Event' : 'Create a New Event'}</h1>
             <div className="create-event__container">
-                <h2 className="create-event__title">Details</h2>
-                <label htmlFor="event-name">Event Name</label>
-                <TextInput
-                    id="event-name"
-                    placeholder="Event Name"
-                    value={newEventName}
-                    onChange={(e) => setNewEventName(e.target.value)}
-                />
-                <label htmlFor="start-time">Start Time</label>
-                <TextInput
-                    id="start-time"
-                    type="datetime-local"
-                    value={startTime}
-                    onChange={(e) => setStartTime(e.target.value)}
-                />
-                <label htmlFor="end-time">End Time</label>
-                <TextInput
-                    id="end-time"
-                    type="datetime-local"
-                    value={endTime || startTime} // Set to startTime if endTime is not set
-                    onChange={(e) => setEndTime(e.target.value)}
-                />
-                <label htmlFor="slot-duration">Slot Duration (minutes)</label>
-                <TextInput
-                    id="slot-duration"
-                    type="number"
-                    placeholder="Slot Duration (minutes)"
-                    value={slotDuration || ''}
-                    onChange={(e) => setSlotDuration(e.target.value)}
-                />
-                <label htmlFor="setup-duration">Setup Duration (minutes)</label>
-                <TextInput
-                    id="setup-duration"
-                    type="number"
-                    placeholder="Setup Duration (minutes)"
-                    value={setupDuration || ''}
-                    onChange={(e) => setSetupDuration(e.target.value)}
-                />
-                <label htmlFor="additional-information">Additional Information</label>
-                <textarea
-                    id="additional-information"
-                    className="input-style"
-                    placeholder="Additional Info"
-                    value={additionalInfo}
-                    onChange={(e) => setAdditionalInfo(e.target.value)}
-                />
+                <BorderBox>
+                    <h2 className="create-event__title">Details</h2>
+                    <label htmlFor="event-name">Event Name</label>
+                    <TextInput
+                        id="event-name"
+                        placeholder="Event Name"
+                        value={newEventName}
+                        onChange={(e) => setNewEventName(e.target.value)}
+                    />
+                    <label htmlFor="start-time">Start Time</label>
+                    <TextInput
+                        id="start-time"
+                        type="datetime-local"
+                        value={startTime}
+                        onChange={(e) => setStartTime(e.target.value)}
+                    />
+                    <label htmlFor="end-time">End Time</label>
+                    <TextInput
+                        id="end-time"
+                        type="datetime-local"
+                        value={endTime || startTime} // Set to startTime if endTime is not set
+                        onChange={(e) => setEndTime(e.target.value)}
+                    />
+                    <label htmlFor="slot-duration">Slot Duration (minutes)</label>
+                    <TextInput
+                        id="slot-duration"
+                        type="number"
+                        placeholder="Slot Duration (minutes)"
+                        value={slotDuration || ''}
+                        onChange={(e) => setSlotDuration(e.target.value)}
+                    />
+                    <label htmlFor="setup-duration">Setup Duration (minutes)</label>
+                    <TextInput
+                        id="setup-duration"
+                        type="number"
+                        placeholder="Setup Duration (minutes)"
+                        value={setupDuration || ''}
+                        onChange={(e) => setSetupDuration(e.target.value)}
+                    />
+                    <label htmlFor="additional-information">Additional Information</label>
+                    <textarea
+                        id="additional-information"
+                        className="input-style"
+                        placeholder="Additional Info"
+                        value={additionalInfo}
+                        onChange={(e) => setAdditionalInfo(e.target.value)}
+                    />
+                </BorderBox>
             </div>
             <div className="create-event__container">
-                <h2 className="create-event__title">Location</h2>
-                <button className="event-details__edit" onClick={() => setIsEditingLocation(true)}>
-                    <EditIcon />
-                </button>
-                <div className="create-event__map-container">
-                    <LocationMap
-                        latitude={selectedVenue?.latitude}
-                        longitude={selectedVenue?.longitude}
-                        showMarker={true}
-                    />
-                </div>
-                {isEditMode && !isEditingLocation && (
-                    <p className="create-event__text">Location: {selectedVenue?.name}, {selectedVenue?.address}</p>
-                )}
+                <BorderBox
+                    onEdit={isEditMode ? () => setIsEditingLocation(true) : null}
+                >
+                    <h2 className="create-event__title">Location</h2>
+                    {(!isEditMode || isEditingLocation) ? (
+                        <VenueAutocomplete
+                            onPlaceSelected={(place) => {
+                                setSelectedVenue(place);
+                                setIsEditingLocation(false);
+                            }}
+                            resetTrigger={resetTrigger}
+                            onResetComplete={handleResetComplete}
+                            initialValue={selectedVenue ? `${selectedVenue.name}, ${selectedVenue.address}` : ''}
+                        />
+                    ) : (
+                        <p className="create-event__text">
+                            {selectedVenue?.name}, {selectedVenue?.address}
+                        </p>
+                    )}
+                    <div className="create-event__map-container">
+                        <LocationMap
+                            latitude={selectedVenue?.latitude}
+                            longitude={selectedVenue?.longitude}
+                            showMarker={true}
+                        />
+                    </div>
+                </BorderBox>
             </div>
-            {(!isEditMode || isEditingLocation) && (
-                <VenueAutocomplete
-                    onPlaceSelected={(place) => {
-                        // console.log("selected place: ", place)
-                        setSelectedVenue(place);
-                        setIsEditingLocation(false);
-                    }}
-                    resetTrigger={resetTrigger}
-                    onResetComplete={handleResetComplete}
-                    initialValue={selectedVenue ? `${selectedVenue.name}, ${selectedVenue.address}` : ''}
-                />
-            )}
             <button className="submit-button" onClick={handleSubmit}>{isEditMode ? 'Save' : 'Submit'}</button>
             {isEditMode && <button className="cancel-button" onClick={() => navigate(-1)}>Cancel</button>}
         </div>

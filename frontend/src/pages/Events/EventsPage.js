@@ -86,14 +86,14 @@ function EventsPage() {
         <tbody>
           {otherEvents.map(event => (
             <tr key={`event-${event.event_id}`}>
-              <td><Link to={`/events/${event.id}`}>{event.event_id}</Link></td>
+              <td><Link to={`/events/${event.event_id}`}>{event.event_id}</Link></td>
               <td>{event.event_name}</td>
               <td>{event.additional_info}</td>
               <td>{new Date(event.start_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</td>
               <td>{new Date(event.end_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</td>
               <td>{parseInterval(event.slot_duration)}</td>
               <td><Link to={`/venues/${event.venue_id}`}>{event.venue_id}</Link></td>
-  <td><Link to={`/users/${event.host_id}`}>{event.host_id}</Link></td>
+              <td><Link to={`/users/${event.host_id}`}>{event.host_id}</Link></td>
             </tr>
           ))}
         </tbody>

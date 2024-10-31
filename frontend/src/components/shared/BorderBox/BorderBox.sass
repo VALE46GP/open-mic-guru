@@ -1,0 +1,54 @@
+@import '../../../styles/mixins'
+
+.border-box
+    @media (min-width: 992px)
+        border-radius: 20px
+        padding: 1.5rem 2rem
+    display: block
+    align-items: center
+    margin: 1rem auto
+    padding: 0.75rem
+    border: 1px solid black
+    border-radius: 10px
+    position: relative
+    width: fit-content
+    min-width: 500px
+
+    &__icons
+        position: absolute
+        top: 0.75rem
+        right: 0.75rem
+        display: flex
+        gap: 0.5rem
+
+    &__icon-button
+        @media (min-width: $lg)
+            width: 40px
+            height: 40px
+        background: none
+        border: none
+        padding: 0
+        width: 30px
+        height: 30px
+        cursor: pointer
+        display: flex
+        align-items: center
+        justify-content: center
+
+        &:focus-visible,
+        &:hover
+            background: none
+            .edit-icon-stroke
+                stroke: gray
+            .delete-icon-stroke
+                stroke: red
+
+    &__icon
+        @media (min-width: $lg)
+            width: 24px
+            height: 24px
+        width: 20px
+        height: 20px
+
+        path
+            stroke: black

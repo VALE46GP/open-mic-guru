@@ -10,6 +10,8 @@ function EventPage() {
     const { eventId } = useParams();
     const navigate = useNavigate();
     const [eventDetails, setEventDetails] = useState(null);
+    const [isLoading, setIsLoading] = useState(true);
+    const [error, setError] = useState(null);
     const { getUserId } = useAuth();
     const userId = getUserId();
     const [showModal, setShowModal] = useState(false);
@@ -19,16 +21,33 @@ function EventPage() {
 
     useEffect(() => {
         const fetchEventDetails = async () => {
-            const response = await fetch(`/api/events/${eventId}`);
-            const data = await response.json();
-            // console.log('>>>>>>>>>>>>>>>>>>>>> eventId = ', eventId)
-            // console.log('>>>>>>>>>>>>>>>>>>>>> data = ', data)
-            setEventDetails(data);
+            if (!eventId) {
+                setError('No event ID provided');
+                setIsLoading(false);
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/events/${eventId}`);
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                const data = await response.json();
+                setEventDetails(data);
+                setIsLoading(false);
+            } catch (err) {
+                console.error('Error fetching event details:', err);
+                setError(err.message);
+                setIsLoading(false);
+            }
         };
+
         fetchEventDetails();
     }, [eventId]);
 
-    if (!eventDetails) return <div>Loading...</div>;
+    if (isLoading) return <div>Loading...</div>;
+    if (error) return <div>Error: {error}</div>;
+    if (!eventDetails) return <div>No event found</div>;
 
     const generateAllSlots = () => {
         if (!eventDetails.event || !eventDetails.lineup) {
