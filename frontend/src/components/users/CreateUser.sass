@@ -2,7 +2,7 @@
 
 .create-user
     &__container
-        max-width: 400px
+        max-width: 500px
         margin: 0 auto
         display: flex
         flex-direction: column
@@ -11,10 +11,10 @@
     &__title
         font-size: 1.5rem
         margin-bottom: 1rem
+        text-align: center
 
-    &__image-wrapper
-        position: relative
-        width: 400px
+    &__profile-box
+        width: 100%
         margin-bottom: 1rem
 
     &__profile-image
@@ -23,34 +23,8 @@
         border-radius: 50%
         object-fit: cover
 
-    &__button-container
-        position: absolute
-        top: -10px
-        right: 10px
-        display: flex
-        gap: 0.5rem
-
-    &__button
-        background: none
-        border: none
-        padding: 0
-        cursor: pointer
-
-        &--edit
-            width: 30px
-            height: 30px
-
-        &--delete
-            width: 36px
-            height: 36px
-
-        &:focus-visible,
-        &:hover
-            background: none
-            .delete-icon-stroke
-                stroke: red
-            .edit-icon-stroke
-                stroke: gray
+    &__form-box
+        width: 100%
 
     &__form
         width: 100%

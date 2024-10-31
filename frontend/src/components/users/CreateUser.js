@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import { ReactComponent as EditIcon } from '../../assets/icons/edit.svg';
 import { ReactComponent as DeleteIcon } from '../../assets/icons/delete.svg';
+import BorderBox from '../shared/BorderBox/BorderBox';
 import './CreateUser.sass';
 
 function CreateUser({ initialData }) {
@@ -110,47 +111,15 @@ function CreateUser({ initialData }) {
     return (
         <div className='create-user__container'>
             <h2 className='create-user__title'>{initialData ? 'Edit Profile' : 'Register'}</h2>
-            <div className='create-user__image-wrapper'>
+            <BorderBox
+                onEdit={handleEditClick}
+                onDelete={() => setProfilePhoto(defaultImageUrl)}
+                className='create-user__profile-box'
+            >
                 <img
                     src={profilePhoto instanceof File ? URL.createObjectURL(profilePhoto) : (profilePhoto || defaultImageUrl)}
                     alt='Profile Preview'
                     className='create-user__profile-image'
-                />
-                <div className='create-user__button-container'>
-                    <button type='button' className='create-user__button create-user__button--edit' onClick={handleEditClick}>
-                        <EditIcon />
-                    </button>
-                    <button type='button' className='create-user__button create-user__button--delete'>
-                        <DeleteIcon />
-                    </button>
-                </div>
-            </div>
-            <form onSubmit={handleRegister} className='create-user__form'>
-                <input
-                    type='email'
-                    placeholder='Email'
-                    value={registerEmail}
-                    onChange={handleInputChange(setRegisterEmail)}
-                    data-testid='email-input'
-                    className='create-user__input'
-                />
-                {!initialData && (
-                    <input
-                        type='password'
-                        placeholder='Password'
-                        value={registerPassword}
-                        onChange={handleInputChange(setRegisterPassword)}
-                        data-testid='password-input'
-                        className='create-user__input'
-                    />
-                )}
-                <input
-                    type='text'
-                    placeholder='Name'
-                    value={registerName}
-                    onChange={handleInputChange(setRegisterName)}
-                    data-testid='name-input'
-                    className='create-user__input'
                 />
                 <input
                     type='file'
@@ -158,15 +127,49 @@ function CreateUser({ initialData }) {
                     onChange={handleFileChange}
                     style={{ display: 'none' }}
                 />
-                <button
-                    className="create-user__submit-button"
-                    type="submit"
-                    data-testid="register-button"
-                >
-                    Register
-                </button>
-            </form>
-            {success && <p className='create-user__success-message' data-testid='success-message'>{initialData ? 'Profile updated successfully!' : 'Registration successful!'}</p>}
+            </BorderBox>
+
+            <BorderBox className='create-user__form-box'>
+                <form onSubmit={handleRegister} className='create-user__form'>
+                    <input
+                        type='email'
+                        placeholder='Email'
+                        value={registerEmail}
+                        onChange={handleInputChange(setRegisterEmail)}
+                        data-testid='email-input'
+                        className='create-user__input'
+                    />
+                    {!initialData && (
+                        <input
+                            type='password'
+                            placeholder='Password'
+                            value={registerPassword}
+                            onChange={handleInputChange(setRegisterPassword)}
+                            data-testid='password-input'
+                            className='create-user__input'
+                        />
+                    )}
+                    <input
+                        type='text'
+                        placeholder='Name'
+                        value={registerName}
+                        onChange={handleInputChange(setRegisterName)}
+                        data-testid='name-input'
+                        className='create-user__input'
+                    />
+                    <button
+                        className="create-user__submit-button"
+                        type="submit"
+                        data-testid="register-button"
+                    >
+                        {initialData ? 'Save Changes' : 'Register'}
+                    </button>
+                </form>
+            </BorderBox>
+            
+            {success && <p className='create-user__success-message' data-testid='success-message'>
+                {initialData ? 'Profile updated successfully!' : 'Registration successful!'}
+            </p>}
             {error && <p className='create-user__error-message' data-testid='error-message'>{error}</p>}
         </div>
     );
