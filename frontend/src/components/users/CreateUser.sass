@@ -13,7 +13,9 @@
         margin-bottom: 1rem
         text-align: center
 
-    &__profile-box
+    &__profile-box,
+    &__social-media-box,
+    &__form-box
         width: 100%
         margin-bottom: 1rem
 
@@ -22,9 +24,6 @@
         height: auto
         border-radius: 50%
         object-fit: cover
-
-    &__form-box
-        width: 100%
 
     &__form
         width: 100%
@@ -36,6 +35,70 @@
         border: 1px solid #ccc
         border-radius: 4px
         font-size: 1rem
+
+    &__social-media-input-group
+        display: flex
+        align-items: center
+        gap: 0.5rem
+        margin-bottom: 0.5rem
+        width: 100%
+
+    &__social-input
+        flex: 1 1 auto
+        padding: 0.5rem
+        border: 1px solid #ccc
+        border-radius: 4px
+        font-size: 1rem
+        min-width: 20px
+
+        &--platform
+            flex: 1
+
+        &--url
+            flex: 2
+
+    &__delete-social-button
+        background: none
+        border: none
+        cursor: pointer
+        padding: 0
+        display: flex
+        align-items: center
+        justify-content: center
+        width: 30px
+        height: 30px
+        outline: none // Removes default outline on focus
+
+        // Ensure no background appears on hover/focus
+        &:hover,
+        &:focus-visible
+            background: none
+            outline: none
+
+        &:hover .create-user__delete-icon path,
+        &:focus-visible .create-user__delete-icon path
+            stroke: red // Red color on hover and focus
+
+    &__delete-icon
+        width: 20px
+        height: 20px
+
+        path
+            stroke: black // Default color
+            transition: stroke 0.2s ease // Smooth transition for stroke color
+
+    &__add-social-button
+        background-color: #28a745
+        color: #fff
+        padding: 0.5rem 1rem
+        font-size: 1rem
+        border: none
+        border-radius: 4px
+        cursor: pointer
+        text-align: center
+        margin-top: 1rem
+        &:hover
+            background-color: #218838
 
     &__submit-button
         width: 100%

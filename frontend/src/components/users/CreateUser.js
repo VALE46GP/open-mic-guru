@@ -1,8 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
-import { ReactComponent as EditIcon } from '../../assets/icons/edit.svg';
-import { ReactComponent as DeleteIcon } from '../../assets/icons/delete.svg';
 import BorderBox from '../shared/BorderBox/BorderBox';
+import { ReactComponent as DeleteIcon } from "../../assets/icons/delete.svg";
 import './CreateUser.sass';
 
 function CreateUser({ initialData }) {
@@ -10,6 +9,7 @@ function CreateUser({ initialData }) {
     const [registerPassword, setRegisterPassword] = useState('');
     const [registerName, setRegisterName] = useState('');
     const [profilePhoto, setProfilePhoto] = useState(null);
+    const [socialMediaAccounts, setSocialMediaAccounts] = useState([]);
     const [error, setError] = useState(null);
     const [success, setSuccess] = useState(false);
     const fileInputRef = useRef(null);
@@ -21,6 +21,7 @@ function CreateUser({ initialData }) {
             setRegisterEmail(initialData.email);
             setRegisterName(initialData.name);
             setProfilePhoto(initialData.image || defaultImageUrl);
+            setSocialMediaAccounts(initialData.social_media_accounts || []);
         } else {
             setProfilePhoto(defaultImageUrl);
         }
@@ -32,15 +33,18 @@ function CreateUser({ initialData }) {
         setSuccess(false);
     };
 
-    const handleFileChange = (e) => {
-        const file = e.target.files[0];
-        if (file) {
-            setProfilePhoto(file);
-        }
+    const handleSocialMediaChange = (index, field, value) => {
+        const updatedAccounts = [...socialMediaAccounts];
+        updatedAccounts[index][field] = value;
+        setSocialMediaAccounts(updatedAccounts);
     };
 
-    const handleEditClick = () => {
-        fileInputRef.current.click(); // Trigger the file input when edit button is clicked
+    const addSocialMediaAccount = () => {
+        setSocialMediaAccounts([...socialMediaAccounts, { platform: '', url: '' }]);
+    };
+
+    const removeSocialMediaAccount = (index) => {
+        setSocialMediaAccounts(socialMediaAccounts.filter((_, i) => i !== index));
     };
 
     const handleRegister = async (e) => {
@@ -49,42 +53,36 @@ function CreateUser({ initialData }) {
         setSuccess(false);
 
         let photoUrl = profilePhoto;
-
         if (profilePhoto && profilePhoto instanceof File) {
             try {
                 const { data } = await axios.post('/api/users/upload', {
                     fileName: profilePhoto.name,
                     fileType: profilePhoto.type,
-                    userId: initialData?.id // Pass user ID if it's an update
+                    userId: initialData?.id,
                 });
 
                 await axios.put(data.uploadURL, profilePhoto, {
-                    headers: {
-                        'Content-Type': profilePhoto.type
-                    }
+                    headers: { 'Content-Type': profilePhoto.type },
                 });
-
-                photoUrl = data.uploadURL.split('?')[0]; // Get the URL of the uploaded image
+                photoUrl = data.uploadURL.split('?')[0];
             } catch (error) {
-                setError('An unexpected error occurred while uploading the photo. Please try again.');
+                setError('An error occurred while uploading the photo.');
                 console.error('Upload error:', error.response?.data || error);
                 return;
             }
         }
 
+        const payload = {
+            email: registerEmail,
+            name: registerName,
+            photoUrl,
+            socialMediaAccounts: socialMediaAccounts,
+            isUpdate: !!initialData,
+            userId: initialData?.id,
+        };
+        if (registerPassword) payload.password = registerPassword;
+
         try {
-            const payload = {
-                email: registerEmail,
-                name: registerName,
-                photoUrl, // Include the image URL in the payload
-                isUpdate: !!initialData, // Indicates if this is an update request
-                userId: initialData?.id // Pass user ID if it's an update
-            };
-
-            if (registerPassword) {
-                payload.password = registerPassword; // Only include password if provided
-            }
-
             const response = await fetch('/api/users/register', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -92,43 +90,76 @@ function CreateUser({ initialData }) {
             });
 
             const result = await response.json();
-            if (response.ok) {
-                setSuccess(true);
-            } else {
-                // Check for specific error message
-                const emailError = result.errors?.find(err => err.msg === 'Email is already in use');
-                if (emailError) {
-                    setError('This email is already registered. Please use a different email.');
-                } else {
-                    setError(result.errors?.[0]?.msg || 'Registration failed');
-                }
+
+            if (!response.ok) {
+                throw new Error(result.error || 'Failed to update user');
             }
+
+            setSuccess(true);
         } catch (error) {
-            setError('An unexpected error occurred. Please try again.');
+            console.error('Registration/Update error:', error);
+            setError(error.message || 'An unexpected error occurred.');
         }
     };
 
     return (
         <div className='create-user__container'>
             <h2 className='create-user__title'>{initialData ? 'Edit Profile' : 'Register'}</h2>
+
+            {/* BorderBox for Profile Photo */}
             <BorderBox
-                onEdit={handleEditClick}
+                onEdit={() => fileInputRef.current.click()}
                 onDelete={() => setProfilePhoto(defaultImageUrl)}
                 className='create-user__profile-box'
             >
                 <img
-                    src={profilePhoto instanceof File ? URL.createObjectURL(profilePhoto) : (profilePhoto || defaultImageUrl)}
+                    src={profilePhoto instanceof File ? URL.createObjectURL(profilePhoto) : profilePhoto}
                     alt='Profile Preview'
                     className='create-user__profile-image'
                 />
                 <input
                     type='file'
                     ref={fileInputRef}
-                    onChange={handleFileChange}
+                    onChange={(e) => e.target.files[0] && setProfilePhoto(e.target.files[0])}
                     style={{ display: 'none' }}
                 />
             </BorderBox>
 
+            {/* BorderBox for Social Media Accounts */}
+            <BorderBox className='create-user__social-media-box'>
+                <h3>Social Media Accounts</h3>
+                {socialMediaAccounts.map((account, index) => (
+                    <div key={index} className='create-user__social-media-input-group'>
+                        <input
+                            type='text'
+                            placeholder='Platform'
+                            value={account.platform}
+                            onChange={(e) => handleSocialMediaChange(index, 'platform', e.target.value)}
+                            className='create-user__social-input create-user__social-input--platform'
+                        />
+                        <input
+                            type='text'
+                            placeholder='URL'
+                            value={account.url}
+                            onChange={(e) => handleSocialMediaChange(index, 'url', e.target.value)}
+                            className='create-user__social-input create-user__social-input--url'
+                        />
+                        <button
+                            type='button'
+                            onClick={() => removeSocialMediaAccount(index)}
+                            className='create-user__delete-social-button'
+                            aria-label="Delete Social Media Account"
+                        >
+                            <DeleteIcon className="create-user__delete-icon" />
+                        </button>
+                    </div>
+                ))}
+                <button type='button' onClick={addSocialMediaAccount} className='create-user__add-social-button'>
+                    Add Social Media Account
+                </button>
+            </BorderBox>
+
+            {/* BorderBox for Form Fields */}
             <BorderBox className='create-user__form-box'>
                 <form onSubmit={handleRegister} className='create-user__form'>
                     <input
@@ -136,7 +167,6 @@ function CreateUser({ initialData }) {
                         placeholder='Email'
                         value={registerEmail}
                         onChange={handleInputChange(setRegisterEmail)}
-                        data-testid='email-input'
                         className='create-user__input'
                     />
                     {!initialData && (
@@ -145,7 +175,6 @@ function CreateUser({ initialData }) {
                             placeholder='Password'
                             value={registerPassword}
                             onChange={handleInputChange(setRegisterPassword)}
-                            data-testid='password-input'
                             className='create-user__input'
                         />
                     )}
@@ -154,23 +183,16 @@ function CreateUser({ initialData }) {
                         placeholder='Name'
                         value={registerName}
                         onChange={handleInputChange(setRegisterName)}
-                        data-testid='name-input'
                         className='create-user__input'
                     />
-                    <button
-                        className="create-user__submit-button"
-                        type="submit"
-                        data-testid="register-button"
-                    >
+                    <button className='create-user__submit-button' type='submit'>
                         {initialData ? 'Save Changes' : 'Register'}
                     </button>
                 </form>
             </BorderBox>
-            
-            {success && <p className='create-user__success-message' data-testid='success-message'>
-                {initialData ? 'Profile updated successfully!' : 'Registration successful!'}
-            </p>}
-            {error && <p className='create-user__error-message' data-testid='error-message'>{error}</p>}
+
+            {success && <p className='create-user__success-message'>Profile updated successfully!</p>}
+            {error && <p className='create-user__error-message'>{error}</p>}
         </div>
     );
 }

@@ -19,7 +19,7 @@ const s3 = new AWS.S3();
 // GET all users
 router.get('/', verifyToken, async (req, res) => {
     try {
-        const result = await db.query('SELECT * FROM users');
+        const result = await db.query('SELECT id, email, name, image, social_media_accounts FROM users');
         res.json(result.rows);
     } catch (err) {
         console.error(err);
@@ -28,54 +28,56 @@ router.get('/', verifyToken, async (req, res) => {
 });
 
 // POST a new user OR edit an existing user
-router.post('/register', [
-    body('email').trim().isEmail().withMessage('Email is required and must be valid.'),
-    // Only validate password if it's provided (for updates without password change)
-    body('password').optional({ checkFalsy: true }).isLength({ min: 5 }).withMessage('Password must be at least 5 characters long.'),
-], async (req, res) => {
-    // Check for validation errors.
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-        return res.status(400).json({ errors: errors.array() });
+router.post('/register', async (req, res) => {
+    const { email, password, name, photoUrl, socialMediaAccounts, isUpdate, userId } = req.body;
+    let hashedPassword = null;
+
+    if (password) {
+        hashedPassword = await bcrypt.hash(password, 10);
     }
 
     try {
-        const { email, password, name, photoUrl, isUpdate, userId } = req.body;
-        let hashedPassword = null;
-
-        if (password) {
-            hashedPassword = await bcrypt.hash(password, 10);
-        }
-
         if (isUpdate) {
-            // Update user if it's an update request
-            const query = hashedPassword
-                ? 'UPDATE users SET email = $1, password = $2, name = $3, image = $4 WHERE id = $5 RETURNING *'
-                : 'UPDATE users SET email = $1, name = $2, image = $3 WHERE id = $4 RETURNING *';
-            const values = hashedPassword
-                ? [email, hashedPassword, name, photoUrl, userId]
-                : [email, name, photoUrl, userId];
+            const socialMediaJson = JSON.stringify(socialMediaAccounts || []);
+            const client = await db.connect();
+            
+            try {
+                await client.query('BEGIN');
+                const result = await client.query(
+                    `UPDATE users 
+                    SET email = $1, 
+                        name = $2, 
+                        image = $3, 
+                        social_media_accounts = $4::jsonb 
+                    WHERE id = $5 
+                    RETURNING *`,
+                    [email, name, photoUrl, socialMediaJson, userId]
+                );
 
-            const result = await db.query(query, values);
-            res.status(200).json({ user: result.rows[0] });
-        } else {
-            // Check if email already exists
-            const emailCheck = await db.query('SELECT * FROM users WHERE email = $1', [email]);
-            if (emailCheck.rows.length > 0) {
-                return res.status(400).json({ errors: [{ msg: 'Email is already in use' }] });
+                await client.query('COMMIT');
+                return res.status(200).json({ user: result.rows[0] });
+            } catch (err) {
+                await client.query('ROLLBACK');
+                throw err;
+            } finally {
+                client.release();
             }
-
-            // Insert a new user
-            const result = await db.query('INSERT INTO users (email, password, name, image) VALUES ($1, $2, $3, $4) RETURNING *', [email, hashedPassword, name, photoUrl]);
-            const user = result.rows[0];
-
-            // Generate a JWT token
-            const token = jwt.sign({ userId: user.id }, process.env.JWT_SECRET, { expiresIn: '24h' });
-            res.status(201).json({ token });
+        } else {
+            const socialMediaJson = JSON.stringify(socialMediaAccounts || []);
+            const result = await db.query(
+                `INSERT INTO users (email, password, name, image, social_media_accounts) 
+                VALUES ($1, $2, $3, $4, $5) 
+                RETURNING *`,
+                [email, hashedPassword, name, photoUrl, socialMediaJson]
+            );
+            return res.status(201).json({ user: result.rows[0] });
         }
     } catch (err) {
-        console.error(err);
-        res.status(500).send('Server error');
+        console.error('Database Error:', err);
+        return res.status(500).json({ 
+            error: 'Server error',
+            details: err.message
+        });
     }
 });
 
@@ -104,21 +106,24 @@ router.post('/login', async (req, res) => {
     }
 });
 
-// GET user details and their events
+// GET a single user's details and their events
 router.get('/:userId', async (req, res) => {
     try {
         const { userId } = req.params;
-        
-        // Fetch user details
-        const userQuery = await db.query('SELECT * FROM users WHERE id = $1', [userId]);
+
+        // Fetch user details including social media accounts
+        const userQuery = await db.query(
+            'SELECT id, email, name, image, social_media_accounts FROM users WHERE id = $1',
+            [userId]
+        );
         if (userQuery.rows.length === 0) {
             return res.status(404).json({ error: 'User not found' });
         }
         const user = userQuery.rows[0];
 
-        // Fetch events hosted by the user, including venue_id
+        // Fetch events hosted by the user
         const eventsQuery = await db.query(`
-            SELECT 
+            SELECT
                 e.id AS event_id,
                 e.name AS event_name,
                 e.start_time,
@@ -127,13 +132,14 @@ router.get('/:userId', async (req, res) => {
                 e.additional_info,
                 v.id AS venue_id
             FROM events e
-            JOIN venues v ON e.venue_id = v.id
-            JOIN user_roles ur ON e.id = ur.event_id AND ur.role = 'host'
+                     JOIN venues v ON e.venue_id = v.id
+                     JOIN user_roles ur ON e.id = ur.event_id AND ur.role = 'host'
             WHERE ur.user_id = $1
         `, [userId]);
 
         const events = eventsQuery.rows;
 
+        // Include user details and events in the response
         res.json({ user, events });
     } catch (err) {
         console.error(err);
