@@ -1,0 +1,123 @@
+@import '../../styles/extensions'
+
+.user-page
+    max-width: 800px
+    margin: 0 auto
+    padding: 20px
+
+    +media-down($sm)
+        padding: 10px
+
+    &__profile-box
+        +media-down($sm)
+            margin: 0.5rem
+            min-width: auto
+
+    &__profile-content
+        display: flex
+        flex-direction: column
+        width: 100%
+        gap: 2rem
+
+    &__profile-section
+        display: flex
+        flex-direction: column
+        align-items: center
+        gap: 1.5rem
+        padding-bottom: 2rem
+        border-bottom: 1px solid #dee2e6
+        text-align: center
+
+        +media-up($md)
+            flex-direction: row
+            text-align: left
+            align-items: flex-start
+
+    &__image-container
+        flex-shrink: 0
+        width: 150px
+        height: 150px
+        
+        +media-down($xs)
+            width: 120px
+            height: 120px
+
+    &__profile-image
+        width: 100%
+        height: 100%
+        border-radius: 50%
+        object-fit: cover
+
+    &__user-info
+        flex-grow: 1
+        
+        h2
+            margin: 0 0 0.5rem 0
+            font-size: 1.5rem
+            
+            +media-down($xs)
+                font-size: 1.25rem
+        
+        p
+            margin: 0
+            color: #666
+            font-size: 1rem
+            
+            +media-down($xs)
+                font-size: 0.9rem
+
+    &__social-media
+        display: flex
+        flex-direction: column
+        gap: 0.75rem
+        margin-top: 1rem
+
+    &__social-media-item
+        display: flex
+        flex-direction: column
+        gap: 0.25rem
+        padding: 0.75rem
+        background-color: #f8f9fa
+        border-radius: 4px
+        
+        +media-up($md)
+            flex-direction: row
+            align-items: center
+            gap: 1rem
+
+    &__platform
+        font-weight: bold
+        color: #495057
+        
+        +media-up($md)
+            min-width: 100px
+
+    &__social-link
+        color: #007bff
+        text-decoration: none
+        word-break: break-all
+        
+        &:hover
+            text-decoration: underline
+
+    &__no-social
+        color: #666
+        font-style: italic
+        text-align: center
+
+    &__events-table
+        width: 100%
+        margin-top: 1rem
+        border-collapse: collapse
+
+        th, td
+            padding: 0.75rem
+            text-align: left
+            border-bottom: 1px solid #dee2e6
+
+        th
+            background-color: #f8f9fa
+            font-weight: bold
+
+        tr:hover
+            background-color: #f8f9fa
