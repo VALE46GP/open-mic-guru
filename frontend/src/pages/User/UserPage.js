@@ -115,7 +115,7 @@ function UserPage() {
                                     <td>{event.slot_duration.minutes} minutes</td>
                                     <td>
                                         <Link to={`/venues/${event.venue_id}`}>
-                                            View Venue
+                                            {event.venue_id || 'Unknown Venue'}
                                         </Link>
                                     </td>
                                 </tr>
