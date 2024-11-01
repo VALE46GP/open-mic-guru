@@ -6,6 +6,9 @@ import { ReactComponent as EditIcon } from '../../assets/icons/edit.svg';
 import { ReactComponent as DeleteIcon } from '../../assets/icons/delete.svg';
 import BorderBox from '../../components/shared/BorderBox/BorderBox';
 import './EventPage.sass';
+import { QRCodeSVG } from 'qrcode.react';
+
+const DEV_IP = '192.168.1.104';
 
 function EventPage() {
     const { eventId } = useParams();
@@ -19,6 +22,7 @@ function EventPage() {
     const [currentSlot, setCurrentSlot] = useState(null);
     const [currentSlotName, setCurrentSlotName] = useState('');
     const [showDeleteConfirmModal, setShowDeleteConfirmModal] = useState(false);
+    const [qrUrl, setQrUrl] = useState('');
 
     useEffect(() => {
         const fetchEventDetails = async () => {
@@ -44,6 +48,13 @@ function EventPage() {
         };
 
         fetchEventDetails();
+    }, [eventId]);
+
+    useEffect(() => {
+        const baseUrl = process.env.NODE_ENV === 'development'
+            ? `http://${DEV_IP}:3000`
+            : window.location.origin;
+        setQrUrl(`${baseUrl}/events/${eventId}`);
     }, [eventId]);
 
     if (isLoading) return <div>Loading...</div>;
@@ -169,6 +180,15 @@ function EventPage() {
                             longitude={eventDetails.venue.longitude}
                         />
                     )}
+                </div>
+                <div className="event-details__qr-container">
+                    <QRCodeSVG 
+                        value={qrUrl}
+                        size={128}
+                        level="H"
+                        includeMargin={true}
+                    />
+                    <p className="event-details__qr-url">{qrUrl}</p>
                 </div>
             </BorderBox>
 
