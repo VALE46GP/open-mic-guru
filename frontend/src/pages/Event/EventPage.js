@@ -100,7 +100,7 @@ function EventPage() {
             },
             body: JSON.stringify({
                 event_id: eventId,
-                user_id: userId,
+                user_id: userId || null,
                 slot_number: currentSlot.slot_number,
                 slot_name: currentSlotName
             }),
@@ -154,6 +154,53 @@ function EventPage() {
     const toggleDeleteConfirmModal = () => {
         setShowDeleteConfirmModal(!showDeleteConfirmModal);
     };
+
+    function Slot({ slot, onClick, onDelete, isHost }) {
+        const slotContent = (
+            <div
+                className={`event-details__lineup__slot ${slot.slot_name === "Open" ? 'clickable' : ''}`}
+                onClick={slot.slot_name === "Open" ? onClick : undefined}
+                style={{ cursor: slot.slot_name === "Open" ? 'pointer' : 'default' }}
+                role="button"
+                tabIndex={0}
+            >
+                <div className="slot-number">{slot.slot_number}</div>
+                <div className="slot-time">{slot.slot_start_time.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
+                <div className="slot-artist">
+                    {slot.slot_name}
+                    {isHost && (
+                        <div
+                            className="event-details__button event-details__button--delete"
+                            onClick={(e) => {
+                                e.stopPropagation(); // Prevent row click event
+                                onDelete(slot.slot_id);
+                            }}
+                            role="button"
+                            tabIndex={0}
+                        >
+                            <DeleteIcon />
+                        </div>
+                    )}
+                </div>
+            </div>
+        );
+
+        return slot.user_id ? (
+            <Link
+                to={`/users/${slot.user_id}`}
+                className="event-details__lineup__slot-link slot-link-pointer"
+                style={{
+                    textDecoration: 'none',
+                    color: 'inherit',
+                    display: 'block',
+                }}
+            >
+                {slotContent}
+            </Link>
+        ) : (
+            slotContent
+        );
+    }
 
     return (
         <div className="event-details">
@@ -210,45 +257,22 @@ function EventPage() {
                         </div>
                     </div>
                 )}
-                <table>
-                    <thead>
-                        <tr>
-                            <th>#</th>
-                            <th>Start Time</th>
-                            <th>Artist</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {generateAllSlots().map((slot, index) => (
-                            <tr key={index}
-                                className={`event-details__lineup__row ${currentSlot === slot.slot_number ? 'event-details__lineup__row--selected' : ''}`}
-                                onClick={() => {
-                                    if (slot.slot_name === "Open") {
-                                        setCurrentSlot(slot);
-                                        setShowModal(true);
-                                    }
-                                }}>
-                                <td>{slot.slot_number}</td>
-                                <td>{slot.slot_start_time.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</td>
-                                <td>
-                                    {slot.user_id ? (
-                                        <div className="event-details__td">
-                                            <Link to={`/users/${slot.user_id}`}>{slot.slot_name}</Link>
-                                            <div className="event-details__buttons">
-                                                {/* <button className="event-details__button event-details__button--edit">
-                                                    <EditIcon />
-                                                </button> */}
-                                                <button className="event-details__button event-details__button--delete" onClick={() => handleUnsign(slot.slot_id)}>
-                                                    <DeleteIcon />
-                                                </button>
-                                            </div>
-                                        </div>
-                                    ) : "Open"}
-                                </td>
-                            </tr>
-                        ))}
-                    </tbody>
-                </table>
+                <div className="event-details__lineup">
+                    {generateAllSlots().map((slot, index) => (
+                        <Slot
+                            key={index}
+                            slot={slot}
+                            onClick={() => {
+                                if (slot.slot_name === "Open") {
+                                    setCurrentSlot(slot);
+                                    setShowModal(true);
+                                }
+                            }}
+                            onDelete={handleUnsign}
+                            isHost={eventDetails?.host?.id === userId}
+                        />
+                    ))}
+                </div>
             </BorderBox>
 
             {showDeleteConfirmModal && (

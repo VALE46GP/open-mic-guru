@@ -32,13 +32,24 @@
         color: #666
 
     &__lineup
-        &__row
-            cursor: pointer
-            &:hover
-                background-color: #f0f0f0
+        display: flex
+        flex-direction: column
+        gap: 10px
 
-        &__row--selected
-            background-color: #b0c4de
+    &__lineup__slot
+        display: flex
+        justify-content: space-between
+        padding: 10px
+        border: 1px solid #ccc
+        border-radius: 5px
+
+        &.clickable:hover,
+        &.clickable:focus
+            background-color: #f0f0f0
+            cursor: pointer !important
+
+    .slot-number, .slot-time, .slot-artist
+        flex: 1
 
     &__map-container
         display: flex
@@ -88,4 +99,11 @@
         color: #666
         word-break: break-all
         text-align: center
+
+    &__lineup__slot-link
+        display: block
+        &:hover,
+        &:focus
+            background-color: #f0f0f0
+            cursor: pointer !important
 
