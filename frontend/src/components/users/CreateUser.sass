@@ -67,9 +67,8 @@
         justify-content: center
         width: 30px
         height: 30px
-        outline: none // Removes default outline on focus
+        outline: none
 
-        // Ensure no background appears on hover/focus
         &:hover,
         &:focus-visible
             background: none
@@ -77,15 +76,15 @@
 
         &:hover .create-user__delete-icon path,
         &:focus-visible .create-user__delete-icon path
-            stroke: red // Red color on hover and focus
+            stroke: red
 
     &__delete-icon
         width: 20px
         height: 20px
 
         path
-            stroke: black // Default color
-            transition: stroke 0.2s ease // Smooth transition for stroke color
+            stroke: black
+            transition: stroke 0.2s ease
 
     &__add-social-button
         background-color: #28a745

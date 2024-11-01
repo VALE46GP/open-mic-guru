@@ -23,11 +23,11 @@ function App() {
             <Route path="/login" element={<LoginPage />} />
             <Route path="/testdb" element={<ProtectedRoute element={<TestDbPage />} />} />
             <Route path="/create-event" element={<ProtectedRoute element={<CreateEventPage />} />} />
-            <Route path="/events/:eventId" element={<ProtectedRoute element={<EventPage />} />} />
+            <Route path="/events/:eventId" element={<EventPage />} />
             <Route path="/events/:eventId/edit" element={<ProtectedRoute element={<CreateEventPage />} />} />
-            <Route path="/users/:userId" element={<ProtectedRoute element={<UserPage />} />} />
+            <Route path="/users/:userId" element={<UserPage />} />
             <Route path="/users/:userId/edit" element={<EditUserPage />} />
-            <Route path="/events" element={<ProtectedRoute element={<EventsPage />} />} />
+            <Route path="/events" element={<EventsPage />} />
           </Routes>
         </div>
       </AuthProvider>
