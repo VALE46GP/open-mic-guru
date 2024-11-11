@@ -8,6 +8,7 @@ import BorderBox from '../../components/shared/BorderBox/BorderBox';
 import './EventPage.sass';
 import { QRCodeSVG } from 'qrcode.react';
 import Lineup from '../../components/Lineup/Lineup';
+import { v4 as uuidv4 } from 'uuid';
 
 const DEV_IP = '192.168.1.104';
 
@@ -24,6 +25,13 @@ function EventPage() {
     const [currentSlotName, setCurrentSlotName] = useState('');
     const [showDeleteConfirmModal, setShowDeleteConfirmModal] = useState(false);
     const [qrUrl, setQrUrl] = useState('');
+
+    useEffect(() => {
+        // Set a unique identifier cookie for non-users if it doesn't already exist
+        if (!document.cookie.includes('nonUserId')) {
+            document.cookie = `nonUserId=${uuidv4()}; path=/; max-age=31536000`; // 1-year expiration
+        }
+    }, []);
 
     useEffect(() => {
         const fetchEventDetails = async () => {
