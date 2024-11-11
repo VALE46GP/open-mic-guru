@@ -4,9 +4,11 @@ const db = require('../db');
 
 // POST a new lineup slot
 router.post('/', async (req, res) => {
-    const { event_id, user_id, slot_number, slot_name } = req.body;
+    const { event_id, user_id, slot_number, slot_name, isHostAssignment } = req.body;
     const nonUserId = req.cookies?.nonUserId || null;
     const ipAddress = req.ip;
+
+    console.log("Request received:", { event_id, user_id, slot_number, slot_name, isHostAssignment, nonUserId, ipAddress });
 
     // Validate that non-users provide a name for the slot
     if (!user_id && !slot_name) {
@@ -14,32 +16,40 @@ router.post('/', async (req, res) => {
     }
 
     try {
-        // Step 1: Check if the current user is the event host by querying user_roles table
+        // Step 1: Check if the current user is the event host
         const hostResult = await db.query(
             `SELECT user_id AS host_id FROM user_roles WHERE event_id = $1 AND role = 'host'`,
             [event_id]
         );
 
-        // If there's no host for the event, return an error
         if (hostResult.rows.length === 0) {
             return res.status(404).json({ error: 'Host for this event not found' });
         }
 
         const hostId = hostResult.rows[0].host_id;
+        console.log("Host ID found:", hostId);
 
-        // Step 2: Allow unrestricted slot assignments if the user is the host
-        if (user_id === hostId) {
-            // Host can assign multiple slots, so we skip further checks
+        // Step 2: If host assignment, set non_user_identifier and ip_address to NULL and bypass the one-slot rule
+        if (user_id === hostId && isHostAssignment) {
+            console.log("Host assignment detected, setting non_user_identifier and ip_address to NULL.");
+
             const result = await db.query(`
                 INSERT INTO lineup_slots (event_id, user_id, slot_number, slot_name, non_user_identifier, ip_address) 
-                VALUES ($1, $2, $3, $4, NULL, NULL) -- No need to store identifier or IP for host assignments
+                VALUES ($1, NULL, $2, $3, NULL, NULL) -- NULL for user_id, non_user_identifier, and ip_address
                 RETURNING id AS slot_id, slot_number, slot_name, user_id
-            `, [event_id, null, slot_number, slot_name]); // `user_id` is null to signify host assignment
+            `, [event_id, slot_number, slot_name]);
 
+            console.log("Host-assigned slot successfully created:", result.rows[0]);
             return res.status(201).json(result.rows[0]);
         }
 
-        // Step 3: If not the host, enforce one-slot-per-person rule
+        // Step 3: Set non_user_identifier and ip_address for non-host assignments
+        const userIdForSlot = user_id || null;
+        const nonUserIdForSlot = isHostAssignment ? null : nonUserId; // Set to NULL if host assignment
+        const ipAddressForSlot = isHostAssignment ? null : ipAddress; // Set to NULL if host assignment
+
+        console.log("Proceeding with regular slot assignment:", { userIdForSlot, nonUserIdForSlot, ipAddressForSlot });
+
         if (user_id) {
             // Check if the user (logged-in non-host) has already signed up for a slot in this event
             const existingUserSlot = await db.query(
@@ -54,7 +64,7 @@ router.post('/', async (req, res) => {
             // Check if the non-user has already signed up for a slot in this event
             const existingNonUserSlot = await db.query(
                 `SELECT id FROM lineup_slots WHERE event_id = $1 AND (non_user_identifier = $2 OR ip_address = $3)`,
-                [event_id, nonUserId, ipAddress]
+                [event_id, nonUserIdForSlot, ipAddressForSlot]
             );
 
             if (existingNonUserSlot.rows.length > 0) {
@@ -67,8 +77,9 @@ router.post('/', async (req, res) => {
             INSERT INTO lineup_slots (event_id, user_id, slot_number, slot_name, non_user_identifier, ip_address) 
             VALUES ($1, $2, $3, $4, $5, $6) 
             RETURNING id AS slot_id, slot_number, slot_name, user_id
-        `, [event_id, user_id || null, slot_number, slot_name, nonUserId, ipAddress]);
+        `, [event_id, userIdForSlot, slot_number, slot_name, nonUserIdForSlot, ipAddressForSlot]);
 
+        console.log("Regular slot assigned:", result.rows[0]);
         res.status(201).json(result.rows[0]);
     } catch (err) {
         console.error('Error signing up for lineup:', err);

@@ -169,7 +169,7 @@ function EventPage() {
                 slots={generateAllSlots()}
                 isHost={eventDetails?.host?.id === userId}
                 currentUserId={userId}
-                onSlotClick={async (slot, slotName) => {
+                onSlotClick={async (slot, slotName, isHostAssignment) => {
                     const response = await fetch('/api/lineup_slots/', {
                         method: 'POST',
                         headers: {
@@ -177,11 +177,13 @@ function EventPage() {
                         },
                         body: JSON.stringify({
                             event_id: eventId,
-                            user_id: eventDetails?.host?.id === userId ? null : userId,
+                            user_id: isHostAssignment ? null : userId, // Set user_id to null if it's a host assignment
                             slot_number: slot.slot_number,
-                            slot_name: slotName
+                            slot_name: slotName,
+                            isHostAssignment // Send this flag to backend
                         }),
                     });
+
                     const data = await response.json();
                     if (response.ok) {
                         setEventDetails(prevDetails => ({
