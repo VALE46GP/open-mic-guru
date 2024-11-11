@@ -168,7 +168,7 @@ function EventPage() {
                         },
                         body: JSON.stringify({
                             event_id: eventId,
-                            user_id: userId || null,
+                            user_id: eventDetails?.host?.id === userId ? null : userId,
                             slot_number: slot.slot_number,
                             slot_name: slotName
                         }),

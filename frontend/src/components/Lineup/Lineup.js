@@ -1,15 +1,14 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { ReactComponent as DeleteIcon } from '../../assets/icons/delete.svg';
 import BorderBox from '../shared/BorderBox/BorderBox';
 import './Lineup.sass';
 
-function Slot({ slot, onClick, onDelete, isHost }) {
+function Slot({ slot, onClick, isHost }) {
     const slotContent = (
         <div
-            className={`lineup__slot ${slot.slot_name === "Open" ? 'clickable' : ''}`}
-            onClick={slot.slot_name === "Open" ? onClick : undefined}
-            style={{ cursor: slot.slot_name === "Open" ? 'pointer' : 'default' }}
+            className={`lineup__slot ${(slot.slot_name === "Open" || isHost) ? 'clickable' : ''}`}
+            onClick={(slot.slot_name === "Open" || isHost) ? onClick : undefined}
+            style={{ cursor: (slot.slot_name === "Open" || isHost) ? 'pointer' : 'default' }}
             role="button"
             tabIndex={0}
         >
@@ -18,39 +17,22 @@ function Slot({ slot, onClick, onDelete, isHost }) {
                 {slot.slot_start_time.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
             </div>
             <div className="lineup__slot-artist">
-                {slot.slot_name}
-                {isHost && (
-                    <div
-                        className="lineup__button lineup__button--delete"
-                        onClick={(e) => {
-                            e.stopPropagation();
-                            onDelete(slot.slot_id);
-                        }}
-                        role="button"
-                        tabIndex={0}
+                {slot.user_id ? (
+                    <Link
+                        to={`/users/${slot.user_id}`}
+                        className="lineup__slot-username"
+                        onClick={(e) => e.stopPropagation()}
                     >
-                        <DeleteIcon />
-                    </div>
+                        {slot.slot_name}
+                    </Link>
+                ) : (
+                    slot.slot_name
                 )}
             </div>
         </div>
     );
 
-    return slot.user_id ? (
-        <Link
-            to={`/users/${slot.user_id}`}
-            className="lineup__slot-link"
-            style={{
-                textDecoration: 'none',
-                color: 'inherit',
-                display: 'block',
-            }}
-        >
-            {slotContent}
-        </Link>
-    ) : (
-        slotContent
-    );
+    return slotContent;
 }
 
 function Lineup({ slots, isHost, onSlotClick, onSlotDelete }) {
@@ -59,7 +41,7 @@ function Lineup({ slots, isHost, onSlotClick, onSlotDelete }) {
     const [currentSlotName, setCurrentSlotName] = useState('');
 
     const handleSlotClick = (slot) => {
-        if (slot.slot_name === "Open") {
+        if (slot.slot_name === "Open" || isHost) {
             setCurrentSlot(slot);
             setShowModal(true);
         }
@@ -68,6 +50,7 @@ function Lineup({ slots, isHost, onSlotClick, onSlotDelete }) {
     const handleOverlayClick = () => {
         setShowModal(false);
         setCurrentSlot(null);
+        setCurrentSlotName('');
     };
 
     const handleConfirmSignUp = () => {
@@ -76,22 +59,50 @@ function Lineup({ slots, isHost, onSlotClick, onSlotDelete }) {
         setCurrentSlotName('');
     };
 
+    const handleDelete = () => {
+        onSlotDelete(currentSlot.slot_id);
+        setShowModal(false);
+    };
+
+    const handleKeyPress = (e) => {
+        if (e.key === 'Enter' && currentSlotName.trim() && currentSlotName !== "Open") {
+            handleConfirmSignUp();
+        }
+    };
+
     return (
         <BorderBox>
             <h2 className="lineup__title">Lineup</h2>
             {showModal && (
                 <div className="lineup__modal" onClick={handleOverlayClick}>
                     <div className="lineup__modal-content" onClick={e => e.stopPropagation()}>
-                        <p>Slot #{currentSlot.slot_number} is currently open.</p>
+                        <p>Slot #{currentSlot.slot_number}</p>
                         <p>Estimated start time: {new Date(currentSlot.slot_start_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
-                        <input
-                            type="text"
-                            placeholder="Enter a name to sign up."
-                            value={currentSlotName}
-                            onChange={(e) => setCurrentSlotName(e.target.value)}
-                        />
-                        <button onClick={handleConfirmSignUp} disabled={!currentSlotName.trim() || currentSlotName === "Open"}>Sign Up</button>
-                        <button onClick={() => setShowModal(false)}>Cancel</button>
+                        
+                        {isHost && currentSlot.slot_name !== "Open" ? (
+                            <>
+                                <p>Current performer: {currentSlot.slot_name}</p>
+                                <button onClick={handleDelete} className="lineup__modal-button--delete">Delete</button>
+                            </>
+                        ) : (
+                            <>
+                                <p>This slot is currently {currentSlot.slot_name === "Open" ? "open" : "taken"}.</p>
+                                <input
+                                    type="text"
+                                    placeholder="Enter a name to sign up."
+                                    value={currentSlotName}
+                                    onChange={(e) => setCurrentSlotName(e.target.value)}
+                                    onKeyPress={handleKeyPress}
+                                />
+                                <button 
+                                    onClick={handleConfirmSignUp} 
+                                    disabled={!currentSlotName.trim() || currentSlotName === "Open"}
+                                >
+                                    Sign Up
+                                </button>
+                            </>
+                        )}
+                        <button onClick={handleOverlayClick}>Cancel</button>
                     </div>
                 </div>
             )}
@@ -101,7 +112,6 @@ function Lineup({ slots, isHost, onSlotClick, onSlotDelete }) {
                         key={index}
                         slot={slot}
                         onClick={() => handleSlotClick(slot)}
-                        onDelete={onSlotDelete}
                         isHost={isHost}
                     />
                 ))}

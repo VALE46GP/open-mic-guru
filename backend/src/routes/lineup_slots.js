@@ -12,8 +12,11 @@ router.post('/', async (req, res) => {
     }
 
     try {
-        const result = await db.query(
-            'INSERT INTO lineup_slots (event_id, user_id, slot_number, slot_name) VALUES ($1, $2, $3, $4) RETURNING *',
+        const result = await db.query(`
+            INSERT INTO lineup_slots (event_id, user_id, slot_number, slot_name) 
+            VALUES ($1, $2, $3, $4) 
+            RETURNING id AS slot_id, slot_number, slot_name, user_id
+        `,
             [event_id, user_id || null, slot_number, slot_name]
         );
         console.log('Sign-up successful:', result.rows[0]);
