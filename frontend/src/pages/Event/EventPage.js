@@ -7,6 +7,7 @@ import { ReactComponent as DeleteIcon } from '../../assets/icons/delete.svg';
 import BorderBox from '../../components/shared/BorderBox/BorderBox';
 import './EventPage.sass';
 import { QRCodeSVG } from 'qrcode.react';
+import Lineup from '../../components/Lineup/Lineup';
 
 const DEV_IP = '192.168.1.104';
 
@@ -85,41 +86,6 @@ function EventPage() {
         });
     };
 
-    const handleConfirmSignUp = async () => {
-        if (!currentSlot) {
-            console.error("No slot selected");
-            return;
-        } else if (currentSlot.slot_id || (currentSlot.slot_name && currentSlot.slot_name !== "Open")) {
-            console.error("Slot already taken");
-            return;
-        }
-        const response = await fetch('/api/lineup_slots/', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                event_id: eventId,
-                user_id: userId || null,
-                slot_number: currentSlot.slot_number,
-                slot_name: currentSlotName
-            }),
-        });
-        const data = await response.json();
-        if (response.ok) {
-            setEventDetails(prevDetails => ({
-                ...prevDetails,
-                lineup: [...prevDetails.lineup, data]
-            }));
-        }
-        setShowModal(false);
-    };
-
-    const handleOverlayClick = () => {
-        setShowModal(false);
-        setCurrentSlot(null); // Unselect the slot
-    };
-
     const handleUnsign = async (slotId) => {
         const response = await fetch(`/api/lineup_slots/${slotId}`, {
             method: 'DELETE'
@@ -154,53 +120,6 @@ function EventPage() {
     const toggleDeleteConfirmModal = () => {
         setShowDeleteConfirmModal(!showDeleteConfirmModal);
     };
-
-    function Slot({ slot, onClick, onDelete, isHost }) {
-        const slotContent = (
-            <div
-                className={`event-page__lineup__slot ${slot.slot_name === "Open" ? 'clickable' : ''}`}
-                onClick={slot.slot_name === "Open" ? onClick : undefined}
-                style={{ cursor: slot.slot_name === "Open" ? 'pointer' : 'default' }}
-                role="button"
-                tabIndex={0}
-            >
-                <div className="event-page__slot-number">{slot.slot_number}</div>
-                <div className="event-page__slot-time">{slot.slot_start_time.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
-                <div className="event-page__slot-artist">
-                    {slot.slot_name}
-                    {isHost && (
-                        <div
-                            className="event-page__button event-page__button--delete"
-                            onClick={(e) => {
-                                e.stopPropagation(); // Prevent row click event
-                                onDelete(slot.slot_id);
-                            }}
-                            role="button"
-                            tabIndex={0}
-                        >
-                            <DeleteIcon />
-                        </div>
-                    )}
-                </div>
-            </div>
-        );
-
-        return slot.user_id ? (
-            <Link
-                to={`/users/${slot.user_id}`}
-                className="event-page__lineup__slot-link slot-link-pointer"
-                style={{
-                    textDecoration: 'none',
-                    color: 'inherit',
-                    display: 'block',
-                }}
-            >
-                {slotContent}
-            </Link>
-        ) : (
-            slotContent
-        );
-    }
 
     return (
         <div className="event-page">
@@ -238,41 +157,32 @@ function EventPage() {
                 </div>
             </BorderBox>
 
-            <BorderBox >
-                <h2 className="event-page__title">Lineup</h2>
-                {showModal && (
-                    <div className="event-page__modal" onClick={handleOverlayClick}>
-                        <div className="event-page__modal-content" onClick={e => e.stopPropagation()}>
-                            <p>Slot #{currentSlot.slot_number} is currently open.</p>
-                            <p>Estimated start time: {new Date(currentSlot.slot_start_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
-                            <input
-                                type="text"
-                                placeholder="Enter a name to sign up."
-                                value={currentSlotName}
-                                onChange={(e) => setCurrentSlotName(e.target.value)}
-                            />
-                            <button onClick={handleConfirmSignUp} disabled={!currentSlotName.trim() || currentSlotName === "Open"}>Sign Up</button>
-                            <button onClick={() => setShowModal(false)}>Cancel</button>
-                        </div>
-                    </div>
-                )}
-                <div className="event-page__lineup">
-                    {generateAllSlots().map((slot, index) => (
-                        <Slot
-                            key={index}
-                            slot={slot}
-                            onClick={() => {
-                                if (slot.slot_name === "Open") {
-                                    setCurrentSlot(slot);
-                                    setShowModal(true);
-                                }
-                            }}
-                            onDelete={handleUnsign}
-                            isHost={eventDetails?.host?.id === userId}
-                        />
-                    ))}
-                </div>
-            </BorderBox>
+            <Lineup 
+                slots={generateAllSlots()}
+                isHost={eventDetails?.host?.id === userId}
+                onSlotClick={async (slot, slotName) => {
+                    const response = await fetch('/api/lineup_slots/', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            event_id: eventId,
+                            user_id: userId || null,
+                            slot_number: slot.slot_number,
+                            slot_name: slotName
+                        }),
+                    });
+                    const data = await response.json();
+                    if (response.ok) {
+                        setEventDetails(prevDetails => ({
+                            ...prevDetails,
+                            lineup: [...prevDetails.lineup, data]
+                        }));
+                    }
+                }}
+                onSlotDelete={handleUnsign}
+            />
 
             {showDeleteConfirmModal && (
                 <div className="event-page__modal">
