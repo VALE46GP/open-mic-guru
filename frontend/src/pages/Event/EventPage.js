@@ -160,6 +160,7 @@ function EventPage() {
             <Lineup 
                 slots={generateAllSlots()}
                 isHost={eventDetails?.host?.id === userId}
+                currentUserId={userId}
                 onSlotClick={async (slot, slotName) => {
                     const response = await fetch('/api/lineup_slots/', {
                         method: 'POST',

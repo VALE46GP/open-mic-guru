@@ -3,12 +3,13 @@ import { Link } from 'react-router-dom';
 import BorderBox from '../shared/BorderBox/BorderBox';
 import './Lineup.sass';
 
-function Slot({ slot, onClick, isHost }) {
+function Slot({ slot, onClick, isHost, currentUserId }) {
+    const isOwnSlot = slot.user_id === currentUserId;
     const slotContent = (
         <div
-            className={`lineup__slot ${(slot.slot_name === "Open" || isHost) ? 'clickable' : ''}`}
-            onClick={(slot.slot_name === "Open" || isHost) ? onClick : undefined}
-            style={{ cursor: (slot.slot_name === "Open" || isHost) ? 'pointer' : 'default' }}
+            className={`lineup__slot ${(slot.slot_name === "Open" || isHost || isOwnSlot) ? 'clickable' : ''}`}
+            onClick={(slot.slot_name === "Open" || isHost || isOwnSlot) ? onClick : undefined}
+            style={{ cursor: (slot.slot_name === "Open" || isHost || isOwnSlot) ? 'pointer' : 'default' }}
             role="button"
             tabIndex={0}
         >
@@ -22,6 +23,7 @@ function Slot({ slot, onClick, isHost }) {
                         to={`/users/${slot.user_id}`}
                         className="lineup__slot-username"
                         onClick={(e) => e.stopPropagation()}
+                        aria-label={`View ${slot.slot_name}'s profile`}
                     >
                         {slot.slot_name}
                     </Link>
@@ -35,13 +37,14 @@ function Slot({ slot, onClick, isHost }) {
     return slotContent;
 }
 
-function Lineup({ slots, isHost, onSlotClick, onSlotDelete }) {
+function Lineup({ slots, isHost, onSlotClick, onSlotDelete, currentUserId }) {
     const [showModal, setShowModal] = useState(false);
     const [currentSlot, setCurrentSlot] = useState(null);
     const [currentSlotName, setCurrentSlotName] = useState('');
 
     const handleSlotClick = (slot) => {
-        if (slot.slot_name === "Open" || isHost) {
+        const isOwnSlot = slot.user_id === currentUserId;
+        if (slot.slot_name === "Open" || isHost || isOwnSlot) {
             setCurrentSlot(slot);
             setShowModal(true);
         }
@@ -79,10 +82,16 @@ function Lineup({ slots, isHost, onSlotClick, onSlotDelete }) {
                         <p>Slot #{currentSlot.slot_number}</p>
                         <p>Estimated start time: {new Date(currentSlot.slot_start_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
                         
-                        {isHost && currentSlot.slot_name !== "Open" ? (
+                        {(isHost || currentSlot.user_id === currentUserId) && currentSlot.slot_name !== "Open" ? (
                             <>
                                 <p>Current performer: {currentSlot.slot_name}</p>
-                                <button onClick={handleDelete} className="lineup__modal-button--delete">Delete</button>
+                                <button 
+                                    onClick={handleDelete} 
+                                    className="lineup__modal-button--delete"
+                                    aria-label={`Delete slot ${currentSlot.slot_number}`}
+                                >
+                                    Delete
+                                </button>
                             </>
                         ) : (
                             <>
@@ -113,6 +122,7 @@ function Lineup({ slots, isHost, onSlotClick, onSlotDelete }) {
                         slot={slot}
                         onClick={() => handleSlotClick(slot)}
                         isHost={isHost}
+                        currentUserId={currentUserId}
                     />
                 ))}
             </div>
