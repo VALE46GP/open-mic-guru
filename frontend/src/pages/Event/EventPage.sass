@@ -1,6 +1,6 @@
 @import '../../styles/mixins'
 
-.event-details
+.event-page
     &__button
         background: none
         border: none
@@ -44,11 +44,15 @@
         border-radius: 5px
 
         &.clickable:hover,
-        &.clickable:focus
+        &:focus
             background-color: #f0f0f0
             cursor: pointer !important
 
-    .slot-number, .slot-time, .slot-artist
+    &__slot-artist
+        flex: 2
+
+    &__slot-number,
+    &__slot-time
         flex: 1
 
     &__map-container
@@ -84,14 +88,21 @@
     tr
         text-align: left
 
+    &__qr-code
+        display: block
+        aspect-ratio: 1
+        width: 100%
+        height: auto
+
     &__qr-container
         display: flex
         flex-direction: column
         align-items: center
         margin: 1rem 0
         padding: 1rem
-        background-color: #f8f9fa
         border-radius: 8px
+        width: 100%
+        height: auto
 
     &__qr-url
         margin-top: 0.5rem

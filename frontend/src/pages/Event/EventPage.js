@@ -158,19 +158,19 @@ function EventPage() {
     function Slot({ slot, onClick, onDelete, isHost }) {
         const slotContent = (
             <div
-                className={`event-details__lineup__slot ${slot.slot_name === "Open" ? 'clickable' : ''}`}
+                className={`event-page__lineup__slot ${slot.slot_name === "Open" ? 'clickable' : ''}`}
                 onClick={slot.slot_name === "Open" ? onClick : undefined}
                 style={{ cursor: slot.slot_name === "Open" ? 'pointer' : 'default' }}
                 role="button"
                 tabIndex={0}
             >
-                <div className="slot-number">{slot.slot_number}</div>
-                <div className="slot-time">{slot.slot_start_time.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
-                <div className="slot-artist">
+                <div className="event-page__slot-number">{slot.slot_number}</div>
+                <div className="event-page__slot-time">{slot.slot_start_time.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
+                <div className="event-page__slot-artist">
                     {slot.slot_name}
                     {isHost && (
                         <div
-                            className="event-details__button event-details__button--delete"
+                            className="event-page__button event-page__button--delete"
                             onClick={(e) => {
                                 e.stopPropagation(); // Prevent row click event
                                 onDelete(slot.slot_id);
@@ -188,7 +188,7 @@ function EventPage() {
         return slot.user_id ? (
             <Link
                 to={`/users/${slot.user_id}`}
-                className="event-details__lineup__slot-link slot-link-pointer"
+                className="event-page__lineup__slot-link slot-link-pointer"
                 style={{
                     textDecoration: 'none',
                     color: 'inherit',
@@ -203,24 +203,24 @@ function EventPage() {
     }
 
     return (
-        <div className="event-details">
+        <div className="event-page">
             <BorderBox
                 onEdit={eventDetails?.host?.id === userId ? () => navigate(`/events/${eventDetails.event.id}/edit`) : null}
                 onDelete={eventDetails?.host?.id === userId ? toggleDeleteConfirmModal : null}
                 maxWidth="600px"
             >
-                <h1 className="event-details__title">{eventDetails?.event?.name}</h1>
-                <p className="event-details__info">
+                <h1 className="event-page__title">{eventDetails?.event?.name}</h1>
+                <p className="event-page__info">
                     {new Date(eventDetails?.event?.start_time).toLocaleString([], { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' })} -
                     {new Date(eventDetails?.event?.start_time).toDateString() === new Date(eventDetails?.event?.end_time).toDateString() ?
                         new Date(eventDetails?.event?.end_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) :
                         new Date(eventDetails?.event?.end_time).toLocaleString([], { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
                 </p>
-                <p className="event-details__info">Hosted by: {eventDetails?.host?.name}</p>
-                <p className="event-details__info">Slot Duration: {eventDetails?.event?.slot_duration?.minutes} minutes</p>
-                <p className="event-details__info">Additional Info: {eventDetails?.event?.additional_info}</p>
-                <p className="event-details__info">Location: {eventDetails?.venue?.name}, {eventDetails?.venue?.address}</p>
-                <div className="event-details__map-container">
+                <p className="event-page__info">Hosted by: {eventDetails?.host?.name}</p>
+                <p className="event-page__info">Slot Duration: {eventDetails?.event?.slot_duration?.minutes} minutes</p>
+                <p className="event-page__info">Additional Info: {eventDetails?.event?.additional_info}</p>
+                <p className="event-page__info">Location: {eventDetails?.venue?.name}, {eventDetails?.venue?.address}</p>
+                <div className="event-page__map-container">
                     {eventDetails?.venue?.latitude && eventDetails?.venue?.longitude && (
                         <LocationMap
                             latitude={eventDetails.venue.latitude}
@@ -228,22 +228,21 @@ function EventPage() {
                         />
                     )}
                 </div>
-                <div className="event-details__qr-container">
-                    <QRCodeSVG 
+                <div className="event-page__qr-container">
+                    <QRCodeSVG
+                        className="event-page__qr-code"
                         value={qrUrl}
-                        size={128}
                         level="H"
-                        includeMargin={true}
                     />
-                    <p className="event-details__qr-url">{qrUrl}</p>
+                    <p className="event-page__qr-url">{qrUrl}</p>
                 </div>
             </BorderBox>
 
-            <BorderBox maxWidth="600px">
-                <h2 className="event-details__title">Lineup</h2>
+            <BorderBox >
+                <h2 className="event-page__title">Lineup</h2>
                 {showModal && (
-                    <div className="event-details__modal" onClick={handleOverlayClick}>
-                        <div className="event-details__modal-content" onClick={e => e.stopPropagation()}>
+                    <div className="event-page__modal" onClick={handleOverlayClick}>
+                        <div className="event-page__modal-content" onClick={e => e.stopPropagation()}>
                             <p>Slot #{currentSlot.slot_number} is currently open.</p>
                             <p>Estimated start time: {new Date(currentSlot.slot_start_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
                             <input
@@ -257,7 +256,7 @@ function EventPage() {
                         </div>
                     </div>
                 )}
-                <div className="event-details__lineup">
+                <div className="event-page__lineup">
                     {generateAllSlots().map((slot, index) => (
                         <Slot
                             key={index}
@@ -276,8 +275,8 @@ function EventPage() {
             </BorderBox>
 
             {showDeleteConfirmModal && (
-                <div className="modal">
-                    <div className="modal-content">
+                <div className="event-page__modal">
+                    <div className="event-page__modal-content">
                         <h4>Are you sure you want to delete this event?</h4>
                         <button onClick={() => handleDeleteEvent(eventDetails.event.id)}>Confirm</button>
                         <button onClick={toggleDeleteConfirmModal}>Cancel</button>
