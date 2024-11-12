@@ -38,8 +38,6 @@ function UserPage() {
                 </button>
             )}
 
-            <h1 className="user-page__title">User Profile</h1>
-
             <BorderBox
                 onEdit={isOwnProfile ? () => navigate(`/users/${userId}/edit`) : null}
                 className="user-page__profile-box"
@@ -54,13 +52,13 @@ function UserPage() {
                             />
                         </div>
                         <div className="user-page__user-info">
-                            <h2>{userData.user.name}</h2>
+                            <h1>{userData.user.name}</h1>
                             {/*<p>{userData.user.email}</p>*/}
                         </div>
                     </div>
 
                     <div className="user-page__social-media-section">
-                        <h3>Social Media Accounts</h3>
+                        <span className="user-page__social-media-title">Social Media Accounts</span>
                         {userData.user.social_media_accounts && 
                          userData.user.social_media_accounts.length > 0 ? (
                             <div className="user-page__social-media-list">
@@ -83,15 +81,15 @@ function UserPage() {
                 </div>
             </BorderBox>
 
-            <BorderBox className="user-page__events-box">
-                <h3>Events</h3>
+            <div className="user-page__events-section">
+                <h2>Events</h2>
                 {userData.events.length > 0 ? (
                     <div className="user-page__events-grid">
                         {userData.events.map((event) => (
                             <div key={`event-${event.event_id}`} className="user-page__event-wrapper">
                                 <div className="user-page__event-role">
                                     {event.is_host && <span className="user-page__role-badge host">Host</span>}
-                                    {event.is_performer && <span className="user-page__role-badge performer">Performer</span>}
+                                    {event.is_performer && <span className="user-page__role-badge user-page__performer">Performer</span>}
                                 </div>
                                 <EventCard event={event} />
                             </div>
@@ -100,7 +98,7 @@ function UserPage() {
                 ) : (
                     <p>No events found</p>
                 )}
-            </BorderBox>
+            </div>
         </div>
     );
 }

@@ -50,7 +50,7 @@
     &__user-info
         flex-grow: 1
         
-        h2
+        h1
             margin: 0 0 0.5rem 0
             font-size: 2.5rem
             
@@ -71,6 +71,10 @@
         gap: 0.75rem
         margin-top: 1rem
 
+    &__social-media-title
+        font-size: 1.5rem
+        font-weight: 500
+
     &__social-media-item
         display: flex
         flex-direction: column
@@ -89,9 +93,9 @@
         font-style: italic
         text-align: center
 
-    &__events-box
+    &__events-section
         margin-top: 2rem
-
+        
     &__events-grid
         display: grid
         gap: 1rem
@@ -101,7 +105,6 @@
 
     &__event-wrapper
         position: relative
-        margin-bottom: 1rem
 
     &__event-role
         position: absolute
@@ -122,6 +125,10 @@
             background-color: #e3f2fd
             color: #1976d2
 
-        &.performer
+        &.user-page__performer
             background-color: #f3e5f5
             color: #7b1fa2
+
+    h2
+        text-align: center
+        font-size: 2rem
