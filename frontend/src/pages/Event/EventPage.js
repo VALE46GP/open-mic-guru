@@ -69,50 +69,40 @@ function EventPage() {
     
         try {
             const update = JSON.parse(lastMessage.data);
+            console.log('Received WebSocket update:', update);
             
-            if (update.type === 'LINEUP_UPDATE' && update.eventId === eventId) {
+            if (update.type === 'LINEUP_UPDATE' && update.eventId === parseInt(eventId)) {
+                console.log('Processing lineup update:', update);
                 setEventDetails(prevDetails => {
                     if (!prevDetails) return prevDetails;
-    
-                    const updatedLineup = [...prevDetails.lineup];
-                    
-                    if (update.action === 'CREATE') {
-                        const index = updatedLineup.findIndex(
-                            slot => slot.slot_number === update.data.slot_number
+
+                    if (update.action === 'DELETE') {
+                        return {
+                            ...prevDetails,
+                            lineup: prevDetails.lineup.filter(slot => slot.slot_id !== update.data.slotId)
+                        };
+                    } else if (update.action === 'CREATE') {
+                        console.log('Creating new slot:', update.data);
+                        const filteredLineup = prevDetails.lineup.filter(
+                            slot => slot.slot_number !== update.data.slot_number
                         );
-                        if (index !== -1) {
-                            updatedLineup[index] = {
-                                ...update.data,
-                                slot_start_time: update.data.slot_start_time
-                            };
-                        } else {
-                            updatedLineup.push({
-                                ...update.data,
-                                slot_start_time: update.data.slot_start_time
-                            });
-                        }
-                    } else if (update.action === 'DELETE') {
-                        const index = updatedLineup.findIndex(
-                            slot => slot.slot_id === update.data.slotId
-                        );
-                        if (index !== -1) {
-                            updatedLineup[index] = {
-                                ...updatedLineup[index],
-                                slot_name: "Open",
-                                user_id: null,
-                                slot_start_time: update.data.slot_start_time
-                            };
-                        }
+                        
+                        return {
+                            ...prevDetails,
+                            lineup: [
+                                ...filteredLineup,
+                                {
+                                    ...update.data,
+                                    slot_start_time: new Date(update.data.slot_start_time)
+                                }
+                            ].sort((a, b) => a.slot_number - b.slot_number)
+                        };
                     }
-    
-                    return {
-                        ...prevDetails,
-                        lineup: updatedLineup
-                    };
+                    return prevDetails;
                 });
             }
         } catch (error) {
-            console.error('Error parsing WebSocket message:', error);
+            console.error('Error processing WebSocket message:', error);
         }
     }, [lastMessage, eventId]);
 
@@ -220,12 +210,16 @@ function EventPage() {
 
     // Remove the local state update after successful DELETE
     const handleSlotDelete = async (slotId) => {
+        console.log('Deleting slot:', slotId);
         const response = await fetch(`/api/lineup_slots/${slotId}`, {
             method: 'DELETE',
         });
 
         if (!response.ok) {
+            console.error('Failed to delete slot:', response);
             alert('Failed to delete slot');
+        } else {
+            console.log('Successfully deleted slot');
         }
     };
 

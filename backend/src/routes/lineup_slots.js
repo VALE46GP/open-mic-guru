@@ -52,15 +52,17 @@ router.post('/', async (req, res) => {
 
             const lineupData = {
                 type: 'LINEUP_UPDATE',
-                eventId: event_id,
+                eventId: parseInt(event_id),
                 action: 'CREATE',
                 data: {
-                    ...result.rows[0],
-                    slot_start_time: slotStartTime,
+                    slot_id: result.rows[0].slot_id,
+                    slot_number: slot_number,
                     slot_name: slot_name,
+                    user_id: null,
                     user_name: null,
-                    non_user_identifier: nonUserId,
-                    ip_address: ipAddress
+                    slot_start_time: slotStartTime,
+                    non_user_identifier: null,
+                    ip_address: null
                 }
             };
             
@@ -119,15 +121,17 @@ router.post('/', async (req, res) => {
 
         const lineupData = {
             type: 'LINEUP_UPDATE',
-            eventId: event_id,
+            eventId: parseInt(event_id),
             action: 'CREATE',
             data: {
-                ...result.rows[0],
-                slot_start_time: slotStartTime,
+                slot_id: result.rows[0].slot_id,
+                slot_number: slot_number,
                 slot_name: slot_name,
+                user_id: null,
                 user_name: null,
-                non_user_identifier: nonUserIdForSlot,
-                ip_address: ipAddressForSlot
+                slot_start_time: slotStartTime,
+                non_user_identifier: null,
+                ip_address: null
             }
         };
         
@@ -159,38 +163,50 @@ router.get('/:eventId', async (req, res) => {
 
 // Update the delete endpoint to broadcast deletions
 router.delete('/:slotId', async (req, res) => {
-    const { slotId } = req.params;
     try {
+        const { slotId } = req.params;
+        
+        // Get slot and event details before deletion
         const slotQuery = await db.query(`
-            SELECT ls.event_id, ls.slot_number, e.start_time, e.slot_duration, e.setup_duration 
+            SELECT ls.*, e.start_time, e.slot_duration, e.setup_duration 
             FROM lineup_slots ls
             JOIN events e ON ls.event_id = e.id
             WHERE ls.id = $1
         `, [slotId]);
         
-        const slotDetails = slotQuery.rows[0];
-        await db.query('DELETE FROM lineup_slots WHERE id = $1', [slotId]);
+        if (slotQuery.rows.length === 0) {
+            return res.status(404).json({ error: 'Slot not found' });
+        }
         
-        const slotStartTime = new Date(slotDetails.start_time);
-        const slotIndex = slotDetails.slot_number - 1;
-        const totalMinutesPerSlot = slotDetails.slot_duration.minutes + slotDetails.setup_duration.minutes;
+        const slot = slotQuery.rows[0];
+        
+        // Calculate slot start time
+        const slotStartTime = new Date(slot.start_time);
+        const slotIndex = slot.slot_number - 1;
+        const totalMinutesPerSlot = slot.slot_duration.minutes + slot.setup_duration.minutes;
         slotStartTime.setMinutes(slotStartTime.getMinutes() + (slotIndex * totalMinutesPerSlot));
 
+        // Delete the slot
+        await db.query('DELETE FROM lineup_slots WHERE id = $1', [slotId]);
+
+        // Broadcast the update
         const lineupData = {
             type: 'LINEUP_UPDATE',
-            eventId: slotDetails.event_id,
+            eventId: slot.event_id,
             action: 'DELETE',
-            data: { 
-                slotId,
-                slot_number: slotDetails.slot_number,
+            data: {
+                slotId: parseInt(slotId),
+                slot_number: slot.slot_number,
                 slot_start_time: slotStartTime
             }
         };
         
+        console.log('Broadcasting delete update:', lineupData);
         req.app.locals.broadcastLineupUpdate(lineupData);
-        res.status(204).send();
+        
+        res.status(200).json({ message: 'Slot deleted successfully' });
     } catch (err) {
-        console.error(err);
+        console.error('Error deleting slot:', err);
         res.status(500).json({ error: 'Server error', details: err.message });
     }
 });
