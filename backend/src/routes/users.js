@@ -139,7 +139,15 @@ router.get('/:userId', async (req, res) => {
                 CASE 
                     WHEN ls.user_id IS NOT NULL THEN true 
                     ELSE false 
-                END AS is_performer
+                END AS is_performer,
+                ls.slot_number,
+                e.slot_duration,
+                e.setup_duration,
+                e.start_time + 
+                    (INTERVAL '1 minute' * 
+                        (ls.slot_number - 1) * 
+                        (EXTRACT(EPOCH FROM e.slot_duration + e.setup_duration) / 60)
+                    ) AS performer_slot_time
             FROM events e
             JOIN venues v ON e.venue_id = v.id
             LEFT JOIN user_roles ur ON e.id = ur.event_id 

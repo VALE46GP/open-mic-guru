@@ -91,7 +91,10 @@ function UserPage() {
                                     {event.is_host && <span className="user-page__role-badge host">Host</span>}
                                     {event.is_performer && <span className="user-page__role-badge user-page__performer">Performer</span>}
                                 </div>
-                                <EventCard event={event} />
+                                <EventCard 
+                                    event={event} 
+                                    slotTime={event.is_performer ? event.performer_slot_time : null}
+                                />
                             </div>
                         ))}
                     </div>
