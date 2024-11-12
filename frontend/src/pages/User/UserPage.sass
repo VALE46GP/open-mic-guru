@@ -35,12 +35,12 @@
 
     &__image-container
         flex-shrink: 0
-        width: 150px
-        height: 150px
+        width: 320px
+        height: 320px
         
         +media-down($xs)
-            width: 120px
-            height: 120px
+            width: 300px
+            height: 300px
 
     &__profile-image
         width: 100%
@@ -53,10 +53,10 @@
         
         h2
             margin: 0 0 0.5rem 0
-            font-size: 1.5rem
+            font-size: 2.5rem
             
             +media-down($xs)
-                font-size: 1.25rem
+                font-size: 2rem
         
         p
             margin: 0
@@ -84,21 +84,6 @@
             flex-direction: row
             align-items: center
             gap: 1rem
-
-    &__platform
-        font-weight: bold
-        color: #495057
-        
-        +media-up($md)
-            min-width: 100px
-
-    &__social-link
-        color: #007bff
-        text-decoration: none
-        word-break: break-all
-        
-        &:hover
-            text-decoration: underline
 
     &__no-social
         color: #666

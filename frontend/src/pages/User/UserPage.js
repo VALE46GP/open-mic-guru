@@ -54,7 +54,7 @@ function UserPage() {
                         </div>
                         <div className="user-page__user-info">
                             <h2>{userData.user.name}</h2>
-                            <p>{userData.user.email}</p>
+                            {/*<p>{userData.user.email}</p>*/}
                         </div>
                     </div>
 
@@ -65,14 +65,12 @@ function UserPage() {
                             <div className="user-page__social-media-list">
                                 {userData.user.social_media_accounts.map((account, index) => (
                                     <div key={index} className="user-page__social-media-item">
-                                        <span className="user-page__platform">{account.platform}</span>
                                         <a 
                                             href={account.url} 
                                             target="_blank" 
                                             rel="noopener noreferrer"
-                                            className="user-page__social-link"
                                         >
-                                            {account.url}
+                                            {account.platform}
                                         </a>
                                     </div>
                                 ))}
