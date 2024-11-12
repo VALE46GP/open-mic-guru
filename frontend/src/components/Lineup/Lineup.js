@@ -95,8 +95,22 @@ function Lineup({ slots, isHost, onSlotClick, onSlotDelete, currentUserId, curre
     };
 
     const handleConfirmSignUp = () => {
-        const isHostAssignment = isHost; // Only set this to true if the current user is the host
-        onSlotClick(currentSlot, currentSlotName, isHostAssignment); // Pass isHostAssignment flag
+        // First check if this is a non-user (no currentUserId)
+        if (!currentUserId) {
+            // Check if the name is already taken in any slot
+            const isNameTaken = slots.some(slot => 
+                slot.slot_name.toLowerCase() === currentSlotName.toLowerCase() &&
+                slot.slot_number !== currentSlot.slot_number
+            );
+
+            if (isNameTaken) {
+                alert('That name is already taken. Please choose a different name.');
+                return;
+            }
+        }
+
+        const isHostAssignment = isHost;
+        onSlotClick(currentSlot, currentSlotName, isHostAssignment);
         setShowModal(false);
         setCurrentSlotName('');
     };
