@@ -1,11 +1,13 @@
 require('dotenv').config();
-console.log(process.env.DATABASE_URL);
 const express = require('express');
 const cors = require('cors');
+const http = require('http');
 const routes = require('./src/routes');
+const initializeWebSocketServer = require('./src/websocket/WebSocketServer');
 const PORT = process.env.PORT || 3001;
 
 const app = express();
+const server = http.createServer(app);
 
 app.use(cors());
 app.use(express.json());
@@ -14,8 +16,12 @@ app.use(express.json());
 const passport = require('passport');
 app.use(passport.initialize());
 
+// Initialize WebSocket server and store broadcast function
+const { broadcastLineupUpdate } = initializeWebSocketServer(server);
+app.locals.broadcastLineupUpdate = broadcastLineupUpdate;
+
 routes(app);
 
-app.listen(PORT, () => {
+server.listen(PORT, () => {
     console.log(`Server is running on port ${PORT}`);
 });

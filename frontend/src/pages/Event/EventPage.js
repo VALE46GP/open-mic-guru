@@ -2,13 +2,12 @@ import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import LocationMap from '../../components/shared/LocationMap';
 import { useAuth } from '../../hooks/useAuth';
-import { ReactComponent as EditIcon } from '../../assets/icons/edit.svg';
-import { ReactComponent as DeleteIcon } from '../../assets/icons/delete.svg';
 import BorderBox from '../../components/shared/BorderBox/BorderBox';
 import './EventPage.sass';
 import { QRCodeSVG } from 'qrcode.react';
 import Lineup from '../../components/Lineup/Lineup';
 import { v4 as uuidv4 } from 'uuid';
+import { useWebSocketContext } from '../../context/WebSocketContext';
 
 const DEV_IP = '192.168.1.104';
 
@@ -20,11 +19,9 @@ function EventPage() {
     const [error, setError] = useState(null);
     const { getUserId } = useAuth();
     const userId = getUserId();
-    const [showModal, setShowModal] = useState(false);
-    const [currentSlot, setCurrentSlot] = useState(null);
-    const [currentSlotName, setCurrentSlotName] = useState('');
     const [showDeleteConfirmModal, setShowDeleteConfirmModal] = useState(false);
     const [qrUrl, setQrUrl] = useState('');
+    const { lastMessage } = useWebSocketContext();
 
     useEffect(() => {
         // Set a unique identifier cookie for non-users if it doesn't already exist
@@ -66,12 +63,65 @@ function EventPage() {
         setQrUrl(`${baseUrl}/events/${eventId}`);
     }, [eventId]);
 
+    // Add WebSocket event handler
+    useEffect(() => {
+        if (!lastMessage) return;
+    
+        try {
+            const update = JSON.parse(lastMessage.data);
+            
+            if (update.type === 'LINEUP_UPDATE' && update.eventId === eventId) {
+                setEventDetails(prevDetails => {
+                    if (!prevDetails) return prevDetails;
+    
+                    const updatedLineup = [...prevDetails.lineup];
+                    
+                    if (update.action === 'CREATE') {
+                        const index = updatedLineup.findIndex(
+                            slot => slot.slot_number === update.data.slot_number
+                        );
+                        if (index !== -1) {
+                            updatedLineup[index] = {
+                                ...update.data,
+                                slot_start_time: update.data.slot_start_time
+                            };
+                        } else {
+                            updatedLineup.push({
+                                ...update.data,
+                                slot_start_time: update.data.slot_start_time
+                            });
+                        }
+                    } else if (update.action === 'DELETE') {
+                        const index = updatedLineup.findIndex(
+                            slot => slot.slot_id === update.data.slotId
+                        );
+                        if (index !== -1) {
+                            updatedLineup[index] = {
+                                ...updatedLineup[index],
+                                slot_name: "Open",
+                                user_id: null,
+                                slot_start_time: update.data.slot_start_time
+                            };
+                        }
+                    }
+    
+                    return {
+                        ...prevDetails,
+                        lineup: updatedLineup
+                    };
+                });
+            }
+        } catch (error) {
+            console.error('Error parsing WebSocket message:', error);
+        }
+    }, [lastMessage, eventId]);
+
     if (isLoading) return <div>Loading...</div>;
     if (error) return <div>Error: {error}</div>;
     if (!eventDetails) return <div>No event found</div>;
 
     const generateAllSlots = () => {
-        console.log("Event Details:", eventDetails);
+        // console.log("Event Details:", eventDetails);
         if (!eventDetails?.event) return [];
 
         const startTime = new Date(eventDetails.event.start_time);
@@ -103,7 +153,7 @@ function EventPage() {
             };
         });
 
-        console.log("Generated slots:", slots);
+        // console.log("Generated slots:", slots);
         return slots;
     };
 
@@ -142,6 +192,43 @@ function EventPage() {
         setShowDeleteConfirmModal(!showDeleteConfirmModal);
     };
 
+    // Remove the local state update after successful POST
+    const handleSlotClick = async (slot, slotName, isHostAssignment) => {
+        const response = await fetch('/api/lineup_slots/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                event_id: eventId,
+                user_id: isHostAssignment ? null : userId,
+                slot_number: slot.slot_number,
+                slot_name: slotName,
+                isHostAssignment
+            }),
+        });
+
+        if (response.status === 403) {
+            alert('You can only sign up for one slot per event');
+            return;
+        }
+
+        if (!response.ok) {
+            alert('Failed to update slot');
+        }
+    };
+
+    // Remove the local state update after successful DELETE
+    const handleSlotDelete = async (slotId) => {
+        const response = await fetch(`/api/lineup_slots/${slotId}`, {
+            method: 'DELETE',
+        });
+
+        if (!response.ok) {
+            alert('Failed to delete slot');
+        }
+    };
+
     return (
         <div className="event-page">
             <BorderBox
@@ -178,48 +265,13 @@ function EventPage() {
                 </div>
             </BorderBox>
 
-            <Lineup 
+            <Lineup
                 slots={generateAllSlots()}
                 isHost={eventDetails?.host?.id === userId}
+                onSlotClick={handleSlotClick}
+                onSlotDelete={handleSlotDelete}
                 currentUserId={userId}
                 currentNonUser={eventDetails?.currentNonUser}
-                onSlotClick={async (slot, slotName, isHostAssignment) => {
-                    const response = await fetch('/api/lineup_slots/', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                        },
-                        body: JSON.stringify({
-                            event_id: eventId,
-                            user_id: isHostAssignment ? null : userId,
-                            slot_number: slot.slot_number,
-                            slot_name: slotName,
-                            isHostAssignment
-                        }),
-                    });
-
-                    if (response.status === 403) {
-                        alert('You can only sign up for one slot per event');
-                        return;
-                    }
-
-                    const data = await response.json();
-                    if (response.ok) {
-                        setEventDetails(prevDetails => {
-                            const newSlot = {
-                                ...data,
-                                non_user_identifier: prevDetails.currentNonUser?.identifier,
-                                ip_address: prevDetails.currentNonUser?.ipAddress,
-                                is_current_non_user: true // This slot belongs to the current non-user
-                            };
-                            return {
-                                ...prevDetails,
-                                lineup: [...prevDetails.lineup, newSlot]
-                            };
-                        });
-                    }
-                }}
-                onSlotDelete={handleUnsign}
             />
 
             {showDeleteConfirmModal && (

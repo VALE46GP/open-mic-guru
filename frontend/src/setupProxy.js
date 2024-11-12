@@ -9,4 +9,13 @@ module.exports = function(app) {
             pathRewrite: {'^/api': ''},
         })
     );
+
+    app.use(
+        '/ws',
+        createProxyMiddleware({
+            target: 'ws://localhost:3001',
+            ws: true,
+            changeOrigin: true
+        })
+    );
 };

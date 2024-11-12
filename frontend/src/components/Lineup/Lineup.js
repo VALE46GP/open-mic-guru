@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import BorderBox from '../shared/BorderBox/BorderBox';
 import './Lineup.sass';
+import { useWebSocket } from '../../context/WebSocketContext';
 
 function Slot({ slot, onClick, isHost, currentUserId, currentNonUserId }) {
     const canInteract = 
@@ -20,7 +21,7 @@ function Slot({ slot, onClick, isHost, currentUserId, currentNonUserId }) {
         >
             <div className="lineup__slot-number">{slot.slot_number}</div>
             <div className="lineup__slot-time">
-                {slot.slot_start_time.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                {new Date(slot.slot_start_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
             </div>
             <div className="lineup__slot-artist">
                 {slot.user_id ? (
@@ -47,27 +48,12 @@ function Lineup({ slots, isHost, onSlotClick, onSlotDelete, currentUserId, curre
     const [currentSlot, setCurrentSlot] = useState(null);
     const [currentSlotName, setCurrentSlotName] = useState('');
 
-    console.log("Lineup slots with non-user identifiers:", slots.map(slot => ({
-        slot_number: slot.slot_number,
-        non_user_identifier: slot.non_user_identifier,
-        ip_address: slot.ip_address,
-        is_current_non_user: slot.is_current_non_user
-    })));
-
     const handleSlotClick = (slot) => {
-        console.log("Clicked slot:", {
-            slot_number: slot.slot_number,
-            non_user_identifier: slot.non_user_identifier,
-            ip_address: slot.ip_address,
-            is_current_non_user: slot.is_current_non_user
-        });
-        
         // First check if the user/non-user already has a slot
         const hasExistingSlot = slots.some(s => {
             if (currentUserId) {
                 return s.user_id === currentUserId;
             } else {
-                // For non-users, check if they have a slot by comparing non_user_identifier
                 return s.non_user_identifier === currentNonUser?.identifier;
             }
         });
@@ -80,11 +66,12 @@ function Lineup({ slots, isHost, onSlotClick, onSlotDelete, currentUserId, curre
                 : slot.non_user_identifier === currentNonUser?.identifier;
 
             if (!isOwnSlot) {
-                return; // Don't open modal for slots that aren't their own
+                return;
             }
         }
 
         setCurrentSlot(slot);
+        setCurrentSlotName(slot.slot_name === "Open" ? "" : slot.slot_name);
         setShowModal(true);
     };
 
@@ -155,6 +142,7 @@ function Lineup({ slots, isHost, onSlotClick, onSlotDelete, currentUserId, curre
                                     value={currentSlotName}
                                     onChange={(e) => setCurrentSlotName(e.target.value)}
                                     onKeyPress={handleKeyPress}
+                                    autoFocus
                                 />
                                 <button
                                     onClick={handleConfirmSignUp}

@@ -5,7 +5,7 @@ const venueRoutes = require('./venues');
 const authRoutes = require('./auth');
 const lineupSlotsRoutes = require('./lineup_slots');
 const cookieParser = require('cookie-parser');
-const path = require("path");
+// const path = require("path");
 
 module.exports = (app) => {
     app.use(cookieParser());
@@ -16,7 +16,7 @@ module.exports = (app) => {
     app.use(testdbRoutes);
     app.use('/lineup_slots', lineupSlotsRoutes);
 
-    app.get('*', (req, res) => {
-        res.sendFile(path.join(__dirname, '../frontend/src/index.html'));
-    });
+    // app.get('*', (req, res) => {
+    //     res.sendFile(path.join(__dirname, '../frontend/src/index.html'));
+    // });
 };

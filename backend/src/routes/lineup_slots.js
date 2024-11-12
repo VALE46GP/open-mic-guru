@@ -40,6 +40,31 @@ router.post('/', async (req, res) => {
             `, [event_id, slot_number, slot_name]);
 
             console.log("Host-assigned slot successfully created:", result.rows[0]);
+
+            // After successful slot creation, broadcast the update
+            const eventQuery = await db.query('SELECT start_time, slot_duration, setup_duration FROM events WHERE id = $1', [event_id]);
+            const eventDetails = eventQuery.rows[0];
+
+            const slotStartTime = new Date(eventDetails.start_time);
+            const slotIndex = slot_number - 1;
+            const totalMinutesPerSlot = eventDetails.slot_duration.minutes + eventDetails.setup_duration.minutes;
+            slotStartTime.setMinutes(slotStartTime.getMinutes() + (slotIndex * totalMinutesPerSlot));
+
+            const lineupData = {
+                type: 'LINEUP_UPDATE',
+                eventId: event_id,
+                action: 'CREATE',
+                data: {
+                    ...result.rows[0],
+                    slot_start_time: slotStartTime,
+                    slot_name: slot_name,
+                    user_name: null,
+                    non_user_identifier: nonUserId,
+                    ip_address: ipAddress
+                }
+            };
+            
+            req.app.locals.broadcastLineupUpdate(lineupData);
             return res.status(201).json(result.rows[0]);
         }
 
@@ -82,6 +107,31 @@ router.post('/', async (req, res) => {
         `, [event_id, userIdForSlot, slot_number, slot_name, nonUserIdForSlot, ipAddressForSlot]);
 
         console.log("Regular slot assigned:", result.rows[0]);
+
+        // After successful slot creation, broadcast the update
+        const eventQuery = await db.query('SELECT start_time, slot_duration, setup_duration FROM events WHERE id = $1', [event_id]);
+        const eventDetails = eventQuery.rows[0];
+
+        const slotStartTime = new Date(eventDetails.start_time);
+        const slotIndex = slot_number - 1;
+        const totalMinutesPerSlot = eventDetails.slot_duration.minutes + eventDetails.setup_duration.minutes;
+        slotStartTime.setMinutes(slotStartTime.getMinutes() + (slotIndex * totalMinutesPerSlot));
+
+        const lineupData = {
+            type: 'LINEUP_UPDATE',
+            eventId: event_id,
+            action: 'CREATE',
+            data: {
+                ...result.rows[0],
+                slot_start_time: slotStartTime,
+                slot_name: slot_name,
+                user_name: null,
+                non_user_identifier: nonUserIdForSlot,
+                ip_address: ipAddressForSlot
+            }
+        };
+        
+        req.app.locals.broadcastLineupUpdate(lineupData);
         res.status(201).json(result.rows[0]);
     } catch (err) {
         console.error('Error signing up for lineup:', err);
@@ -107,10 +157,37 @@ router.get('/:eventId', async (req, res) => {
     }
 });
 
+// Update the delete endpoint to broadcast deletions
 router.delete('/:slotId', async (req, res) => {
     const { slotId } = req.params;
     try {
+        const slotQuery = await db.query(`
+            SELECT ls.event_id, ls.slot_number, e.start_time, e.slot_duration, e.setup_duration 
+            FROM lineup_slots ls
+            JOIN events e ON ls.event_id = e.id
+            WHERE ls.id = $1
+        `, [slotId]);
+        
+        const slotDetails = slotQuery.rows[0];
         await db.query('DELETE FROM lineup_slots WHERE id = $1', [slotId]);
+        
+        const slotStartTime = new Date(slotDetails.start_time);
+        const slotIndex = slotDetails.slot_number - 1;
+        const totalMinutesPerSlot = slotDetails.slot_duration.minutes + slotDetails.setup_duration.minutes;
+        slotStartTime.setMinutes(slotStartTime.getMinutes() + (slotIndex * totalMinutesPerSlot));
+
+        const lineupData = {
+            type: 'LINEUP_UPDATE',
+            eventId: slotDetails.event_id,
+            action: 'DELETE',
+            data: { 
+                slotId,
+                slot_number: slotDetails.slot_number,
+                slot_start_time: slotStartTime
+            }
+        };
+        
+        req.app.locals.broadcastLineupUpdate(lineupData);
         res.status(204).send();
     } catch (err) {
         console.error(err);
