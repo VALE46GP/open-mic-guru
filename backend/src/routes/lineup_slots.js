@@ -70,10 +70,10 @@ router.post('/', async (req, res) => {
             return res.status(201).json(result.rows[0]);
         }
 
-        // Step 3: Set non_user_identifier and ip_address for non-host assignments
+        // Step 3: Set non_user_identifier and ip_address
         const userIdForSlot = user_id || null;
-        const nonUserIdForSlot = isHostAssignment ? null : nonUserId; // Set to NULL if host assignment
-        const ipAddressForSlot = isHostAssignment ? null : ipAddress; // Set to NULL if host assignment
+        const nonUserIdForSlot = user_id ? null : (isHostAssignment ? null : nonUserId); // Set to NULL if user is logged in or if host assignment
+        const ipAddressForSlot = user_id ? null : (isHostAssignment ? null : ipAddress); // Set to NULL if user is logged in or if host assignment
 
         console.log("Proceeding with regular slot assignment:", { userIdForSlot, nonUserIdForSlot, ipAddressForSlot });
 
