@@ -3,13 +3,18 @@ import { Link } from 'react-router-dom';
 import BorderBox from '../shared/BorderBox/BorderBox';
 import './Lineup.sass';
 
-function Slot({ slot, onClick, isHost, currentUserId }) {
-    const isOwnSlot = slot.user_id === currentUserId;
+function Slot({ slot, onClick, isHost, currentUserId, currentNonUserId }) {
+    const canInteract = 
+        isHost || // Host can interact with any slot
+        (slot.slot_name === "Open") || // Anyone can interact with open slots
+        (currentUserId && slot.user_id === currentUserId) || // Logged-in users can only interact with their own slots
+        (!currentUserId && slot.non_user_identifier === currentNonUserId); // Non-users can only interact with their own slots
+
     const slotContent = (
         <div
-            className={`lineup__slot ${(slot.slot_name === "Open" || isHost || isOwnSlot) ? 'clickable' : ''}`}
-            onClick={(slot.slot_name === "Open" || isHost || isOwnSlot) ? onClick : undefined}
-            style={{ cursor: (slot.slot_name === "Open" || isHost || isOwnSlot) ? 'pointer' : 'default' }}
+            className={`lineup__slot ${canInteract ? 'clickable' : ''}`}
+            onClick={canInteract ? onClick : undefined}
+            style={{ cursor: canInteract ? 'pointer' : 'default' }}
             role="button"
             tabIndex={0}
         >
@@ -37,17 +42,50 @@ function Slot({ slot, onClick, isHost, currentUserId }) {
     return slotContent;
 }
 
-function Lineup({ slots, isHost, onSlotClick, onSlotDelete, currentUserId }) {
+function Lineup({ slots, isHost, onSlotClick, onSlotDelete, currentUserId, currentNonUser }) {
     const [showModal, setShowModal] = useState(false);
     const [currentSlot, setCurrentSlot] = useState(null);
     const [currentSlotName, setCurrentSlotName] = useState('');
 
+    console.log("Lineup slots with non-user identifiers:", slots.map(slot => ({
+        slot_number: slot.slot_number,
+        non_user_identifier: slot.non_user_identifier,
+        ip_address: slot.ip_address,
+        is_current_non_user: slot.is_current_non_user
+    })));
+
     const handleSlotClick = (slot) => {
-        const isOwnSlot = slot.user_id === currentUserId;
-        if (slot.slot_name === "Open" || isHost || isOwnSlot) {
-            setCurrentSlot(slot);
-            setShowModal(true);
+        console.log("Clicked slot:", {
+            slot_number: slot.slot_number,
+            non_user_identifier: slot.non_user_identifier,
+            ip_address: slot.ip_address,
+            is_current_non_user: slot.is_current_non_user
+        });
+        
+        // First check if the user/non-user already has a slot
+        const hasExistingSlot = slots.some(s => {
+            if (currentUserId) {
+                return s.user_id === currentUserId;
+            } else {
+                // For non-users, check if they have a slot by comparing non_user_identifier
+                return s.non_user_identifier === currentNonUser?.identifier;
+            }
+        });
+
+        // If they have an existing slot and they're not the host,
+        // only allow them to click their own slot
+        if (hasExistingSlot && !isHost) {
+            const isOwnSlot = currentUserId 
+                ? slot.user_id === currentUserId
+                : slot.non_user_identifier === currentNonUser?.identifier;
+
+            if (!isOwnSlot) {
+                return; // Don't open modal for slots that aren't their own
+            }
         }
+
+        setCurrentSlot(slot);
+        setShowModal(true);
     };
 
     const handleOverlayClick = () => {
@@ -124,6 +162,7 @@ function Lineup({ slots, isHost, onSlotClick, onSlotDelete, currentUserId }) {
                         onClick={() => handleSlotClick(slot)}
                         isHost={isHost}
                         currentUserId={currentUserId}
+                        currentNonUserId={currentNonUser?.identifier}
                     />
                 ))}
             </div>

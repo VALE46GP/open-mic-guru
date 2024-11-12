@@ -63,8 +63,10 @@ router.post('/', async (req, res) => {
         } else {
             // Check if the non-user has already signed up for a slot in this event
             const existingNonUserSlot = await db.query(
-                `SELECT id FROM lineup_slots WHERE event_id = $1 AND (non_user_identifier = $2 OR ip_address = $3)`,
-                [event_id, nonUserIdForSlot, ipAddressForSlot]
+                `SELECT id FROM lineup_slots 
+                 WHERE event_id = $1 
+                 AND non_user_identifier = $2`,
+                [event_id, nonUserIdForSlot]
             );
 
             if (existingNonUserSlot.rows.length > 0) {

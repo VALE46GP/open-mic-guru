@@ -71,27 +71,40 @@ function EventPage() {
     if (!eventDetails) return <div>No event found</div>;
 
     const generateAllSlots = () => {
-        if (!eventDetails.event || !eventDetails.lineup) {
-            console.error("Event details or lineup missing");
-            return [];
-        }
-        const startTime = new Date(eventDetails.event.start_time).getTime();
-        const endTime = new Date(eventDetails.event.end_time).getTime();
-        const slotDuration = (eventDetails.event.slot_duration.minutes + eventDetails.event.setup_duration.minutes) * 60000;
-        const totalSlots = Math.ceil((endTime - startTime) / slotDuration);
+        console.log("Event Details:", eventDetails);
+        if (!eventDetails?.event) return [];
 
-        return Array.from({ length: totalSlots }, (_, index) => {
-            const slotStartTime = new Date(startTime + index * slotDuration);
-            const matchingSlot = eventDetails.lineup.find(slot => slot.slot_number === index + 1);
+        const startTime = new Date(eventDetails.event.start_time);
+        const endTime = new Date(eventDetails.event.end_time);
+        const slotDuration = eventDetails.event.slot_duration.minutes;
+        const setupDuration = eventDetails.event.setup_duration.minutes;
+        const totalDuration = (endTime - startTime) / (1000 * 60); // Duration in minutes
+        const slotsCount = Math.floor(totalDuration / (slotDuration + setupDuration));
+
+        // Generate array of all possible slots
+        const slots = Array.from({ length: slotsCount }, (_, index) => {
+            const slotNumber = index + 1;
+            const existingSlot = eventDetails.lineup.find(slot => slot.slot_number === slotNumber);
+
+            if (existingSlot) {
+                return {
+                    ...existingSlot,
+                    slot_start_time: new Date(startTime.getTime() + index * (slotDuration + setupDuration) * 60000)
+                };
+            }
 
             return {
-                slot_id: matchingSlot ? matchingSlot.slot_id : null,
-                slot_number: index + 1,
-                slot_start_time: slotStartTime,
-                slot_name: matchingSlot ? (matchingSlot.slot_name || matchingSlot.user_name) : "Open",
-                user_id: matchingSlot ? matchingSlot.user_id : null
+                slot_id: null,
+                slot_number: slotNumber,
+                slot_name: "Open",
+                user_id: null,
+                is_current_non_user: false,
+                slot_start_time: new Date(startTime.getTime() + index * (slotDuration + setupDuration) * 60000)
             };
         });
+
+        console.log("Generated slots:", slots);
+        return slots;
     };
 
     const handleUnsign = async (slotId) => {
@@ -169,6 +182,7 @@ function EventPage() {
                 slots={generateAllSlots()}
                 isHost={eventDetails?.host?.id === userId}
                 currentUserId={userId}
+                currentNonUser={eventDetails?.currentNonUser}
                 onSlotClick={async (slot, slotName, isHostAssignment) => {
                     const response = await fetch('/api/lineup_slots/', {
                         method: 'POST',
@@ -177,19 +191,32 @@ function EventPage() {
                         },
                         body: JSON.stringify({
                             event_id: eventId,
-                            user_id: isHostAssignment ? null : userId, // Set user_id to null if it's a host assignment
+                            user_id: isHostAssignment ? null : userId,
                             slot_number: slot.slot_number,
                             slot_name: slotName,
-                            isHostAssignment // Send this flag to backend
+                            isHostAssignment
                         }),
                     });
 
+                    if (response.status === 403) {
+                        alert('You can only sign up for one slot per event');
+                        return;
+                    }
+
                     const data = await response.json();
                     if (response.ok) {
-                        setEventDetails(prevDetails => ({
-                            ...prevDetails,
-                            lineup: [...prevDetails.lineup, data]
-                        }));
+                        setEventDetails(prevDetails => {
+                            const newSlot = {
+                                ...data,
+                                non_user_identifier: prevDetails.currentNonUser?.identifier,
+                                ip_address: prevDetails.currentNonUser?.ipAddress,
+                                is_current_non_user: true // This slot belongs to the current non-user
+                            };
+                            return {
+                                ...prevDetails,
+                                lineup: [...prevDetails.lineup, newSlot]
+                            };
+                        });
                     }
                 }}
                 onSlotDelete={handleUnsign}

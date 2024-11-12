@@ -38,6 +38,9 @@ router.get('/', async (req, res) => {
 router.get('/:eventId', async (req, res) => {
     try {
         const { eventId } = req.params;
+        const nonUserId = req.cookies?.nonUserId;
+        const ipAddress = req.ip;
+
         const eventQuery = await db.query(`
             SELECT
                 e.id AS event_id,
@@ -68,12 +71,26 @@ router.get('/:eventId', async (req, res) => {
 
         const eventData = eventQuery.rows[0];
         const lineupQuery = await db.query(`
-            SELECT ls.id AS slot_id, ls.slot_number, u.name AS user_name, u.id AS user_id, ls.slot_name
+            SELECT 
+                ls.id AS slot_id, 
+                ls.slot_number,
+                ls.non_user_identifier,
+                ls.ip_address,
+                u.name AS user_name, 
+                u.id AS user_id, 
+                ls.slot_name,
+                ls.non_user_identifier,
+                ls.ip_address,
+                CASE 
+                    WHEN ls.non_user_identifier = $1 OR ls.ip_address = $2 THEN true 
+                    ELSE false 
+                END AS is_current_non_user
             FROM lineup_slots ls
-                     LEFT JOIN users u ON ls.user_id = u.id
-            WHERE ls.event_id = $1
+            LEFT JOIN users u ON ls.user_id = u.id
+            WHERE ls.event_id = $3
             ORDER BY ls.slot_number ASC
-        `, [eventId]);
+        `, [nonUserId, ipAddress, eventId]);
+
         const lineup = lineupQuery.rows;
         const eventDetails = {
             event: {
@@ -99,7 +116,16 @@ router.get('/:eventId', async (req, res) => {
             lineup: lineup
         };
 
-        res.json(eventDetails);
+        res.json({ 
+            event: eventDetails.event,
+            venue: eventDetails.venue,
+            host: eventDetails.host,
+            lineup: lineup,
+            currentNonUser: {
+                identifier: nonUserId,
+                ipAddress: ipAddress
+            }
+        });
     } catch (err) {
         console.error(err);
         res.status(500).json({ error: 'Server error', details: err.message });
