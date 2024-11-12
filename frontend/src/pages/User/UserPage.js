@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from 'react';
-import { useParams, Link, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 import BorderBox from '../../components/shared/BorderBox/BorderBox';
 import EventCard from '../../components/events/EventCard';
+import { socialMediaPlatforms } from '../../components/utils/socialMediaPlatforms'; // Import socialMediaPlatforms array
 import './UserPage.sass';
 
 function UserPage() {
@@ -24,6 +25,12 @@ function UserPage() {
     const handleLogout = () => {
         logout();
         navigate('/login');
+    };
+
+    // Helper function to get the correct icon component based on platform name
+    const getPlatformIcon = (platformName) => {
+        const platform = socialMediaPlatforms.find((p) => p.name === platformName);
+        return platform ? platform.icon : null;
     };
 
     if (!userData) return <div>Loading...</div>;
@@ -53,34 +60,27 @@ function UserPage() {
                         </div>
                         <div className="user-page__user-info">
                             <h1>{userData.user.name}</h1>
-                            {/*<p>{userData.user.email}</p>*/}
                         </div>
                     </div>
 
-                    <div className="user-page__social-media-section">
-                        <span className="user-page__social-media-title">Social Media Accounts</span>
-                        {userData.user.social_media_accounts && 
-                         userData.user.social_media_accounts.length > 0 ? (
-                            <div className="user-page__social-media-list">
-                                {userData.user.social_media_accounts.map((account, index) => (
-                                    <div key={index} className="user-page__social-media-item">
-                                        <a 
-                                            href={account.url} 
-                                            target="_blank" 
-                                            rel="noopener noreferrer"
-                                        >
-                                            {account.platform}
-                                        </a>
-                                    </div>
-                                ))}
-                            </div>
-                        ) : (
-                            <p className="user-page__no-social">No social media accounts linked</p>
-                        )}
+                    {/* Social Media Section */}
+                    <div className="user-page__social-media-list">
+                        {userData.user.social_media_accounts.map((account, index) => {
+                            const IconComponent = getPlatformIcon(account.platform); // Use the helper function here
+                            return (
+                                <div key={index} className="user-page__social-media-item">
+                                    <a href={account.url} target="_blank" rel="noopener noreferrer">
+                                        {IconComponent && <IconComponent className="user-page__social-media-icon" />}
+                                        <span>{account.platform}</span>
+                                    </a>
+                                </div>
+                            );
+                        })}
                     </div>
                 </div>
             </BorderBox>
 
+            {/* Events Section */}
             <div className="user-page__events-section">
                 <h2>Events</h2>
                 {userData.events.length > 0 ? (
@@ -91,8 +91,8 @@ function UserPage() {
                                     {event.is_host && <span className="user-page__role-badge host">Host</span>}
                                     {event.is_performer && <span className="user-page__role-badge user-page__performer">Performer</span>}
                                 </div>
-                                <EventCard 
-                                    event={event} 
+                                <EventCard
+                                    event={event}
                                     slotTime={event.is_performer ? event.performer_slot_time : null}
                                 />
                             </div>

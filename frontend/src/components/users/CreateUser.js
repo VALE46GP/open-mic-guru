@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import BorderBox from '../shared/BorderBox/BorderBox';
 import { ReactComponent as DeleteIcon } from "../../assets/icons/delete.svg";
+import { socialMediaPlatforms } from '../utils/socialMediaPlatforms';
 import './CreateUser.sass';
 
 function CreateUser({ initialData }) {
@@ -135,32 +136,55 @@ function CreateUser({ initialData }) {
             {/* BorderBox for Social Media Accounts */}
             <BorderBox className='create-user__social-media-box'>
                 <h3>Social Media Accounts</h3>
-                {socialMediaAccounts.map((account, index) => (
-                    <div key={index} className='create-user__social-media-input-group'>
-                        <input
-                            type='text'
-                            placeholder='Platform'
-                            value={account.platform}
-                            onChange={(e) => handleSocialMediaChange(index, 'platform', e.target.value)}
-                            className='create-user__social-input create-user__social-input--platform'
-                        />
-                        <input
-                            type='text'
-                            placeholder='URL'
-                            value={account.url}
-                            onChange={(e) => handleSocialMediaChange(index, 'url', e.target.value)}
-                            className='create-user__social-input create-user__social-input--url'
-                        />
-                        <button
-                            type='button'
-                            onClick={() => removeSocialMediaAccount(index)}
-                            className='create-user__delete-social-button'
-                            aria-label="Delete Social Media Account"
-                        >
-                            <DeleteIcon className="create-user__delete-icon" />
-                        </button>
-                    </div>
-                ))}
+                {socialMediaAccounts.map((account, index) => {
+                    // Find the selected platform's details
+                    const platformDetails = socialMediaPlatforms.find(
+                        (platform) => platform.name === account.platform
+                    );
+                    const PlatformIcon = platformDetails ? platformDetails.icon : null;
+
+                    return (
+                        <div key={index} className='create-user__social-media-input-group'>
+                            {/* Dropdown to select platform */}
+                            <select
+                                value={account.platform}
+                                onChange={(e) => handleSocialMediaChange(index, 'platform', e.target.value)}
+                                className='create-user__social-input create-user__social-input--platform'
+                            >
+                                <option value=''>Select Platform</option>
+                                {socialMediaPlatforms.map((platform) => (
+                                    <option key={platform.name} value={platform.name}>
+                                        {platform.name}
+                                    </option>
+                                ))}
+                            </select>
+
+                            {/* Display selected platform icon */}
+                            {PlatformIcon && <PlatformIcon className="create-user__social-icon" />}
+
+                            {/* URL input */}
+                            <input
+                                type='text'
+                                placeholder='URL'
+                                value={account.url}
+                                onChange={(e) => handleSocialMediaChange(index, 'url', e.target.value)}
+                                className='create-user__social-input create-user__social-input--url'
+                            />
+
+                            {/* Delete account button */}
+                            <button
+                                type='button'
+                                onClick={() => removeSocialMediaAccount(index)}
+                                className='create-user__delete-social-button'
+                                aria-label="Delete Social Media Account"
+                            >
+                                <DeleteIcon className="create-user__delete-icon" />
+                            </button>
+                        </div>
+                    );
+                })}
+
+                {/* Button to add a new social media account */}
                 <button type='button' onClick={addSocialMediaAccount} className='create-user__add-social-button'>
                     Add Social Media Account
                 </button>
