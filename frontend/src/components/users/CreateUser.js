@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import BorderBox from '../shared/BorderBox/BorderBox';
 import { ReactComponent as DeleteIcon } from "../../assets/icons/delete.svg";
@@ -13,6 +14,7 @@ function CreateUser({ initialData }) {
     const [error, setError] = useState(null);
     const [success, setSuccess] = useState(false);
     const fileInputRef = useRef(null);
+    const navigate = useNavigate();
 
     const defaultImageUrl = 'https://open-mic-guru.s3.us-west-1.amazonaws.com/users/user-default.jpg';
 
@@ -96,6 +98,11 @@ function CreateUser({ initialData }) {
             }
 
             setSuccess(true);
+            if (initialData?.id) {
+                navigate(`/users/${initialData.id}`);
+            } else if (result.user?.id) {
+                navigate(`/users/${result.user.id}`);
+            }
         } catch (error) {
             console.error('Registration/Update error:', error);
             setError(error.message || 'An unexpected error occurred.');
