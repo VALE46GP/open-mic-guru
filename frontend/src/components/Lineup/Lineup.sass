@@ -15,9 +15,23 @@
         padding: 0.5rem
         border: 1px solid #ccc
         border-radius: 4px
+        transition: all 0.2s ease-in-out
         
-        &.clickable:hover
-            background-color: #f5f5f5
+        &--open.clickable
+            border: 2px solid #28a745
+            box-shadow: 0 2px 4px rgba(40, 167, 69, 0.1)
+            
+            &:hover
+                background-color: rgba(40, 167, 69, 0.05)
+                box-shadow: 0 2px 6px rgba(40, 167, 69, 0.2)
+        
+        &--assigned.clickable
+            border: 2px solid #007bff
+            box-shadow: 0 2px 4px rgba(0, 123, 255, 0.1)
+            
+            &:hover
+                background-color: rgba(0, 123, 255, 0.05)
+                box-shadow: 0 2px 6px rgba(0, 123, 255, 0.2)
 
     &__slot-number
         text-align: center

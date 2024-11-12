@@ -24,9 +24,25 @@ function Slot({ slot, onClick, isHost, currentUserId, currentNonUserId, slots })
         isOwnSlot || // Users/non-users can interact with their own slots
         (slot.slot_name === "Open" && !hasExistingSlot()); // Can interact with open slots only if they don't have a slot
 
+    const getSlotClass = () => {
+        if (!canInteract) return 'lineup__slot';
+        
+        // If it's an open slot
+        if (slot.slot_name === "Open") {
+            // Only show green border if host or user hasn't taken a slot yet
+            if (isHost || !hasExistingSlot()) {
+                return 'lineup__slot lineup__slot--open clickable';
+            }
+            return 'lineup__slot';
+        }
+        
+        // For assigned slots that are clickable
+        return 'lineup__slot lineup__slot--assigned clickable';
+    };
+
     const slotContent = (
         <div
-            className={`lineup__slot ${canInteract ? 'clickable' : ''}`}
+            className={getSlotClass()}
             onClick={canInteract ? onClick : undefined}
             style={{ cursor: canInteract ? 'pointer' : 'default' }}
             role="button"
