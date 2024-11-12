@@ -1,0 +1,45 @@
+@import '../../styles/mixins'
+
+.event-card
+    padding: 0.75rem
+    
+    &__title
+        display: block
+        font-size: 1.1rem
+        font-weight: 600
+        color: #333
+        text-decoration: none
+        margin-bottom: 0.25rem
+
+        &:hover
+            color: #0066cc
+            text-decoration: underline
+
+    &__info
+        color: #666
+        font-size: 0.9rem
+        margin: 0 0 0.5rem 0
+        
+        display: -webkit-box
+        -webkit-line-clamp: 2
+        -webkit-box-orient: vertical
+        overflow: hidden
+        text-overflow: ellipsis
+
+    &__meta
+        display: flex
+        justify-content: center
+        gap: 1rem
+        font-size: 0.8rem
+        color: #666
+        width: 100%
+
+    &__meta-item
+        position: relative
+
+    &__venue-link
+        color: #0066cc
+        text-decoration: none
+
+        &:hover
+            text-decoration: underline

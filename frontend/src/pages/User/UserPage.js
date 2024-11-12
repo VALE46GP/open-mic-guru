@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 import BorderBox from '../../components/shared/BorderBox/BorderBox';
+import EventCard from '../../components/events/EventCard';
 import './UserPage.sass';
 
 function UserPage() {
@@ -85,41 +86,17 @@ function UserPage() {
             <BorderBox className="user-page__events-box">
                 <h3>Events</h3>
                 {userData.events.length > 0 ? (
-                    <table className="user-page__events-table">
-                        <thead>
-                            <tr>
-                                <th>Event</th>
-                                <th>Info</th>
-                                <th>Time</th>
-                                <th>Duration</th>
-                                <th>Venue</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {userData.events.map((event) => (
-                                <tr key={`event-${event.event_id}`}>
-                                    <td>
-                                        <Link to={`/events/${event.event_id}`}>
-                                            {event.event_name}
-                                        </Link>
-                                    </td>
-                                    <td>{event?.additional_info}</td>
-                                    <td>
-                                        {new Date(event.start_time).toLocaleTimeString([], { 
-                                            hour: '2-digit', 
-                                            minute: '2-digit' 
-                                        })}
-                                    </td>
-                                    <td>{event.slot_duration.minutes} minutes</td>
-                                    <td>
-                                        <Link to={`/venues/${event.venue_id}`}>
-                                            {event.venue_id || 'Unknown Venue'}
-                                        </Link>
-                                    </td>
-                                </tr>
-                            ))}
-                        </tbody>
-                    </table>
+                    <div className="user-page__events-grid">
+                        {userData.events.map((event) => (
+                            <div key={`event-${event.event_id}`} className="user-page__event-wrapper">
+                                <div className="user-page__event-role">
+                                    {event.is_host && <span className="user-page__role-badge host">Host</span>}
+                                    {event.is_performer && <span className="user-page__role-badge performer">Performer</span>}
+                                </div>
+                                <EventCard event={event} />
+                            </div>
+                        ))}
+                    </div>
                 ) : (
                     <p>No events found</p>
                 )}

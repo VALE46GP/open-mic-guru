@@ -121,20 +121,34 @@ router.get('/:userId', async (req, res) => {
         }
         const user = userQuery.rows[0];
 
-        // Fetch events hosted by the user
+        // Fetch both hosted events and events where user is in lineup
         const eventsQuery = await db.query(`
-            SELECT
+            SELECT DISTINCT
                 e.id AS event_id,
                 e.name AS event_name,
                 e.start_time,
                 e.end_time,
                 e.slot_duration,
                 e.additional_info,
-                v.id AS venue_id
+                v.id AS venue_id,
+                v.name AS venue_name,
+                CASE 
+                    WHEN ur.user_id IS NOT NULL THEN true 
+                    ELSE false 
+                END AS is_host,
+                CASE 
+                    WHEN ls.user_id IS NOT NULL THEN true 
+                    ELSE false 
+                END AS is_performer
             FROM events e
-                     JOIN venues v ON e.venue_id = v.id
-                     JOIN user_roles ur ON e.id = ur.event_id AND ur.role = 'host'
-            WHERE ur.user_id = $1
+            JOIN venues v ON e.venue_id = v.id
+            LEFT JOIN user_roles ur ON e.id = ur.event_id 
+                AND ur.role = 'host' 
+                AND ur.user_id = $1
+            LEFT JOIN lineup_slots ls ON e.id = ls.event_id 
+                AND ls.user_id = $1
+            WHERE ur.user_id = $1 OR ls.user_id = $1
+            ORDER BY e.start_time DESC
         `, [userId]);
 
         const events = eventsQuery.rows;

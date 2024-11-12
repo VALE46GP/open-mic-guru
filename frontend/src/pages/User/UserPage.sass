@@ -10,7 +10,6 @@
 
     &__profile-box
         +media-down($sm)
-            margin: 0.5rem
             min-width: auto
 
     &__profile-content
@@ -90,19 +89,39 @@
         font-style: italic
         text-align: center
 
-    &__events-table
-        width: 100%
-        margin-top: 1rem
-        border-collapse: collapse
+    &__events-box
+        margin-top: 2rem
 
-        th, td
-            padding: 0.75rem
-            text-align: left
-            border-bottom: 1px solid #dee2e6
+    &__events-grid
+        display: grid
+        gap: 1rem
+        
+        +media-up($md)
+            grid-template-columns: repeat(2, 1fr)
 
-        th
-            background-color: #f8f9fa
-            font-weight: bold
+    &__event-wrapper
+        position: relative
+        margin-bottom: 1rem
 
-        tr:hover
-            background-color: #f8f9fa
+    &__event-role
+        position: absolute
+        top: -0.5rem
+        right: 0.5rem
+        z-index: 1
+        display: flex
+        gap: 0.5rem
+
+    &__role-badge
+        font-size: 0.7rem
+        padding: 0.2rem 0.5rem
+        border-radius: 12px
+        text-transform: uppercase
+        font-weight: 600
+
+        &.host
+            background-color: #e3f2fd
+            color: #1976d2
+
+        &.performer
+            background-color: #f3e5f5
+            color: #7b1fa2

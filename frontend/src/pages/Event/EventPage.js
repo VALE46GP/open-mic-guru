@@ -237,7 +237,7 @@ function EventPage() {
                         new Date(eventDetails?.event?.end_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) :
                         new Date(eventDetails?.event?.end_time).toLocaleString([], { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
                 </p>
-                <p className="event-page__info">Hosted by: {eventDetails?.host?.name}</p>
+                <p className="event-page__info">Hosted by: <Link to={`/users/${eventDetails?.host?.id}`}>{eventDetails?.host?.name}</Link></p>
                 <p className="event-page__info">Slot Duration: {eventDetails?.event?.slot_duration?.minutes} minutes</p>
                 <p className="event-page__info">Additional Info: {eventDetails?.event?.additional_info}</p>
                 <p className="event-page__info">Location: {eventDetails?.venue?.name}, {eventDetails?.venue?.address}</p>
