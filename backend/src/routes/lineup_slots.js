@@ -127,11 +127,11 @@ router.post('/', async (req, res) => {
                 slot_id: result.rows[0].slot_id,
                 slot_number: slot_number,
                 slot_name: slot_name,
-                user_id: null,
+                user_id: userIdForSlot,
                 user_name: null,
                 slot_start_time: slotStartTime,
-                non_user_identifier: null,
-                ip_address: null
+                non_user_identifier: nonUserIdForSlot,
+                ip_address: ipAddressForSlot
             }
         };
         

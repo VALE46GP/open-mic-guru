@@ -4,12 +4,25 @@ import BorderBox from '../shared/BorderBox/BorderBox';
 import './Lineup.sass';
 import { useWebSocket } from '../../context/WebSocketContext';
 
-function Slot({ slot, onClick, isHost, currentUserId, currentNonUserId }) {
+function Slot({ slot, onClick, isHost, currentUserId, currentNonUserId, slots }) {
+    const isOwnSlot = 
+        (currentUserId && slot.user_id === currentUserId) || // For logged-in users
+        (!currentUserId && slot.non_user_identifier === currentNonUserId); // For non-users
+
+    const hasExistingSlot = () => {
+        return slots.some(s => {
+            if (currentUserId) {
+                return s.user_id === currentUserId;
+            } else {
+                return s.non_user_identifier === currentNonUserId;
+            }
+        });
+    };
+
     const canInteract = 
         isHost || // Host can interact with any slot
-        (slot.slot_name === "Open") || // Anyone can interact with open slots
-        (currentUserId && slot.user_id === currentUserId) || // Logged-in users can only interact with their own slots
-        (!currentUserId && slot.non_user_identifier === currentNonUserId); // Non-users can only interact with their own slots
+        isOwnSlot || // Users/non-users can interact with their own slots
+        (slot.slot_name === "Open" && !hasExistingSlot()); // Can interact with open slots only if they don't have a slot
 
     const slotContent = (
         <div
@@ -49,24 +62,23 @@ function Lineup({ slots, isHost, onSlotClick, onSlotDelete, currentUserId, curre
     const [currentSlotName, setCurrentSlotName] = useState('');
 
     const handleSlotClick = (slot) => {
-        // First check if the user/non-user already has a slot
-        const hasExistingSlot = slots.some(s => {
-            if (currentUserId) {
-                return s.user_id === currentUserId;
-            } else {
-                return s.non_user_identifier === currentNonUser?.identifier;
-            }
-        });
+        const isOwnSlot = currentUserId 
+            ? slot.user_id === currentUserId
+            : slot.non_user_identifier === currentNonUser?.identifier;
 
         // If they have an existing slot and they're not the host,
-        // only allow them to click their own slot
-        if (hasExistingSlot && !isHost) {
-            const isOwnSlot = currentUserId 
-                ? slot.user_id === currentUserId
-                : slot.non_user_identifier === currentNonUser?.identifier;
+        // only allow them to click their own slot or prevent clicking open slots
+        if (!isHost) {
+            const hasExistingSlot = slots.some(s => {
+                if (currentUserId) {
+                    return s.user_id === currentUserId;
+                } else {
+                    return s.non_user_identifier === currentNonUser?.identifier;
+                }
+            });
 
-            if (!isOwnSlot) {
-                return;
+            if (hasExistingSlot && !isOwnSlot) {
+                return; // Prevent interaction if they have a slot and trying to click another
             }
         }
 
@@ -161,6 +173,7 @@ function Lineup({ slots, isHost, onSlotClick, onSlotDelete, currentUserId, curre
                     <Slot
                         key={index}
                         slot={slot}
+                        slots={slots}
                         onClick={() => handleSlotClick(slot)}
                         isHost={isHost}
                         currentUserId={currentUserId}
