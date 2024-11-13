@@ -1,15 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '../../hooks/useAuth';
-import { Link } from 'react-router-dom';
-
-function parseInterval(interval) {
-    let totalMinutes = 0;
-    if (interval.hours) totalMinutes += interval.hours * 60;
-    if (interval.minutes) totalMinutes += interval.minutes;
-    if (interval.seconds) totalMinutes += interval.seconds / 60;
-
-    return `${totalMinutes} minutes`;
-}
+import EventCard from '../../components/events/EventCard';
+import BorderBox from '../../components/shared/BorderBox/BorderBox';
+import './EventsPage.sass';
 
 function EventsPage() {
   const [myEvents, setMyEvents] = useState([]);
@@ -23,8 +16,18 @@ function EventsPage() {
         const response = await fetch('/api/events');
         const events = await response.json();
 
-        const myEvents = events.filter(event => event.host_id === userId);
-        const otherEvents = events.filter(event => event.host_id !== userId);
+        // Filter events where user is either host or performer
+        const myEvents = events.filter(event => 
+          event.host_id === userId || event.performers?.includes(userId)
+        ).map(event => ({
+          ...event,
+          is_host: event.host_id === userId,
+          is_performer: event.performers?.includes(userId)
+        }));
+
+        const otherEvents = events.filter(event => 
+          event.host_id !== userId && !event.performers?.includes(userId)
+        );
 
         setMyEvents(myEvents.sort((a, b) => new Date(a.start_time) - new Date(b.start_time)));
         setOtherEvents(otherEvents.sort((a, b) => new Date(a.start_time) - new Date(b.start_time)));
@@ -37,67 +40,38 @@ function EventsPage() {
   }, [userId]);
 
   return (
-    <div>
-      <h1>Events</h1>
-      <h2>My Events</h2>
-      <table>
-        <thead>
-          <tr>
-            <th>id</th>
-            <th>name</th>
-            <th>additional_info</th>
-            <th>start_time</th>
-            <th>end_time</th>
-            <th>slot_duration</th>
-            <th>venue_id</th>
-            <th>host_id</th>
-          </tr>
-        </thead>
-        <tbody>
-          {myEvents.map(event => (
-            <tr key={`event-${event.event_id}`}>
-              <td><Link to={`/events/${event.event_id}`}>{event.event_id}</Link></td>
-              <td>{event.event_name}</td>
-              <td>{event.additional_info}</td>
-              <td>{new Date(event.start_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</td>
-              <td>{new Date(event.end_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</td>
-              <td>{parseInterval(event.slot_duration)}</td>
-              <td><Link to={`/venues/${event.venue_id}`}>{event.venue_id}</Link></td>
-              <td><Link to={`/users/${event.host_id}`}>{event.host_id}</Link></td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+    <div className="events-page">
+      {myEvents.length > 0 && (
+        <div className="events-page__section">
+          <h2 className="events-page__title">My Events</h2>
+          <div className="events-page__grid">
+            {myEvents.map(event => (
+              <div key={`event-${event.event_id}`} className="events-page__event-wrapper">
+                <div className="events-page__event-role">
+                  {event.is_host && <span className="events-page__role-badge host">Host</span>}
+                  {event.is_performer && <span className="events-page__role-badge performer">Performer</span>}
+                </div>
+                <EventCard 
+                  event={event}
+                  slotTime={event.is_performer ? event.performer_slot_time : null}
+                />
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
-      <h2>Other Events</h2>
-      <table>
-        <thead>
-          <tr>
-            <th>id</th>
-            <th>name</th>
-            <th>additional_info</th>
-            <th>start_time</th>
-            <th>end_time</th>
-            <th>slot_duration</th>
-            <th>venue_id</th>
-            <th>host_id</th>
-          </tr>
-        </thead>
-        <tbody>
+      <div className="events-page__section">
+        <h2 className="events-page__title">Other Events</h2>
+        <div className="events-page__grid">
           {otherEvents.map(event => (
-            <tr key={`event-${event.event_id}`}>
-              <td><Link to={`/events/${event.event_id}`}>{event.event_id}</Link></td>
-              <td>{event.event_name}</td>
-              <td>{event.additional_info}</td>
-              <td>{new Date(event.start_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</td>
-              <td>{new Date(event.end_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</td>
-              <td>{parseInterval(event.slot_duration)}</td>
-              <td><Link to={`/venues/${event.venue_id}`}>{event.venue_id}</Link></td>
-              <td><Link to={`/users/${event.host_id}`}>{event.host_id}</Link></td>
-            </tr>
+            <EventCard 
+              key={`event-${event.event_id}`} 
+              event={event}
+            />
           ))}
-        </tbody>
-      </table>
+        </div>
+      </div>
     </div>
   );
 }

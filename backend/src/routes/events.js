@@ -7,7 +7,7 @@ const verifyToken = require('../middleware/verifyToken');
 router.get('/', async (req, res) => {
     try {
         const result = await db.query(`
-            SELECT
+            SELECT DISTINCT
                 e.id AS event_id,
                 e.name AS event_name,
                 e.start_time,
@@ -21,13 +21,42 @@ router.get('/', async (req, res) => {
                 v.latitude AS venue_latitude,
                 v.longitude AS venue_longitude,
                 u.id AS host_id,
-                u.name AS host_name
+                u.name AS host_name,
+                ls.user_id AS performer_id,
+                ls.slot_number,
+                e.start_time + 
+                    (INTERVAL '1 minute' * 
+                        (ls.slot_number - 1) * 
+                        (EXTRACT(EPOCH FROM e.slot_duration + e.setup_duration) / 60)
+                    ) AS performer_slot_time
             FROM events e
             JOIN venues v ON e.venue_id = v.id
             LEFT JOIN user_roles ur ON e.id = ur.event_id AND ur.role = 'host'
             LEFT JOIN users u ON ur.user_id = u.id
+            LEFT JOIN lineup_slots ls ON e.id = ls.event_id
         `);
-        res.json(result.rows);
+
+        // Group performers by event
+        const eventsMap = new Map();
+        result.rows.forEach(row => {
+            const eventId = row.event_id;
+            if (!eventsMap.has(eventId)) {
+                eventsMap.set(eventId, {
+                    ...row,
+                    performers: [],
+                    performer_slot_times: {}
+                });
+            }
+            if (row.performer_id) {
+                const event = eventsMap.get(eventId);
+                if (!event.performers.includes(row.performer_id)) {
+                    event.performers.push(row.performer_id);
+                    event.performer_slot_times[row.performer_id] = row.performer_slot_time;
+                }
+            }
+        });
+
+        res.json(Array.from(eventsMap.values()));
     } catch (err) {
         console.error(err);
         res.status(500).send('Server error');
