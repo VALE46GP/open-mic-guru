@@ -93,6 +93,7 @@ function EventPage() {
                                 ...filteredLineup,
                                 {
                                     ...update.data,
+                                    user_image: update.data.user_image,
                                     slot_start_time: new Date(update.data.slot_start_time)
                                 }
                             ].sort((a, b) => a.slot_number - b.slot_number)
@@ -129,7 +130,8 @@ function EventPage() {
             if (existingSlot) {
                 return {
                     ...existingSlot,
-                    slot_start_time: new Date(startTime.getTime() + index * (slotDuration + setupDuration) * 60000)
+                    slot_start_time: new Date(startTime.getTime() + index * (slotDuration + setupDuration) * 60000),
+                    user_image: existingSlot.user_image
                 };
             }
 
@@ -138,6 +140,7 @@ function EventPage() {
                 slot_number: slotNumber,
                 slot_name: "Open",
                 user_id: null,
+                user_image: null,
                 is_current_non_user: false,
                 slot_start_time: new Date(startTime.getTime() + index * (slotDuration + setupDuration) * 60000)
             };

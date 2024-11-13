@@ -60,6 +60,7 @@ router.post('/', async (req, res) => {
                     slot_name: slot_name,
                     user_id: null,
                     user_name: null,
+                    user_image: result.rows[0].user_image,
                     slot_start_time: slotStartTime,
                     non_user_identifier: null,
                     ip_address: null
@@ -129,6 +130,7 @@ router.post('/', async (req, res) => {
                 slot_name: slot_name,
                 user_id: userIdForSlot,
                 user_name: null,
+                user_image: result.rows[0].user_image,
                 slot_start_time: slotStartTime,
                 non_user_identifier: nonUserIdForSlot,
                 ip_address: ipAddressForSlot

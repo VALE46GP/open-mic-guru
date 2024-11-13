@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import BorderBox from '../shared/BorderBox/BorderBox';
 import './Lineup.sass';
-import { useWebSocket } from '../../context/WebSocketContext';
 
 function Slot({ slot, onClick, isHost, currentUserId, currentNonUserId, slots }) {
     const isOwnSlot = 
@@ -54,14 +53,23 @@ function Slot({ slot, onClick, isHost, currentUserId, currentNonUserId, slots })
             </div>
             <div className="lineup__slot-artist">
                 {slot.user_id ? (
-                    <Link
-                        to={`/users/${slot.user_id}`}
-                        className="lineup__slot-username"
-                        onClick={(e) => e.stopPropagation()}
-                        aria-label={`View ${slot.slot_name}'s profile`}
-                    >
-                        {slot.slot_name}
-                    </Link>
+                    <>
+                        <Link
+                            to={`/users/${slot.user_id}`}
+                            className="lineup__slot-username"
+                            onClick={(e) => e.stopPropagation()}
+                            aria-label={`View ${slot.slot_name}'s profile`}
+                        >
+                            {slot.slot_name}
+                        </Link>
+                        {slot.user_image && (
+                            <img 
+                                src={slot.user_image} 
+                                alt={`${slot.slot_name}'s profile`} 
+                                className="lineup__slot-user-image"
+                            />
+                        )}
+                    </>
                 ) : (
                     slot.slot_name
                 )}

@@ -107,6 +107,7 @@ router.get('/:eventId', async (req, res) => {
                 ls.ip_address,
                 u.name AS user_name, 
                 u.id AS user_id, 
+                u.image AS user_image,
                 ls.slot_name,
                 ls.non_user_identifier,
                 ls.ip_address,
