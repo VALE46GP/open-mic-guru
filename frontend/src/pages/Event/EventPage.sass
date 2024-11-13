@@ -28,9 +28,6 @@
         align-items: center
         gap: .5rem
 
-    &__info
-        color: #666
-
     &__lineup
         display: flex
         flex-direction: column
@@ -117,4 +114,25 @@
         &:focus
             background-color: #f0f0f0
             cursor: pointer !important
+
+    &__host-link
+        display: inline-flex
+        align-items: center
+        gap: 0.5rem
+        text-decoration: none
+        
+        &:hover
+            text-decoration: underline
+
+    &__host-image-container
+        display: block
+        align-items: center
+        margin-bottom: .5rem
+        width: 100%
+
+    &__host-image
+        width: 100px
+        height: 100px
+        border-radius: 50%
+        object-fit: cover
 

@@ -234,13 +234,29 @@ function EventPage() {
                 maxWidth="600px"
             >
                 <h1 className="event-page__title">{eventDetails?.event?.name}</h1>
-                <p className="event-page__info">
+                <p>
                     {new Date(eventDetails?.event?.start_time).toLocaleString([], { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' })} -
                     {new Date(eventDetails?.event?.start_time).toDateString() === new Date(eventDetails?.event?.end_time).toDateString() ?
                         new Date(eventDetails?.event?.end_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) :
                         new Date(eventDetails?.event?.end_time).toLocaleString([], { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
                 </p>
-                <p className="event-page__info">Hosted by: <Link to={`/users/${eventDetails?.host?.id}`}>{eventDetails?.host?.name}</Link></p>
+                <div className="event-page__host-image-container">
+                    <Link to={`/users/${eventDetails?.host?.id}`}>
+                        {eventDetails?.host?.image && (
+                            <img
+                                src={eventDetails.host.image}
+                                alt={`${eventDetails.host.name}'s profile`}
+                                className="event-page__host-image"
+                            />
+                        )}
+                    </Link>
+                </div>
+                <p>
+                    Hosted by:
+                    <Link to={`/users/${eventDetails?.host?.id}`} className="event-page__host-link">
+                        {eventDetails?.host?.name}
+                    </Link>
+                </p>
                 <p className="event-page__info">Slot Duration: {eventDetails?.event?.slot_duration?.minutes} minutes</p>
                 <p className="event-page__info">Additional Info: {eventDetails?.event?.additional_info}</p>
                 <p className="event-page__info">Location: {eventDetails?.venue?.name}, {eventDetails?.venue?.address}</p>
@@ -252,14 +268,16 @@ function EventPage() {
                         />
                     )}
                 </div>
-                <div className="event-page__qr-container">
-                    <QRCodeSVG
-                        className="event-page__qr-code"
-                        value={qrUrl}
-                        level="H"
-                    />
-                    <p className="event-page__qr-url">{qrUrl}</p>
-                </div>
+                {eventDetails?.host?.id === userId && (
+                    <div className="event-page__qr-container">
+                        <QRCodeSVG
+                            className="event-page__qr-code"
+                            value={qrUrl}
+                            level="H"
+                        />
+                        <p className="event-page__qr-url">{qrUrl}</p>
+                    </div>
+                )}
             </BorderBox>
 
             <Lineup

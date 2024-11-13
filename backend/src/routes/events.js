@@ -85,7 +85,8 @@ router.get('/:eventId', async (req, res) => {
                 v.latitude AS venue_latitude,
                 v.longitude AS venue_longitude,
                 u.id AS host_id,
-                u.name AS host_name
+                u.name AS host_name,
+                u.image AS host_image
             FROM events e
                      JOIN venues v ON e.venue_id = v.id
                      JOIN user_roles ur ON e.id = ur.event_id AND ur.role = 'host'
@@ -142,6 +143,7 @@ router.get('/:eventId', async (req, res) => {
             host: {
                 id: eventData.host_id,
                 name: eventData.host_name,
+                image: eventData.host_image
             },
             lineup: lineup
         };

@@ -69,22 +69,26 @@ function UserPage() {
                 )}
             </div>
 
-            <h2>Social Media</h2>
-            <BorderBox className="user-page__social-media-box">
-                <div className="user-page__social-media-list">
-                    {userData.user.social_media_accounts.map((account, index) => {
-                        const IconComponent = getPlatformIcon(account.platform);
-                        return (
-                            <div key={index} className="user-page__social-media-item">
-                                <a href={account.url} target="_blank" rel="noopener noreferrer">
-                                    {IconComponent && <IconComponent className="user-page__social-media-icon" />}
-                                    <span>{account.platform}</span>
-                                </a>
-                            </div>
-                        );
-                    })}
-                </div>
-            </BorderBox>
+            {userData.user.social_media_accounts.length > 0 && (
+                <>
+                    <h2>Social Media</h2>
+                    <BorderBox className="user-page__social-media-box">
+                        <div className="user-page__social-media-list">
+                            {userData.user.social_media_accounts.map((account, index) => {
+                                const IconComponent = getPlatformIcon(account.platform);
+                                return (
+                                    <div key={index} className="user-page__social-media-item">
+                                        <a href={account.url} target="_blank" rel="noopener noreferrer">
+                                            {IconComponent && <IconComponent className="user-page__social-media-icon" />}
+                                            <span>{account.platform}</span>
+                                        </a>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    </BorderBox>
+                </>
+            )}
 
             <div className="user-page__events-section">
                 <h2>Events</h2>
