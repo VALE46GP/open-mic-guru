@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 import BorderBox from '../../components/shared/BorderBox/BorderBox';
 import EventCard from '../../components/events/EventCard';
-import { socialMediaPlatforms } from '../../components/utils/socialMediaPlatforms'; // Import socialMediaPlatforms array
+import { socialMediaPlatforms } from '../../components/utils/socialMediaPlatforms';
 import './UserPage.sass';
 
 function UserPage() {
@@ -27,7 +27,6 @@ function UserPage() {
         navigate('/login');
     };
 
-    // Helper function to get the correct icon component based on platform name
     const getPlatformIcon = (platformName) => {
         const platform = socialMediaPlatforms.find((p) => p.name === platformName);
         return platform ? platform.icon : null;
@@ -39,48 +38,54 @@ function UserPage() {
 
     return (
         <div className="user-page">
-            {isOwnProfile && (
-                <button onClick={handleLogout} className="user-page__logout-button">
-                    Logout
-                </button>
-            )}
-
-            <BorderBox
-                onEdit={isOwnProfile ? () => navigate(`/users/${userId}/edit`) : null}
-                className="user-page__profile-box"
-            >
-                <div className="user-page__profile-content">
-                    <div className="user-page__profile-section">
-                        <div className="user-page__image-container">
-                            <img
-                                src={userData.user.image || defaultImageUrl}
-                                alt={`${userData.user.name}'s profile`}
-                                className="user-page__profile-image"
-                            />
-                        </div>
-                        <div className="user-page__user-info">
-                            <h1>{userData.user.name}</h1>
-                        </div>
+            <div className="user-page__header">
+                <div className="user-page__profile-section">
+                    <div className="user-page__image-container">
+                        <img
+                            src={userData.user.image || defaultImageUrl}
+                            alt={`${userData.user.name}'s profile`}
+                            className="user-page__profile-image"
+                        />
                     </div>
-
-                    {/* Social Media Section */}
-                    <div className="user-page__social-media-list">
-                        {userData.user.social_media_accounts.map((account, index) => {
-                            const IconComponent = getPlatformIcon(account.platform); // Use the helper function here
-                            return (
-                                <div key={index} className="user-page__social-media-item">
-                                    <a href={account.url} target="_blank" rel="noopener noreferrer">
-                                        {IconComponent && <IconComponent className="user-page__social-media-icon" />}
-                                        <span>{account.platform}</span>
-                                    </a>
-                                </div>
-                            );
-                        })}
+                    <div className="user-page__user-info">
+                        <h1>{userData.user.name}</h1>
                     </div>
+                </div>
+                {isOwnProfile && (
+                    <div className="user-page__actions">
+                        <button 
+                            onClick={() => navigate(`/users/${userId}/edit`)} 
+                            className="user-page__edit-button"
+                        >
+                            Edit Profile
+                        </button>
+                        <button 
+                            onClick={handleLogout} 
+                            className="user-page__logout-button"
+                        >
+                            Logout
+                        </button>
+                    </div>
+                )}
+            </div>
+
+            <h2>Social Media</h2>
+            <BorderBox className="user-page__social-media-box">
+                <div className="user-page__social-media-list">
+                    {userData.user.social_media_accounts.map((account, index) => {
+                        const IconComponent = getPlatformIcon(account.platform);
+                        return (
+                            <div key={index} className="user-page__social-media-item">
+                                <a href={account.url} target="_blank" rel="noopener noreferrer">
+                                    {IconComponent && <IconComponent className="user-page__social-media-icon" />}
+                                    <span>{account.platform}</span>
+                                </a>
+                            </div>
+                        );
+                    })}
                 </div>
             </BorderBox>
 
-            {/* Events Section */}
             <div className="user-page__events-section">
                 <h2>Events</h2>
                 {userData.events.length > 0 ? (

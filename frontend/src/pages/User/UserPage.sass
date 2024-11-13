@@ -3,30 +3,30 @@
 .user-page
     max-width: 800px
     margin: 0 auto
+        
+    h1
+        margin: 0
+        font-size: 3rem
+        text-align: center
+        
+        +media-down($xs)
+            font-size: 2.5rem
 
     +media-down($sm)
         padding: 10px
 
-    &__profile-box
-        +media-down($sm)
-            min-width: auto
-
-    &__profile-content
-        display: flex
-        flex-direction: column
-        width: 100%
-        gap: 2rem
+    &__header
+        margin-bottom: 2rem
 
     &__profile-section
+        display: flex
+        flex-direction: column
         align-items: center
         gap: 1.5rem
-        padding-bottom: 2rem
-        border-bottom: 1px solid #dee2e6
-        text-align: center
-
+        margin-bottom: 1rem
+        
         +media-up($md)
             flex-direction: row
-            text-align: left
             align-items: flex-start
 
     &__image-container
@@ -47,58 +47,62 @@
 
     &__user-info
         flex-grow: 1
-        
-        h1
-            margin: 0 0 0.5rem 0
-            font-size: 2.5rem
-            text-align: center
-            
-            +media-down($xs)
-                font-size: 2rem
-        
-        p
-            margin: 0
-            color: #666
-            font-size: 1rem
-            
-            +media-down($xs)
-                font-size: 0.9rem
 
-    &__social-media
+    &__actions
         display: flex
-        flex-direction: column
-        gap: 0.75rem
+        justify-content: center
+        gap: 1rem
         margin-top: 1rem
 
-    &__social-media-title
-        font-size: 1.5rem
+    &__edit-button,
+    &__logout-button
+        padding: 0.5rem 1rem
+        border-radius: 4px
         font-weight: 500
+        cursor: pointer
+        border: none
+        transition: background-color 0.2s ease
+
+    &__edit-button
+        background-color: #007bff
+        color: white
+        
+        &:hover
+            background-color: #0056b3
+
+    &__logout-button
+        background-color: #dc3545
+        color: white
+        
+        &:hover
+            background-color: #c82333
+
+    &__social-media-box
+        margin-bottom: 2rem
+
+    &__social-media-list
+        display: flex
+        flex-wrap: wrap
+        gap: 1rem
+        justify-content: center
 
     &__social-media-item
-        display: flex
-        flex-direction: column
-        gap: 0.25rem
-        padding: 0.75rem
-        border-radius: 4px
-
-        +media-up($md)
-            flex-direction: row
-            align-items: center
-            gap: 1rem
-
         a
-            color: black
+            display: flex
+            align-items: center
+            gap: 0.5rem
+            color: #333
             text-decoration: none
+            padding: 0.5rem 1rem
+            border-radius: 4px
+            transition: background-color 0.2s ease
+
+            &:hover
+                background-color: #f0f0f0
 
     &__social-media-icon
-        margin-right: .5rem
-        width: 40px
-        height: 40px
-
-    &__no-social
-        color: #666
-        font-style: italic
-        text-align: center
+        width: 24px
+        height: 24px
 
     &__events-section
         margin-top: 2rem
@@ -106,33 +110,6 @@
     &__events-grid
         display: grid
         gap: 1rem
-        //grid-template-columns: repeat(auto-fill, minmax(300px, 1fr))
-
-    &__event-wrapper
-        position: relative
-
-    &__event-role
-        position: absolute
-        top: -0.5rem
-        right: 0.5rem
-        z-index: 1
-        display: flex
-        gap: 0.5rem
-
-    &__role-badge
-        font-size: 0.7rem
-        padding: 0.2rem 0.5rem
-        border-radius: 12px
-        text-transform: uppercase
-        font-weight: 600
-
-        &.host
-            background-color: #e3f2fd
-            color: #1976d2
-
-        &.user-page__performer
-            background-color: #f3e5f5
-            color: #7b1fa2
 
     h2
         text-align: center
