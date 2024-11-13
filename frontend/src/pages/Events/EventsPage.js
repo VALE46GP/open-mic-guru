@@ -46,16 +46,11 @@ function EventsPage() {
           <h2 className="events-page__title">My Events</h2>
           <div className="events-page__grid">
             {myEvents.map(event => (
-              <div key={`event-${event.event_id}`} className="events-page__event-wrapper">
-                <div className="events-page__event-role">
-                  {event.is_host && <span className="events-page__role-badge host">Host</span>}
-                  {event.is_performer && <span className="events-page__role-badge performer">Performer</span>}
-                </div>
-                <EventCard 
-                  event={event}
-                  slotTime={event.is_performer ? event.performer_slot_time : null}
-                />
-              </div>
+              <EventCard 
+                key={`event-${event.event_id}`} 
+                event={event}
+                slotTime={event.is_performer ? event.performer_slot_time : null}
+              />
             ))}
           </div>
         </div>

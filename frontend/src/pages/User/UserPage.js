@@ -86,16 +86,11 @@ function UserPage() {
                 {userData.events.length > 0 ? (
                     <div className="user-page__events-grid">
                         {userData.events.map((event) => (
-                            <div key={`event-${event.event_id}`} className="user-page__event-wrapper">
-                                <div className="user-page__event-role">
-                                    {event.is_host && <span className="user-page__role-badge host">Host</span>}
-                                    {event.is_performer && <span className="user-page__role-badge user-page__performer">Performer</span>}
-                                </div>
-                                <EventCard
-                                    event={event}
-                                    slotTime={event.is_performer ? event.performer_slot_time : null}
-                                />
-                            </div>
+                            <EventCard
+                                key={`event-${event.event_id}`}
+                                event={event}
+                                slotTime={event.is_performer ? event.performer_slot_time : null}
+                            />
                         ))}
                     </div>
                 ) : (
