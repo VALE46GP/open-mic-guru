@@ -18,8 +18,6 @@
         gap: 2rem
 
     &__profile-section
-        display: flex
-        flex-direction: column
         align-items: center
         gap: 1.5rem
         padding-bottom: 2rem
@@ -33,6 +31,7 @@
 
     &__image-container
         flex-shrink: 0
+        margin: 0 auto
         width: 320px
         height: 320px
         
@@ -52,6 +51,7 @@
         h1
             margin: 0 0 0.5rem 0
             font-size: 2.5rem
+            text-align: center
             
             +media-down($xs)
                 font-size: 2rem
@@ -79,13 +79,21 @@
         flex-direction: column
         gap: 0.25rem
         padding: 0.75rem
-        background-color: #f8f9fa
         border-radius: 4px
 
         +media-up($md)
             flex-direction: row
             align-items: center
             gap: 1rem
+
+        a
+            color: black
+            text-decoration: none
+
+    &__social-media-icon
+        margin-right: .5rem
+        width: 40px
+        height: 40px
 
     &__no-social
         color: #666
@@ -98,9 +106,7 @@
     &__events-grid
         display: grid
         gap: 1rem
-        
-        +media-up($md)
-            grid-template-columns: repeat(2, 1fr)
+        //grid-template-columns: repeat(auto-fill, minmax(300px, 1fr))
 
     &__event-wrapper
         position: relative
