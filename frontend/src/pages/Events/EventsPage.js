@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '../../hooks/useAuth';
 import EventCard from '../../components/events/EventCard';
-import BorderBox from '../../components/shared/BorderBox/BorderBox';
+import EventsMap from '../../components/events/EventsMap';
 import './EventsPage.sass';
 
 function EventsPage() {
@@ -15,14 +15,12 @@ function EventsPage() {
         const response = await fetch('/api/events');
         const eventsData = await response.json();
 
-        // Add is_host and is_performer flags to all events
         const processedEvents = eventsData.map(event => ({
           ...event,
           is_host: event.host_id === userId,
           is_performer: event.performers?.includes(userId)
         }));
 
-        // Sort all events by start time
         setEvents(processedEvents.sort((a, b) => new Date(a.start_time) - new Date(b.start_time)));
       } catch (error) {
         console.error('Error fetching events:', error);
@@ -36,6 +34,7 @@ function EventsPage() {
     <div className="events-page">
       <div className="events-page__section">
         <h2 className="events-page__title">Events</h2>
+        <EventsMap events={events} userId={userId} />
         <div className="events-page__grid">
           {events.map(event => (
             <EventCard 
