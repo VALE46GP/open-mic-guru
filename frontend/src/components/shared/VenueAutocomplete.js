@@ -6,7 +6,7 @@ const VenueAutocomplete = ({
     resetTrigger, 
     onResetComplete, 
     initialValue,
-    restrictToEstablishments = false,
+    specificCoordinates = false,
     placeholder = "Location"
 }) => {
     const autocompleteInputRef = useRef(null);
@@ -16,24 +16,26 @@ const VenueAutocomplete = ({
         const checkGoogleMapsLoaded = setInterval(() => {
             if (window.google && window.google.maps && window.google.maps.places && autocompleteInputRef.current) {
                 clearInterval(checkGoogleMapsLoaded);
-                
+
+                // Set types based on specificCoordinates flag
                 const autocomplete = new window.google.maps.places.Autocomplete(
                     autocompleteInputRef.current,
-                    restrictToEstablishments ? {
-                        types: ['establishment']
-                    } : {}
+                    {
+                        types: specificCoordinates ? ['establishment'] : [],
+                        fields: ['place_id', 'name', 'formatted_address', 'geometry', 'address_components', 'utc_offset_minutes']
+                    }
                 );
 
-                console.log('Autocomplete options:', {
-                    types: restrictToEstablishments ? ['establishment'] : ['geocode', '(cities)', 'establishment', 'address'],
-                    fields: ['place_id', 'name', 'formatted_address', 'geometry', 'address_components']
+                console.log('Autocomplete initialized with options:', {
+                    specificCoordinates,
+                    types: specificCoordinates ? ['establishment'] : [],
+                    fields: ['place_id', 'name', 'formatted_address', 'geometry', 'address_components', 'utc_offset_minutes']
                 });
 
                 autocomplete.addListener('place_changed', () => {
                     const place = autocomplete.getPlace();
-                    console.log('Selected place:', place);
-                    if (!place.geometry) {
-                        console.error('No geometry for place:', place);
+                    if (!place || !place.geometry) {
+                        console.error('No valid place selected or place has no geometry:', place);
                         return;
                     }
 
@@ -50,7 +52,7 @@ const VenueAutocomplete = ({
         }, 100);
 
         return () => clearInterval(checkGoogleMapsLoaded);
-    }, [onPlaceSelected, restrictToEstablishments]);
+    }, [onPlaceSelected, specificCoordinates]);
 
     useEffect(() => {
         if (resetTrigger) {

@@ -6,6 +6,13 @@ const EventsMap = ({ events, userId, center }) => {
   const map = useRef(null);
   const markers = useRef([]);
 
+  useEffect(() => {
+    if (center && map.current) {
+      map.current.setCenter(center);
+      map.current.setZoom(11.5);
+    }
+  }, [center]);
+
   const initializeMap = useCallback(() => {
     if (!mapRef.current || !window.google || !window.google.maps) return;
 
@@ -20,7 +27,7 @@ const EventsMap = ({ events, userId, center }) => {
       });
     } else if (center) {
       map.current.setCenter(center);
-      map.current.setZoom(12);
+      map.current.setZoom(11.5);
     }
 
     if (!events || !events.length) return;
@@ -83,6 +90,13 @@ const EventsMap = ({ events, userId, center }) => {
         });
         map.current.fitBounds(padded);
       }
+    }
+
+    if (center && markers.current.length > 0) {
+      setTimeout(() => {
+        map.current.setCenter(center);
+        map.current.setZoom(11.5);
+      }, 100);
     }
   }, [events, center]);
 

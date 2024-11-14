@@ -72,7 +72,7 @@ function EventsPage() {
             resetTrigger={false}
             onResetComplete={() => {}}
             placeholder="Search by location (address, city, or coordinates)"
-            restrictToEstablishments={false}
+            specificCoordinates={false}
           />
         </div>
         <EventsMap events={events} userId={userId} center={mapCenter} />

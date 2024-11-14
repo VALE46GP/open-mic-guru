@@ -242,7 +242,7 @@ function CreateEvent() {
                                 resetTrigger={resetTrigger}
                                 onResetComplete={handleResetComplete}
                                 initialValue={selectedVenue ? `${selectedVenue.name}, ${selectedVenue.address}` : ''}
-                                restrictToEstablishments={true}
+                                specificCoordinates={true}
                                 placeholder="Search for a venue"
                             />
                         ) : (
