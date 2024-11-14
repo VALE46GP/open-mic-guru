@@ -172,6 +172,17 @@ function Lineup({ slots, isHost, onSlotClick, onSlotDelete, currentUserId, curre
                         ) : (
                             <>
                                 <p>This slot is currently {currentSlot.slot_name === "Open" ? "open" : "taken"}.</p>
+                                {isHost && !slots.some(s => s.user_id === currentUserId) && (
+                                    <button
+                                        onClick={() => {
+                                            onSlotClick(currentSlot, userName, false);
+                                            setShowModal(false);
+                                        }}
+                                        className="lineup__modal-button--assign-self"
+                                    >
+                                        Assign Self
+                                    </button>
+                                )}
                                 <input
                                     type="text"
                                     placeholder="Enter a name to sign up."
@@ -183,6 +194,7 @@ function Lineup({ slots, isHost, onSlotClick, onSlotDelete, currentUserId, curre
                                 <button
                                     onClick={handleConfirmSignUp}
                                     disabled={!currentSlotName.trim() || currentSlotName === "Open"}
+                                    className="lineup__modal-button--sign-up"
                                 >
                                     Sign Up
                                 </button>
