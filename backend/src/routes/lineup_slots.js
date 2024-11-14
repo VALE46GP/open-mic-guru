@@ -104,12 +104,20 @@ router.post('/', async (req, res) => {
 
         // Proceed with sign-up for a non-host, ensuring no duplicate slot assignment
         const result = await db.query(`
-            INSERT INTO lineup_slots (event_id, user_id, slot_number, slot_name, non_user_identifier, ip_address) 
-            VALUES ($1, $2, $3, $4, $5, $6) 
-            RETURNING id AS slot_id, slot_number, slot_name, user_id
+            WITH inserted AS (
+                INSERT INTO lineup_slots (event_id, user_id, slot_number, slot_name, non_user_identifier, ip_address) 
+                VALUES ($1, $2, $3, $4, $5, $6) 
+                RETURNING *
+            )
+            SELECT 
+                inserted.id AS slot_id,
+                inserted.slot_number,
+                inserted.slot_name,
+                inserted.user_id,
+                u.image AS user_image
+            FROM inserted
+            LEFT JOIN users u ON inserted.user_id = u.id
         `, [event_id, userIdForSlot, slot_number, slot_name, nonUserIdForSlot, ipAddressForSlot]);
-
-        console.log("Regular slot assigned:", result.rows[0]);
 
         // After successful slot creation, broadcast the update
         const eventQuery = await db.query('SELECT start_time, slot_duration, setup_duration FROM events WHERE id = $1', [event_id]);
@@ -137,6 +145,8 @@ router.post('/', async (req, res) => {
             }
         };
         
+        // Before broadcasting the update
+        console.log("Broadcasting lineup data:", lineupData);
         req.app.locals.broadcastLineupUpdate(lineupData);
         res.status(201).json(result.rows[0]);
     } catch (err) {

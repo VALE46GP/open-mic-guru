@@ -70,7 +70,7 @@ function EventPage() {
     
         try {
             const update = JSON.parse(lastMessage.data);
-            console.log('Received WebSocket update:', update);
+            console.log('Parsed WebSocket update data:', update);
             
             if (update.type === 'LINEUP_UPDATE' && update.eventId === parseInt(eventId)) {
                 console.log('Processing lineup update:', update);
