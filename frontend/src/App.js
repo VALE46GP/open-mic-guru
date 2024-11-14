@@ -18,19 +18,23 @@ function App() {
     <WebSocketProvider>
       <Router>
         <AuthProvider>
-          <div className="App">
+          <div className="app">
             <Navigation />
-            <Routes>
-              <Route path="/" element={<Navigate to="/testdb" />} />
-              <Route path="/login" element={<LoginPage />} />
-              <Route path="/testdb" element={<ProtectedRoute element={<TestDbPage />} />} />
-              <Route path="/create-event" element={<ProtectedRoute element={<CreateEventPage />} />} />
-              <Route path="/events/:eventId" element={<EventPage />} />
-              <Route path="/events/:eventId/edit" element={<ProtectedRoute element={<CreateEventPage />} />} />
-              <Route path="/users/:userId" element={<UserPage />} />
-              <Route path="/users/:userId/edit" element={<EditUserPage />} />
-              <Route path="/events" element={<EventsPage />} />
-            </Routes>
+            <div className="app__container">
+              <div className="app__content">
+                <Routes>
+                  <Route path="/" element={<Navigate to="/testdb" />} />
+                  <Route path="/login" element={<LoginPage />} />
+                  <Route path="/testdb" element={<ProtectedRoute element={<TestDbPage />} />} />
+                  <Route path="/create-event" element={<ProtectedRoute element={<CreateEventPage />} />} />
+                  <Route path="/events/:eventId" element={<EventPage />} />
+                  <Route path="/events/:eventId/edit" element={<ProtectedRoute element={<CreateEventPage />} />} />
+                  <Route path="/users/:userId" element={<UserPage />} />
+                  <Route path="/users/:userId/edit" element={<EditUserPage />} />
+                  <Route path="/events" element={<EventsPage />} />
+                </Routes>
+              </div>
+            </div>
           </div>
         </AuthProvider>
       </Router>

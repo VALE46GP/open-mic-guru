@@ -1,29 +1,37 @@
-.App
+.app
   text-align: center
   padding: 0 10px
   margin: auto
-  max-width: 800px
+  width: 100%
 
-.App-logo
-  height: 40vmin
-  pointer-events: none
+  &__container
+    width: 100%
 
-@media (prefers-reduced-motion: no-preference)
-  .App-logo
-    animation: App-logo-spin infinite 20s linear
+  &__content
+    margin: 0 auto
+    max-width: 500px
+    width: 100%
 
-.App-header
-  background-color: #282c34
-  min-height: 100vh
-  display: flex
-  flex-direction: column
-  align-items: center
-  justify-content: center
-  font-size: calc(10px + 2vmin)
-  color: white
+//.App-logo
+//  height: 40vmin
+//  pointer-events: none
 
-.App-link
-  color: #61dafb
+//@media (prefers-reduced-motion: no-preference)
+//  .App-logo
+//    animation: App-logo-spin infinite 20s linear
+
+//.App-header
+//  background-color: #282c34
+//  min-height: 100vh
+//  display: flex
+//  flex-direction: column
+//  align-items: center
+//  justify-content: center
+//  font-size: calc(10px + 2vmin)
+//  color: white
+//
+//.App-link
+//  color: #61dafb
 
 ul
   list-style-type: none
@@ -55,8 +63,9 @@ button
   color: white
   cursor: pointer
 
-button:hover
-  background-color: #0056b3
+  &:focus-visible,
+  &:hover
+    background-color: #0056b3
 
 table
   width: 100%
@@ -70,8 +79,8 @@ th, td
 th
   background-color: #f2f2f2
 
-@keyframes App-logo-spin
-  from
-    transform: rotate(0deg)
-  to
-    transform: rotate(360deg)
+//@keyframes App-logo-spin
+//  from
+//    transform: rotate(0deg)
+//  to
+//    transform: rotate(360deg)

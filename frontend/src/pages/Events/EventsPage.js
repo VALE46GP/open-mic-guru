@@ -3,11 +3,13 @@ import { useAuth } from '../../hooks/useAuth';
 import EventCard from '../../components/events/EventCard';
 import EventsMap from '../../components/events/EventsMap';
 import VenueAutocomplete from '../../components/shared/VenueAutocomplete';
+import BorderBox from '../../components/shared/BorderBox/BorderBox';
 import './EventsPage.sass';
 
 function EventsPage() {
   const [events, setEvents] = useState([]);
   const [mapCenter, setMapCenter] = useState(null);
+  const [selectedEvent, setSelectedEvent] = useState(null);
   const { getUserId } = useAuth();
   const userId = getUserId();
 
@@ -62,20 +64,41 @@ function EventsPage() {
     setEvents(filteredEvents);
   };
 
+  const handleEventSelect = (event) => {
+    setSelectedEvent(event);
+  };
+
   return (
     <div className="events-page">
       <div className="events-page__section">
         <h2 className="events-page__title">Events</h2>
-        <div className="events-page__search">
-          <VenueAutocomplete
-            onPlaceSelected={handleLocationSelected}
-            resetTrigger={false}
-            onResetComplete={() => {}}
-            placeholder="Search by location (address, city, or coordinates)"
-            specificCoordinates={false}
-          />
-        </div>
-        <EventsMap events={events} userId={userId} center={mapCenter} />
+        <BorderBox className="events-page__border-box">
+          <div className="events-page__map-section">
+            <div className="events-page__search">
+              <VenueAutocomplete
+                onPlaceSelected={handleLocationSelected}
+                resetTrigger={false}
+                onResetComplete={() => {}}
+                placeholder="Search by location (address, city, or coordinates)"
+                specificCoordinates={false}
+              />
+            </div>
+            <EventsMap 
+              events={events} 
+              userId={userId} 
+              center={mapCenter} 
+              onEventSelect={handleEventSelect}
+            />
+            {selectedEvent && (
+              <div className="events-page__selected-event">
+                <EventCard 
+                  event={selectedEvent}
+                  slotTime={selectedEvent.is_performer ? selectedEvent.performer_slot_time : null}
+                />
+              </div>
+            )}
+          </div>
+        </BorderBox>
         <div className="events-page__grid">
           {events.map(event => (
             <EventCard 

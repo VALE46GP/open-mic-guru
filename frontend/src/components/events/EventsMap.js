@@ -1,7 +1,7 @@
-import React, { useEffect, useRef, useCallback } from 'react';
+import React, { useEffect, useRef, useCallback, useState } from 'react';
 import './EventsMap.sass';
 
-const EventsMap = ({ events, userId, center }) => {
+const EventsMap = ({ events, userId, center, onEventSelect }) => {
   const mapRef = useRef(null);
   const map = useRef(null);
   const markers = useRef([]);
@@ -68,7 +68,7 @@ const EventsMap = ({ events, userId, center }) => {
         });
 
         marker.addListener('click', () => {
-          window.location.href = `/events/${event.event_id}`;
+          onEventSelect(event);
         });
 
         markers.current.push(marker);
@@ -98,7 +98,7 @@ const EventsMap = ({ events, userId, center }) => {
         map.current.setZoom(11.5);
       }, 100);
     }
-  }, [events, center]);
+  }, [events, center, onEventSelect]);
 
   useEffect(() => {
     if (window.google && window.google.maps) {

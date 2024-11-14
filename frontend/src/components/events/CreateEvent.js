@@ -227,10 +227,7 @@ function CreateEvent() {
                 </BorderBox>
             </div>
             <div className="create-event__container">
-                <BorderBox
-                    maxWidth="600px"
-                    onEdit={isEditMode ? () => setIsEditingLocation(true) : null}
-                >
+                <BorderBox onEdit={isEditMode ? () => setIsEditingLocation(true) : null}>
                     <h2 className="create-event__title">Location</h2>
                     <div className="create-event__form-content">
                         {(!isEditMode || isEditingLocation) ? (
@@ -260,8 +257,10 @@ function CreateEvent() {
                     </div>
                 </BorderBox>
             </div>
-            <button className="submit-button" onClick={handleSubmit}>{isEditMode ? 'Save' : 'Submit'}</button>
-            {isEditMode && <button className="cancel-button" onClick={() => navigate(-1)}>Cancel</button>}
+            <div className="create-event__button-container">
+                <button className="create-event__submit-button" onClick={handleSubmit}>{isEditMode ? 'Save' : 'Submit'}</button>
+                {isEditMode && <button className="create-event__cancel-button" onClick={() => navigate(-1)}>Cancel</button>}
+            </div>
         </div>
     );
 }

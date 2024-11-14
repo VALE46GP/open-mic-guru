@@ -1,4 +1,5 @@
 import React, { useEffect, useRef } from 'react';
+import './LocationMap.sass';
 
 const LocationMap = ({ latitude, longitude, showMarker = true }) => {
   const mapRef = useRef(null);
@@ -53,7 +54,7 @@ const LocationMap = ({ latitude, longitude, showMarker = true }) => {
     }
   }, [latitude, longitude, showMarker]);
 
-  return <div ref={mapRef} style={{ width: '100%', maxWidth: '500px', height: '400px' }} />;
+  return <div ref={mapRef} className="location-map" />;
 };
 
 export default LocationMap;
