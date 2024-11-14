@@ -172,17 +172,21 @@ function Lineup({ slots, isHost, onSlotClick, onSlotDelete, currentUserId, curre
                         ) : (
                             <>
                                 <p>This slot is currently {currentSlot.slot_name === "Open" ? "open" : "taken"}.</p>
-                                <input
-                                    type="text"
-                                    placeholder="Enter a name to sign up."
-                                    value={currentSlotName}
-                                    onChange={(e) => setCurrentSlotName(e.target.value)}
-                                    onKeyPress={handleKeyPress}
-                                    autoFocus
-                                />
+                                {!currentUserId ? (
+                                    <input
+                                        type="text"
+                                        placeholder="Enter a name to sign up."
+                                        value={currentSlotName}
+                                        onChange={(e) => setCurrentSlotName(e.target.value)}
+                                        onKeyPress={handleKeyPress}
+                                        autoFocus
+                                    />
+                                ) : (
+                                    <p>Click Sign Up to confirm your slot.</p>
+                                )}
                                 <button
                                     onClick={handleConfirmSignUp}
-                                    disabled={!currentSlotName.trim() || currentSlotName === "Open"}
+                                    disabled={!currentUserId && (!currentSlotName.trim() || currentSlotName === "Open")}
                                 >
                                     Sign Up
                                 </button>

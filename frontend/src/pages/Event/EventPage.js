@@ -17,8 +17,9 @@ function EventPage() {
     const [eventDetails, setEventDetails] = useState(null);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState(null);
-    const { getUserId } = useAuth();
+    const { getUserId, user } = useAuth();
     const userId = getUserId();
+    console.log('Auth data:', { userId, userName: user?.name });
     const [showDeleteConfirmModal, setShowDeleteConfirmModal] = useState(false);
     const [qrUrl, setQrUrl] = useState('');
     const { lastMessage } = useWebSocketContext();
@@ -187,6 +188,9 @@ function EventPage() {
 
     // Remove the local state update after successful POST
     const handleSlotClick = async (slot, slotName, isHostAssignment) => {
+        // For logged-in users (non-host), use their name from context
+        const finalSlotName = (userId && !isHostAssignment) ? user.name : slotName;
+
         const response = await fetch('/api/lineup_slots/', {
             method: 'POST',
             headers: {
@@ -196,7 +200,7 @@ function EventPage() {
                 event_id: eventId,
                 user_id: isHostAssignment ? null : userId,
                 slot_number: slot.slot_number,
-                slot_name: slotName,
+                slot_name: finalSlotName,
                 isHostAssignment
             }),
         });
@@ -287,6 +291,7 @@ function EventPage() {
                 onSlotDelete={handleSlotDelete}
                 currentUserId={userId}
                 currentNonUser={eventDetails?.currentNonUser}
+                userName={user?.name}
             />
 
             {showDeleteConfirmModal && (
