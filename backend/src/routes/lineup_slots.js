@@ -11,7 +11,7 @@ router.post('/', async (req, res) => {
     console.log("Request received:", { event_id, user_id, slot_number, slot_name, isHostAssignment, nonUserId, ipAddress });
 
     // Validate that non-users provide a name for the slot
-    if (!user_id && !slot_name) {
+    if (!user_id && !slot_name && !isHostAssignment) {
         return res.status(400).json({ error: 'Non-users must provide a name' });
     }
 
@@ -29,45 +29,14 @@ router.post('/', async (req, res) => {
         const hostId = hostResult.rows[0].host_id;
         console.log("Host ID found:", hostId);
 
-        // Step 2: If host assignment, set non_user_identifier and ip_address to NULL and bypass the one-slot rule
+        // Step 2: If host assignment, set user_id, non_user_identifier and ip_address to NULL
         if (user_id === hostId && isHostAssignment) {
-            console.log("Host assignment detected, setting non_user_identifier and ip_address to NULL.");
-
             const result = await db.query(`
                 INSERT INTO lineup_slots (event_id, user_id, slot_number, slot_name, non_user_identifier, ip_address) 
-                VALUES ($1, NULL, $2, $3, NULL, NULL) -- NULL for user_id, non_user_identifier, and ip_address
+                VALUES ($1, NULL, $2, $3, NULL, NULL)
                 RETURNING id AS slot_id, slot_number, slot_name, user_id
             `, [event_id, slot_number, slot_name]);
 
-            console.log("Host-assigned slot successfully created:", result.rows[0]);
-
-            // After successful slot creation, broadcast the update
-            const eventQuery = await db.query('SELECT start_time, slot_duration, setup_duration FROM events WHERE id = $1', [event_id]);
-            const eventDetails = eventQuery.rows[0];
-
-            const slotStartTime = new Date(eventDetails.start_time);
-            const slotIndex = slot_number - 1;
-            const totalMinutesPerSlot = eventDetails.slot_duration.minutes + eventDetails.setup_duration.minutes;
-            slotStartTime.setMinutes(slotStartTime.getMinutes() + (slotIndex * totalMinutesPerSlot));
-
-            const lineupData = {
-                type: 'LINEUP_UPDATE',
-                eventId: parseInt(event_id),
-                action: 'CREATE',
-                data: {
-                    slot_id: result.rows[0].slot_id,
-                    slot_number: slot_number,
-                    slot_name: slot_name,
-                    user_id: null,
-                    user_name: null,
-                    user_image: result.rows[0].user_image,
-                    slot_start_time: slotStartTime,
-                    non_user_identifier: null,
-                    ip_address: null
-                }
-            };
-            
-            req.app.locals.broadcastLineupUpdate(lineupData);
             return res.status(201).json(result.rows[0]);
         }
 

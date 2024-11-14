@@ -90,7 +90,6 @@ function Lineup({ slots, isHost, onSlotClick, onSlotDelete, currentUserId, curre
             ? slot.user_id === currentUserId
             : slot.non_user_identifier === currentNonUser?.identifier;
 
-        // If they have an existing slot and they're not the host,
         // only allow them to click their own slot or prevent clicking open slots
         if (!isHost) {
             const hasExistingSlot = slots.some(s => {
@@ -107,7 +106,8 @@ function Lineup({ slots, isHost, onSlotClick, onSlotDelete, currentUserId, curre
         }
 
         setCurrentSlot(slot);
-        setCurrentSlotName(currentUserId ? userName : (slot.slot_name === "Open" ? "" : slot.slot_name));
+        // If host, leave the field empty. Otherwise, use the user's name or current slot name
+        setCurrentSlotName(isHost ? "" : (currentUserId ? userName : (slot.slot_name === "Open" ? "" : slot.slot_name)));
         setShowModal(true);
     };
 
