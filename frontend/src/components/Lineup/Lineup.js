@@ -80,7 +80,7 @@ function Slot({ slot, onClick, isHost, currentUserId, currentNonUserId, slots })
     return slotContent;
 }
 
-function Lineup({ slots, isHost, onSlotClick, onSlotDelete, currentUserId, currentNonUser }) {
+function Lineup({ slots, isHost, onSlotClick, onSlotDelete, currentUserId, currentNonUser, userName }) {
     const [showModal, setShowModal] = useState(false);
     const [currentSlot, setCurrentSlot] = useState(null);
     const [currentSlotName, setCurrentSlotName] = useState('');
@@ -107,7 +107,7 @@ function Lineup({ slots, isHost, onSlotClick, onSlotDelete, currentUserId, curre
         }
 
         setCurrentSlot(slot);
-        setCurrentSlotName(slot.slot_name === "Open" ? "" : slot.slot_name);
+        setCurrentSlotName(currentUserId ? userName : (slot.slot_name === "Open" ? "" : slot.slot_name));
         setShowModal(true);
     };
 
@@ -172,21 +172,17 @@ function Lineup({ slots, isHost, onSlotClick, onSlotDelete, currentUserId, curre
                         ) : (
                             <>
                                 <p>This slot is currently {currentSlot.slot_name === "Open" ? "open" : "taken"}.</p>
-                                {!currentUserId ? (
-                                    <input
-                                        type="text"
-                                        placeholder="Enter a name to sign up."
-                                        value={currentSlotName}
-                                        onChange={(e) => setCurrentSlotName(e.target.value)}
-                                        onKeyPress={handleKeyPress}
-                                        autoFocus
-                                    />
-                                ) : (
-                                    <p>Click Sign Up to confirm your slot.</p>
-                                )}
+                                <input
+                                    type="text"
+                                    placeholder="Enter a name to sign up."
+                                    value={currentSlotName}
+                                    onChange={(e) => setCurrentSlotName(e.target.value)}
+                                    onKeyPress={handleKeyPress}
+                                    autoFocus
+                                />
                                 <button
                                     onClick={handleConfirmSignUp}
-                                    disabled={!currentUserId && (!currentSlotName.trim() || currentSlotName === "Open")}
+                                    disabled={!currentSlotName.trim() || currentSlotName === "Open"}
                                 >
                                     Sign Up
                                 </button>
