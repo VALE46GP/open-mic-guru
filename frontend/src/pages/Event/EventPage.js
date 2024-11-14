@@ -99,6 +99,17 @@ function EventPage() {
                                 }
                             ].sort((a, b) => a.slot_number - b.slot_number)
                         };
+                    } else if (update.action === 'REORDER') {
+                        console.log('Reordering slots:', update.data);
+                        const updatedLineup = prevDetails.lineup.map(slot => {
+                            const updatedSlot = update.data.slots.find(s => s.slot_id === slot.slot_id);
+                            return updatedSlot ? { ...slot, slot_number: updatedSlot.slot_number } : slot;
+                        });
+
+                        return {
+                            ...prevDetails,
+                            lineup: updatedLineup.sort((a, b) => a.slot_number - b.slot_number)
+                        };
                     }
                     return prevDetails;
                 });

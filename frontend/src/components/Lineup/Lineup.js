@@ -1,12 +1,13 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 import BorderBox from '../shared/BorderBox/BorderBox';
 import './Lineup.sass';
 
-function Slot({ slot, onClick, isHost, currentUserId, currentNonUserId, slots }) {
+function Slot({ slot, onClick, isHost, currentUserId, currentNonUserId, slots, isEditing, provided, isDragging }) {
     const isOwnSlot = 
-        (currentUserId && slot.user_id === currentUserId) || // For logged-in users
-        (!currentUserId && slot.non_user_identifier === currentNonUserId); // For non-users
+        (currentUserId && slot.user_id === currentUserId) || 
+        (!currentUserId && slot.non_user_identifier === currentNonUserId);
 
     const hasExistingSlot = () => {
         return slots.some(s => {
@@ -18,32 +19,45 @@ function Slot({ slot, onClick, isHost, currentUserId, currentNonUserId, slots })
         });
     };
 
-    const canInteract = 
-        isHost || // Host can interact with any slot
-        isOwnSlot || // Users/non-users can interact with their own slots
-        (slot.slot_name === "Open" && !hasExistingSlot()); // Can interact with open slots only if they don't have a slot
+    const canInteract = !isEditing && (
+        isHost || 
+        isOwnSlot || 
+        (slot.slot_name === "Open" && !hasExistingSlot())
+    );
 
     const getSlotClass = () => {
-        if (!canInteract) return 'lineup__slot';
+        let classes = ['lineup__slot'];
         
-        // If it's an open slot
-        if (slot.slot_name === "Open") {
-            // Only show green border if host or user hasn't taken a slot yet
-            if (isHost || !hasExistingSlot()) {
-                return 'lineup__slot lineup__slot--open clickable';
-            }
-            return 'lineup__slot';
+        if (isDragging) {
+            classes.push('lineup__slot--dragging');
         }
         
-        // For assigned slots that are clickable
-        return 'lineup__slot lineup__slot--assigned clickable';
+        if (!canInteract && !isEditing) return classes.join(' ');
+        
+        if (slot.slot_name === "Open") {
+            if (isHost || !hasExistingSlot()) {
+                classes.push('lineup__slot--open');
+                if (!isEditing) classes.push('clickable');
+            }
+        } else {
+            classes.push('lineup__slot--assigned');
+            if (!isEditing) classes.push('clickable');
+        }
+        
+        return classes.join(' ');
     };
 
     const slotContent = (
         <div
+            ref={provided?.innerRef}
+            {...provided?.draggableProps}
+            {...provided?.dragHandleProps}
             className={getSlotClass()}
             onClick={canInteract ? onClick : undefined}
-            style={{ cursor: canInteract ? 'pointer' : 'default' }}
+            style={{
+                cursor: isEditing ? 'grab' : (canInteract ? 'pointer' : 'default'),
+                ...provided?.draggableProps?.style
+            }}
             role="button"
             tabIndex={0}
         >
@@ -54,14 +68,20 @@ function Slot({ slot, onClick, isHost, currentUserId, currentNonUserId, slots })
             <div className="lineup__slot-artist">
                 {slot.user_id ? (
                     <>
-                        <Link
-                            to={`/users/${slot.user_id}`}
-                            className="lineup__slot-username"
-                            onClick={(e) => e.stopPropagation()}
-                            aria-label={`View ${slot.slot_name}'s profile`}
-                        >
-                            {slot.slot_name}
-                        </Link>
+                        {isEditing ? (
+                            <span className="lineup__slot-username">
+                                {slot.slot_name}
+                            </span>
+                        ) : (
+                            <Link
+                                to={`/users/${slot.user_id}`}
+                                className="lineup__slot-username"
+                                onClick={(e) => e.stopPropagation()}
+                                aria-label={`View ${slot.slot_name}'s profile`}
+                            >
+                                {slot.slot_name}
+                            </Link>
+                        )}
                         {slot.user_image && (
                             <img 
                                 src={slot.user_image} 
@@ -84,6 +104,12 @@ function Lineup({ slots, isHost, onSlotClick, onSlotDelete, currentUserId, curre
     const [showModal, setShowModal] = useState(false);
     const [currentSlot, setCurrentSlot] = useState(null);
     const [currentSlotName, setCurrentSlotName] = useState('');
+    const [isEditing, setIsEditing] = useState(false);
+    const [editedSlots, setEditedSlots] = useState(slots);
+
+    useEffect(() => {
+        setEditedSlots(slots);
+    }, [slots]);
 
     const handleSlotClick = (slot) => {
         const isOwnSlot = currentUserId 
@@ -149,9 +175,99 @@ function Lineup({ slots, isHost, onSlotClick, onSlotDelete, currentUserId, curre
         }
     };
 
+    const handleDragEnd = (result) => {
+        if (!result.destination) return;
+
+        const items = Array.from(editedSlots);
+        const [reorderedItem] = items.splice(result.source.index, 1);
+        items.splice(result.destination.index, 0, reorderedItem);
+
+        // Update slot numbers
+        const updatedItems = items.map((item, index) => ({
+            ...item,
+            slot_number: index + 1
+        }));
+
+        setEditedSlots(updatedItems);
+    };
+
+    const handleSave = async () => {
+        const updatedSlots = editedSlots.filter(slot => slot.slot_id); // Filter out "Open" slots
+        
+        try {
+            const response = await fetch('/api/lineup_slots/reorder', {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    slots: updatedSlots.map(slot => ({
+                        slot_id: slot.slot_id,
+                        slot_number: slot.slot_number
+                    }))
+                })
+            });
+
+            if (!response.ok) throw new Error('Failed to update slot order');
+            
+            setIsEditing(false);
+        } catch (error) {
+            console.error('Error updating slot order:', error);
+            alert('Failed to save changes');
+        }
+    };
+
+    const handleCancel = () => {
+        setEditedSlots(slots);
+        setIsEditing(false);
+    };
+
     return (
-        <BorderBox>
+        <BorderBox onEdit={isHost ? () => setIsEditing(true) : null}>
             <h2 className="lineup__title">Lineup</h2>
+            {isEditing && (
+                <div className="lineup__edit-controls">
+                    <button onClick={handleSave}>Save</button>
+                    <button onClick={handleCancel}>Cancel</button>
+                </div>
+            )}
+            
+            <DragDropContext onDragEnd={handleDragEnd}>
+                <Droppable droppableId="lineup">
+                    {(provided) => (
+                        <div 
+                            className="lineup__slots"
+                            ref={provided.innerRef}
+                            {...provided.droppableProps}
+                        >
+                            {editedSlots.map((slot, index) => (
+                                <Draggable 
+                                    key={`slot-${slot.slot_number}-${slot.slot_id || 'open'}`}
+                                    draggableId={`slot-${slot.slot_number}-${slot.slot_id || 'open'}`}
+                                    index={index}
+                                    isDragDisabled={!isEditing}
+                                >
+                                    {(provided, snapshot) => (
+                                        <Slot
+                                            slot={slot}
+                                            slots={editedSlots}
+                                            onClick={() => handleSlotClick(slot)}
+                                            isHost={isHost}
+                                            currentUserId={currentUserId}
+                                            currentNonUserId={currentNonUser?.identifier}
+                                            isEditing={isEditing}
+                                            provided={provided}
+                                            isDragging={snapshot.isDragging}
+                                        />
+                                    )}
+                                </Draggable>
+                            ))}
+                            {provided.placeholder}
+                        </div>
+                    )}
+                </Droppable>
+            </DragDropContext>
+
             {showModal && (
                 <div className="lineup__modal" onClick={handleOverlayClick}>
                     <div className="lineup__modal-content" onClick={e => e.stopPropagation()}>
@@ -204,19 +320,6 @@ function Lineup({ slots, isHost, onSlotClick, onSlotDelete, currentUserId, curre
                     </div>
                 </div>
             )}
-            <div className="lineup__slots">
-                {slots.map((slot, index) => (
-                    <Slot
-                        key={index}
-                        slot={slot}
-                        slots={slots}
-                        onClick={() => handleSlotClick(slot)}
-                        isHost={isHost}
-                        currentUserId={currentUserId}
-                        currentNonUserId={currentNonUser?.identifier}
-                    />
-                ))}
-            </div>
         </BorderBox>
     );
 }

@@ -192,4 +192,46 @@ router.delete('/:slotId', async (req, res) => {
     }
 });
 
+// Add this new endpoint for reordering slots
+router.put('/reorder', async (req, res) => {
+    const { slots } = req.body;
+    
+    try {
+        // Get event_id for the first slot to use in broadcast
+        const eventQuery = await db.query(
+            'SELECT event_id FROM lineup_slots WHERE id = $1',
+            [slots[0].slot_id]
+        );
+        const eventId = eventQuery.rows[0].event_id;
+
+        // Use a transaction to ensure all updates succeed or none do
+        await db.query('BEGIN');
+        
+        for (const slot of slots) {
+            await db.query(
+                'UPDATE lineup_slots SET slot_number = $1 WHERE id = $2',
+                [slot.slot_number, slot.slot_id]
+            );
+        }
+        
+        await db.query('COMMIT');
+
+        // Broadcast the update via WebSocket
+        const lineupData = {
+            type: 'LINEUP_UPDATE',
+            eventId: eventId,
+            action: 'REORDER',
+            data: { slots }
+        };
+        
+        req.app.locals.broadcastLineupUpdate(lineupData);
+        
+        res.json({ message: 'Slots reordered successfully' });
+    } catch (err) {
+        await db.query('ROLLBACK');
+        console.error('Error reordering slots:', err);
+        res.status(500).json({ error: 'Server error' });
+    }
+});
+
 module.exports = router;
