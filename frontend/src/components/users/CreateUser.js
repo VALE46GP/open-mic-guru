@@ -6,7 +6,7 @@ import { ReactComponent as DeleteIcon } from "../../assets/icons/delete.svg";
 import { socialMediaPlatforms } from '../utils/socialMediaPlatforms';
 import './CreateUser.sass';
 
-function CreateUser({ initialData }) {
+function CreateUser({ initialData, onCancel }) {
     const [registerEmail, setRegisterEmail] = useState('');
     const [registerPassword, setRegisterPassword] = useState('');
     const [registerName, setRegisterName] = useState('');
@@ -193,32 +193,55 @@ function CreateUser({ initialData }) {
             {/* BorderBox for Form Fields */}
             <BorderBox className='create-user__form-box'>
                 <form onSubmit={handleRegister} className='create-user__form'>
-                    <input
-                        type='email'
-                        placeholder='Email'
-                        value={registerEmail}
-                        onChange={handleInputChange(setRegisterEmail)}
-                        className='create-user__input'
-                    />
-                    {!initialData && (
+                    <div className='create-user__input-group'>
+                        <label htmlFor='email' className='create-user__label'>Email</label>
                         <input
-                            type='password'
-                            placeholder='Password'
-                            value={registerPassword}
-                            onChange={handleInputChange(setRegisterPassword)}
+                            id='email'
+                            type='email'
+                            placeholder='Email'
+                            value={registerEmail}
+                            onChange={handleInputChange(setRegisterEmail)}
                             className='create-user__input'
                         />
+                    </div>
+                    {!initialData && (
+                        <div className='create-user__input-group'>
+                            <label htmlFor='password' className='create-user__label'>Password</label>
+                            <input
+                                id='password'
+                                type='password'
+                                placeholder='Password'
+                                value={registerPassword}
+                                onChange={handleInputChange(setRegisterPassword)}
+                                className='create-user__input'
+                            />
+                        </div>
                     )}
-                    <input
-                        type='text'
-                        placeholder='Name'
-                        value={registerName}
-                        onChange={handleInputChange(setRegisterName)}
-                        className='create-user__input'
-                    />
-                    <button className='create-user__submit-button' type='submit'>
-                        {initialData ? 'Save Changes' : 'Register'}
-                    </button>
+                    <div className='create-user__input-group'>
+                        <label htmlFor='name' className='create-user__label'>Name</label>
+                        <input
+                            id='name'
+                            type='text'
+                            placeholder='Name'
+                            value={registerName}
+                            onChange={handleInputChange(setRegisterName)}
+                            className='create-user__input'
+                        />
+                    </div>
+                    <div className="create-user__button-group">
+                        <button className='create-user__submit-button' type='submit'>
+                            {initialData ? 'Save Changes' : 'Register'}
+                        </button>
+                        {initialData && (
+                            <button 
+                                type="button"
+                                onClick={onCancel}
+                                className='create-user__cancel-button'
+                            >
+                                Cancel
+                            </button>
+                        )}
+                    </div>
                 </form>
             </BorderBox>
 

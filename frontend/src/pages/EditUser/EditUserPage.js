@@ -27,12 +27,16 @@ function EditUserPage() {
         fetchUserData();
     }, [userId, user, navigate]);
 
+    const handleCancel = () => {
+        navigate(`/users/${userId}`);
+    };
+
     if (!userData) return <div>Loading...</div>;
 
     return (
         <div>
             <h2>Edit Profile</h2>
-            <CreateUser initialData={userData} />
+            <CreateUser initialData={userData} onCancel={handleCancel} />
         </div>
     );
 }
