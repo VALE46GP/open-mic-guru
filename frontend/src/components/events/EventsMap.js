@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useCallback } from 'react';
 import './EventsMap.sass';
 
-const EventsMap = ({ events, userId }) => {
+const EventsMap = ({ events, userId, center }) => {
   const mapRef = useRef(null);
   const map = useRef(null);
   const markers = useRef([]);
@@ -16,8 +16,11 @@ const EventsMap = ({ events, userId }) => {
       map.current = new window.google.maps.Map(mapRef.current, {
         zoom: 12,
         disableDefaultUI: true,
-        center: { lat: 0, lng: 0 }
+        center: center || { lat: 0, lng: 0 }
       });
+    } else if (center) {
+      map.current.setCenter(center);
+      map.current.setZoom(12);
     }
 
     if (!events || !events.length) return;
@@ -81,7 +84,7 @@ const EventsMap = ({ events, userId }) => {
         map.current.fitBounds(padded);
       }
     }
-  }, [events]);
+  }, [events, center]);
 
   useEffect(() => {
     if (window.google && window.google.maps) {

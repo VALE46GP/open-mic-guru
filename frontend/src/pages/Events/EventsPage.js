@@ -2,10 +2,12 @@ import React, { useEffect, useState } from 'react';
 import { useAuth } from '../../hooks/useAuth';
 import EventCard from '../../components/events/EventCard';
 import EventsMap from '../../components/events/EventsMap';
+import VenueAutocomplete from '../../components/shared/VenueAutocomplete';
 import './EventsPage.sass';
 
 function EventsPage() {
   const [events, setEvents] = useState([]);
+  const [mapCenter, setMapCenter] = useState(null);
   const { getUserId } = useAuth();
   const userId = getUserId();
 
@@ -30,11 +32,50 @@ function EventsPage() {
     fetchEvents();
   }, [userId]);
 
+  const handleLocationSelected = async (place) => {
+    if (!place || !place.geometry) return;
+
+    const location = {
+      lat: place.geometry.location.lat(),
+      lng: place.geometry.location.lng()
+    };
+
+    setMapCenter(location);
+
+    // Filter events within 15 miles (approximately 24140 meters)
+    const filteredEvents = events.filter(event => {
+      if (!event.venue_latitude || !event.venue_longitude) return false;
+      
+      const eventLocation = new window.google.maps.LatLng(
+        Number(event.venue_latitude),
+        Number(event.venue_longitude)
+      );
+      
+      const distance = window.google.maps.geometry.spherical.computeDistanceBetween(
+        new window.google.maps.LatLng(location.lat, location.lng),
+        eventLocation
+      );
+      
+      return distance <= 24140; // 15 miles in meters
+    });
+
+    setEvents(filteredEvents);
+  };
+
   return (
     <div className="events-page">
       <div className="events-page__section">
         <h2 className="events-page__title">Events</h2>
-        <EventsMap events={events} userId={userId} />
+        <div className="events-page__search">
+          <VenueAutocomplete
+            onPlaceSelected={handleLocationSelected}
+            resetTrigger={false}
+            onResetComplete={() => {}}
+            placeholder="Search by location (address, city, or coordinates)"
+            restrictToEstablishments={false}
+          />
+        </div>
+        <EventsMap events={events} userId={userId} center={mapCenter} />
         <div className="events-page__grid">
           {events.map(event => (
             <EventCard 

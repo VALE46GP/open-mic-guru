@@ -242,6 +242,8 @@ function CreateEvent() {
                                 resetTrigger={resetTrigger}
                                 onResetComplete={handleResetComplete}
                                 initialValue={selectedVenue ? `${selectedVenue.name}, ${selectedVenue.address}` : ''}
+                                restrictToEstablishments={true}
+                                placeholder="Search for a venue"
                             />
                         ) : (
                             <p className="create-event__text">

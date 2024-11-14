@@ -26,14 +26,12 @@
       Learn how to configure a non-root public URL by running `npm run build`.
     -->
     <script>
-      function loadGoogleMapsScript() {
-        const script = document.createElement('script');
-        script.src = `https://maps.googleapis.com/maps/api/js?key=${window.REACT_APP_GOOGLE_API_KEY}&libraries=places`;
-        script.async = true;
-        script.defer = true;
-        document.head.appendChild(script);
+      window.initMap = function() {
+        console.log('Google Maps API loaded');
       }
-      window.addEventListener('load', loadGoogleMapsScript);
+    </script>
+    <script async defer
+      src="https://maps.googleapis.com/maps/api/js?key=%REACT_APP_GOOGLE_API_KEY%&libraries=places,geometry&callback=initMap">
     </script>
 
     <title>Open Mic Guru</title>
