@@ -1,13 +1,19 @@
-import React, { useEffect, useRef, useCallback, useState } from 'react';
+import React, { useEffect, useRef, useCallback } from 'react';
 import './EventsMap.sass';
 
 const EventsMap = ({ events, userId, center, onEventSelect }) => {
   const mapRef = useRef(null);
   const map = useRef(null);
   const markers = useRef([]);
+  const mapInitialized = useRef(false); // Track if the map was already initialized
 
+  const handleMarkerClick = useCallback((event) => {
+    onEventSelect(event);
+  }, [onEventSelect]);
+
+  // Center the map based on `center` prop only after the map has been initialized
   useEffect(() => {
-    if (center && map.current) {
+    if (center && map.current && mapInitialized.current) {
       map.current.setCenter(center);
       map.current.setZoom(11.5);
     }
@@ -16,24 +22,24 @@ const EventsMap = ({ events, userId, center, onEventSelect }) => {
   const initializeMap = useCallback(() => {
     if (!mapRef.current || !window.google || !window.google.maps) return;
 
+    // Clear existing markers
     markers.current.forEach(marker => marker.setMap(null));
     markers.current = [];
 
+    // Initialize the map if it hasn't been created yet
     if (!map.current) {
       map.current = new window.google.maps.Map(mapRef.current, {
         zoom: 12,
         disableDefaultUI: true,
-        center: center || { lat: 0, lng: 0 }
+        center: { lat: 0, lng: 0 }, // Temporary center; we'll use fitBounds below to adjust
       });
-    } else if (center) {
-      map.current.setCenter(center);
-      map.current.setZoom(11.5);
     }
 
     if (!events || !events.length) return;
 
     const bounds = new window.google.maps.LatLngBounds();
 
+    // Create markers for each event and extend the bounds
     events.forEach(event => {
       if (event.venue_latitude && event.venue_longitude) {
         const position = {
@@ -43,11 +49,11 @@ const EventsMap = ({ events, userId, center, onEventSelect }) => {
 
         let fillColor, strokeColor;
         if (event.is_host) {
-          fillColor = '#e3f2fd';
-          strokeColor = '#1976d2';
-        } else if (event.is_performer) {
           fillColor = '#f3e5f5';
           strokeColor = '#7b1fa2';
+        } else if (event.is_performer) {
+          fillColor = '#e3f2fd';
+          strokeColor = '#1976d2';
         } else {
           fillColor = '#666666';
           strokeColor = '#ffffff';
@@ -68,7 +74,7 @@ const EventsMap = ({ events, userId, center, onEventSelect }) => {
         });
 
         marker.addListener('click', () => {
-          onEventSelect(event);
+          handleMarkerClick(event);
         });
 
         markers.current.push(marker);
@@ -76,29 +82,12 @@ const EventsMap = ({ events, userId, center, onEventSelect }) => {
       }
     });
 
-    if (markers.current.length > 0) {
+    // Adjust the map view to fit all markers within the viewport on the initial load
+    if (!mapInitialized.current && markers.current.length > 0) {
       map.current.fitBounds(bounds);
-      const padded = map.current.getBounds();
-      if (padded) {
-        padded.extend({
-          lat: bounds.getNorthEast().lat() + 0.01,
-          lng: bounds.getNorthEast().lng() + 0.01
-        });
-        padded.extend({
-          lat: bounds.getSouthWest().lat() - 0.01,
-          lng: bounds.getSouthWest().lng() - 0.01
-        });
-        map.current.fitBounds(padded);
-      }
+      mapInitialized.current = true; // Set the map as initialized
     }
-
-    if (center && markers.current.length > 0) {
-      setTimeout(() => {
-        map.current.setCenter(center);
-        map.current.setZoom(11.5);
-      }, 100);
-    }
-  }, [events, center, onEventSelect]);
+  }, [events, handleMarkerClick]);
 
   useEffect(() => {
     if (window.google && window.google.maps) {
