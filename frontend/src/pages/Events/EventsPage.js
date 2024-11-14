@@ -5,8 +5,7 @@ import BorderBox from '../../components/shared/BorderBox/BorderBox';
 import './EventsPage.sass';
 
 function EventsPage() {
-  const [myEvents, setMyEvents] = useState([]);
-  const [otherEvents, setOtherEvents] = useState([]);
+  const [events, setEvents] = useState([]);
   const { getUserId } = useAuth();
   const userId = getUserId();
 
@@ -14,23 +13,17 @@ function EventsPage() {
     const fetchEvents = async () => {
       try {
         const response = await fetch('/api/events');
-        const events = await response.json();
+        const eventsData = await response.json();
 
-        // Filter events where user is either host or performer
-        const myEvents = events.filter(event => 
-          event.host_id === userId || event.performers?.includes(userId)
-        ).map(event => ({
+        // Add is_host and is_performer flags to all events
+        const processedEvents = eventsData.map(event => ({
           ...event,
           is_host: event.host_id === userId,
           is_performer: event.performers?.includes(userId)
         }));
 
-        const otherEvents = events.filter(event => 
-          event.host_id !== userId && !event.performers?.includes(userId)
-        );
-
-        setMyEvents(myEvents.sort((a, b) => new Date(a.start_time) - new Date(b.start_time)));
-        setOtherEvents(otherEvents.sort((a, b) => new Date(a.start_time) - new Date(b.start_time)));
+        // Sort all events by start time
+        setEvents(processedEvents.sort((a, b) => new Date(a.start_time) - new Date(b.start_time)));
       } catch (error) {
         console.error('Error fetching events:', error);
       }
@@ -41,28 +34,14 @@ function EventsPage() {
 
   return (
     <div className="events-page">
-      {myEvents.length > 0 && (
-        <div className="events-page__section">
-          <h2 className="events-page__title">My Events</h2>
-          <div className="events-page__grid">
-            {myEvents.map(event => (
-              <EventCard 
-                key={`event-${event.event_id}`} 
-                event={event}
-                slotTime={event.is_performer ? event.performer_slot_time : null}
-              />
-            ))}
-          </div>
-        </div>
-      )}
-
       <div className="events-page__section">
-        <h2 className="events-page__title">Other Events</h2>
+        <h2 className="events-page__title">Events</h2>
         <div className="events-page__grid">
-          {otherEvents.map(event => (
+          {events.map(event => (
             <EventCard 
               key={`event-${event.event_id}`} 
               event={event}
+              slotTime={event.is_performer ? event.performer_slot_time : null}
             />
           ))}
         </div>
