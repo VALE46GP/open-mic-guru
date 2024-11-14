@@ -47,6 +47,16 @@ function Slot({ slot, onClick, isHost, currentUserId, currentNonUserId, slots, i
         return classes.join(' ');
     };
 
+    const DragHandle = () => (
+        <div className="lineup__slot-drag-handle">
+            <div className="lineup__slot-drag-handle-lines">
+                <span></span>
+                <span></span>
+                <span></span>
+            </div>
+        </div>
+    );
+
     const slotContent = (
         <div
             ref={provided?.innerRef}
@@ -61,38 +71,41 @@ function Slot({ slot, onClick, isHost, currentUserId, currentNonUserId, slots, i
             role="button"
             tabIndex={0}
         >
-            <div className="lineup__slot-number">{slot.slot_number}</div>
-            <div className="lineup__slot-time">
-                {new Date(slot.slot_start_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-            </div>
-            <div className="lineup__slot-artist">
-                {slot.user_id ? (
-                    <>
-                        {isEditing ? (
-                            <span className="lineup__slot-username">
-                                {slot.slot_name}
-                            </span>
-                        ) : (
-                            <Link
-                                to={`/users/${slot.user_id}`}
-                                className="lineup__slot-username"
-                                onClick={(e) => e.stopPropagation()}
-                                aria-label={`View ${slot.slot_name}'s profile`}
-                            >
-                                {slot.slot_name}
-                            </Link>
-                        )}
-                        {slot.user_image && (
-                            <img 
-                                src={slot.user_image} 
-                                alt={`${slot.slot_name}'s profile`} 
-                                className="lineup__slot-user-image"
-                            />
-                        )}
-                    </>
-                ) : (
-                    slot.slot_name
-                )}
+            <div className={`lineup__slot-content ${isEditing ? 'lineup__slot-content--editing' : ''}`}>
+                {isEditing && <DragHandle />}
+                <div className="lineup__slot-number">{slot.slot_number}</div>
+                <div className="lineup__slot-time">
+                    {new Date(slot.slot_start_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                </div>
+                <div className="lineup__slot-artist">
+                    {slot.user_id ? (
+                        <>
+                            {isEditing ? (
+                                <span className="lineup__slot-username">
+                                    {slot.slot_name}
+                                </span>
+                            ) : (
+                                <Link
+                                    to={`/users/${slot.user_id}`}
+                                    className="lineup__slot-username"
+                                    onClick={(e) => e.stopPropagation()}
+                                    aria-label={`View ${slot.slot_name}'s profile`}
+                                >
+                                    {slot.slot_name}
+                                </Link>
+                            )}
+                            {slot.user_image && (
+                                <img 
+                                    src={slot.user_image} 
+                                    alt={`${slot.slot_name}'s profile`} 
+                                    className="lineup__slot-user-image"
+                                />
+                            )}
+                        </>
+                    ) : (
+                        slot.slot_name
+                    )}
+                </div>
             </div>
         </div>
     );
