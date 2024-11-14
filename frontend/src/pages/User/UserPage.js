@@ -36,6 +36,11 @@ function UserPage() {
 
     const isOwnProfile = user && String(user.id) === String(userId);
 
+    const currentEvents = userData?.events.filter(event => new Date(event.start_time) >= new Date()) || [];
+    const pastEvents = (userData?.events
+      .filter(event => new Date(event.start_time) < new Date())
+      .sort((a, b) => new Date(b.start_time) - new Date(a.start_time))) || [];
+
     return (
         <div className="user-page">
             <div className="user-page__header">
@@ -91,10 +96,10 @@ function UserPage() {
             )}
 
             <div className="user-page__events-section">
-                <h2>Events</h2>
-                {userData.events.length > 0 ? (
+                <h2>Upcoming Events</h2>
+                {currentEvents.length > 0 ? (
                     <div className="user-page__events-grid">
-                        {userData.events.map((event) => (
+                        {currentEvents.map((event) => (
                             <EventCard
                                 key={`event-${event.event_id}`}
                                 event={event}
@@ -103,7 +108,22 @@ function UserPage() {
                         ))}
                     </div>
                 ) : (
-                    <p>No events found</p>
+                    <p>No upcoming events</p>
+                )}
+
+                {pastEvents.length > 0 && (
+                    <>
+                        <h2>Past Events</h2>
+                        <div className="user-page__events-grid">
+                            {pastEvents.map((event) => (
+                                <EventCard
+                                    key={`event-${event.event_id}`}
+                                    event={event}
+                                    slotTime={event.is_performer ? event.performer_slot_time : null}
+                                />
+                            ))}
+                        </div>
+                    </>
                 )}
             </div>
         </div>

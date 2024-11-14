@@ -6,7 +6,7 @@ import VenueAutocomplete from '../../components/shared/VenueAutocomplete';
 import BorderBox from '../../components/shared/BorderBox/BorderBox';
 import './EventsPage.sass';
 
-function EventsPage() {
+const EventsPage = () => {
   const [events, setEvents] = useState([]);
   const [mapCenter, setMapCenter] = useState(null);
   const [selectedEvent, setSelectedEvent] = useState(null);
@@ -33,6 +33,11 @@ function EventsPage() {
 
     fetchEvents();
   }, [userId]);
+
+  const currentEvents = events.filter(event => new Date(event.start_time) >= new Date());
+  const pastEvents = events
+    .filter(event => new Date(event.start_time) < new Date())
+    .sort((a, b) => new Date(b.start_time) - new Date(a.start_time));
 
   const handleLocationSelected = async (place) => {
     if (!place || !place.geometry) return;
@@ -71,7 +76,6 @@ function EventsPage() {
   return (
     <div className="events-page">
       <div className="events-page__section">
-        <h2 className="events-page__title">Events</h2>
         <BorderBox className="events-page__border-box">
           <div className="events-page__map-section">
             <div className="events-page__search">
@@ -79,19 +83,19 @@ function EventsPage() {
                 onPlaceSelected={handleLocationSelected}
                 resetTrigger={false}
                 onResetComplete={() => {}}
-                placeholder="Search by location (address, city, or coordinates)"
+                placeholder="Search by location"
                 specificCoordinates={false}
               />
             </div>
-            <EventsMap 
-              events={events} 
-              userId={userId} 
-              center={mapCenter} 
+            <EventsMap
+              events={events}
+              userId={userId}
+              center={mapCenter}
               onEventSelect={handleEventSelect}
             />
             {selectedEvent && (
               <div className="events-page__selected-event">
-                <EventCard 
+                <EventCard
                   event={selectedEvent}
                   slotTime={selectedEvent.is_performer ? selectedEvent.performer_slot_time : null}
                 />
@@ -99,8 +103,9 @@ function EventsPage() {
             )}
           </div>
         </BorderBox>
+        <h2 className="events-page__title">Upcoming Events</h2>
         <div className="events-page__grid">
-          {events.map(event => (
+          {currentEvents.map(event => (
             <EventCard 
               key={`event-${event.event_id}`} 
               event={event}
@@ -109,8 +114,23 @@ function EventsPage() {
           ))}
         </div>
       </div>
+
+      {pastEvents.length > 0 && (
+        <div className="events-page__section">
+          <h2 className="events-page__title">Past Events</h2>
+          <div className="events-page__grid">
+            {pastEvents.map(event => (
+              <EventCard 
+                key={`event-${event.event_id}`} 
+                event={event}
+                slotTime={event.is_performer ? event.performer_slot_time : null}
+              />
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
-}
+};
 
 export default EventsPage;

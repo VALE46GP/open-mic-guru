@@ -13,7 +13,7 @@ const Navigation = () => {
 
     return (
         <Navbar bg="light" expand="lg" className="w-100" expanded={expanded}>
-            <Navbar.Brand as={Link} to="/">Open Mic Guru</Navbar.Brand>
+            <Navbar.Brand as={Link} to="/">OMG</Navbar.Brand>
             <Navbar.Toggle aria-controls="basic-navbar-nav" onClick={handleToggle} />
             <Navbar.Collapse id="basic-navbar-nav">
                 <Nav className="me-auto">
@@ -26,7 +26,7 @@ const Navigation = () => {
                 </Nav>
                 {isAuthenticated && user && (
                     <Nav className="ms-auto">
-                        <Nav.Link as={Link} to={`/users/${user.id}`} onClick={handleClose}>{user.name}</Nav.Link>
+                        <Nav.Link as={Link} to={`/users/${user.id}`} onClick={handleClose}>Account</Nav.Link>
                     </Nav>
                 )}
             </Navbar.Collapse>

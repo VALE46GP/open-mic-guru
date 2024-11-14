@@ -240,7 +240,7 @@ function CreateEvent() {
                                 onResetComplete={handleResetComplete}
                                 initialValue={selectedVenue ? `${selectedVenue.name}, ${selectedVenue.address}` : ''}
                                 specificCoordinates={true}
-                                placeholder="Search for a venue"
+                                placeholder="Choose a location"
                             />
                         ) : (
                             <p className="create-event__text">
