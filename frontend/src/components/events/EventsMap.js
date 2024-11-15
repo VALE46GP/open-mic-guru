@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { MarkerClusterer } from '@googlemaps/markerclusterer';
 import './EventsMap.sass';
 
-const EventsMap = ({ events, center }) => {
+const EventsMap = ({ events, center, onEventSelect }) => {
   const mapRef = useRef(null);
   const map = useRef(null);
   const markers = useRef([]);
@@ -88,6 +88,9 @@ const EventsMap = ({ events, center }) => {
           },
         });
 
+        marker.event = event; // Store event data on marker
+        marker.addListener('click', () => handleMarkerClick(event));
+
         bounds.extend(position);
         return marker;
       }
@@ -110,6 +113,10 @@ const EventsMap = ({ events, center }) => {
     map.current.fitBounds(bounds);
 
   }, [isGoogleLoaded, center, events]); // Add `events` as a dependency
+
+  const handleMarkerClick = (event) => {
+    onEventSelect(event);
+  };
 
   return (
       <div ref={mapRef} className="events-map" style={{ width: '100%', height: '400px' }}>

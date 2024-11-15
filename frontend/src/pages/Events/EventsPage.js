@@ -95,14 +95,12 @@ const EventsPage = () => {
             />
             {selectedEvent && (
               <div className="events-page__selected-events">
-                {selectedEvent.map(event => (
-                  <EventCard
-                    key={`selected-${event.event_id}`}
-                    event={event}
-                    slotTime={event.is_performer ? event.performer_slot_time : null}
-                    compact={true}
-                  />
-                ))}
+                <EventCard
+                  key={`selected-${selectedEvent.event_id}`}
+                  event={selectedEvent}
+                  slotTime={selectedEvent.is_performer ? selectedEvent.performer_slot_time : null}
+                  compact={true}
+                />
               </div>
             )}
           </div>
