@@ -119,6 +119,7 @@ function Lineup({ slots, isHost, onSlotClick, onSlotDelete, currentUserId, curre
     const [currentSlotName, setCurrentSlotName] = useState('');
     const [isEditing, setIsEditing] = useState(false);
     const [editedSlots, setEditedSlots] = useState(slots);
+    const [newSlotsCount, setNewSlotsCount] = useState(0);
 
     useEffect(() => {
         setEditedSlots(slots);
@@ -204,28 +205,73 @@ function Lineup({ slots, isHost, onSlotClick, onSlotDelete, currentUserId, curre
         setEditedSlots(updatedItems);
     };
 
-    const handleSave = async () => {
-        const updatedSlots = editedSlots.filter(slot => slot.slot_id); // Filter out "Open" slots
-        
-        try {
-            const response = await fetch('/api/lineup_slots/reorder', {
-                method: 'PUT',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    slots: updatedSlots.map(slot => ({
-                        slot_id: slot.slot_id,
-                        slot_number: slot.slot_number
-                    }))
-                })
-            });
+    const handleAddSlot = () => {
+        const newSlot = {
+            event_id: slots[0]?.event_id,
+            slot_number: editedSlots.length + 1,
+            slot_name: "Open",
+            user_id: null,
+            user_image: null,
+            slot_start_time: calculateNewSlotTime(editedSlots.length)
+        };
+        setEditedSlots([...editedSlots, newSlot]);
+        setNewSlotsCount(prev => prev + 1);
+    };
 
-            if (!response.ok) throw new Error('Failed to update slot order');
+    const calculateNewSlotTime = (slotIndex) => {
+        const firstSlot = editedSlots[0];
+        if (!firstSlot?.slot_start_time) return new Date();
+        
+        const startTime = new Date(firstSlot.slot_start_time);
+        const totalMinutesPerSlot = slots[0]?.slot_duration?.minutes + slots[0]?.setup_duration?.minutes;
+        startTime.setMinutes(startTime.getMinutes() + (slotIndex * totalMinutesPerSlot));
+        return startTime;
+    };
+
+    const handleSave = async () => {
+        try {
+            // First update any existing slots' order
+            if (editedSlots.some(slot => slot.slot_id)) {
+                const response = await fetch('/api/lineup_slots/reorder', {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        slots: editedSlots
+                            .filter(slot => slot.slot_id)
+                            .map(slot => ({
+                                slot_id: slot.slot_id,
+                                slot_number: slot.slot_number
+                            }))
+                    })
+                });
+
+                if (!response.ok) throw new Error('Failed to update slot order');
+            }
+
+            // If new slots were added, extend the event duration
+            if (newSlotsCount > 0) {
+                const eventId = slots[0]?.event_id;
+                if (!eventId) throw new Error('Event ID not found');
+
+                const eventUpdateResponse = await fetch(`/api/events/${eventId}/extend`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        additional_slots: newSlotsCount
+                    })
+                });
+
+                if (!eventUpdateResponse.ok) throw new Error('Failed to update event end time');
+            }
             
             setIsEditing(false);
+            setNewSlotsCount(0);
         } catch (error) {
-            console.error('Error updating slot order:', error);
+            console.error('Error updating slots:', error);
             alert('Failed to save changes');
         }
     };
@@ -242,6 +288,12 @@ function Lineup({ slots, isHost, onSlotClick, onSlotDelete, currentUserId, curre
                 <div className="lineup__edit-controls">
                     <button onClick={handleSave}>Save</button>
                     <button onClick={handleCancel}>Cancel</button>
+                    <button 
+                        className="lineup__add-slot-button"
+                        onClick={handleAddSlot}
+                    >
+                        Add Slot
+                    </button>
                 </div>
             )}
             

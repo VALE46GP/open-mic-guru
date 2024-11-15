@@ -104,6 +104,7 @@ router.get('/:eventId', async (req, res) => {
             SELECT 
                 ls.id AS slot_id, 
                 ls.slot_number,
+                ls.event_id,
                 ls.non_user_identifier,
                 ls.ip_address,
                 u.name AS user_name, 
@@ -225,6 +226,55 @@ router.delete('/:eventId', verifyToken, async (req, res) => {
     } catch (err) {
         console.error(err);
         res.status(500).json({ error: 'Server error', details: err.message });
+    }
+});
+
+// Add new endpoint for extending event duration
+router.put('/:eventId/extend', async (req, res) => {
+    const { eventId } = req.params;
+    const { additional_slots } = req.body;
+
+    try {
+        // Get current event details
+        const eventQuery = await db.query(
+            'SELECT end_time, slot_duration, setup_duration FROM events WHERE id = $1',
+            [eventId]
+        );
+
+        if (eventQuery.rows.length === 0) {
+            return res.status(404).json({ error: 'Event not found' });
+        }
+
+        const event = eventQuery.rows[0];
+        const totalMinutesPerSlot = 
+            event.slot_duration.minutes + 
+            event.setup_duration.minutes;
+
+        // Calculate new end time
+        const currentEndTime = new Date(event.end_time);
+        const additionalMinutes = totalMinutesPerSlot * additional_slots;
+        currentEndTime.setMinutes(currentEndTime.getMinutes() + additionalMinutes);
+
+        // Update the event
+        const result = await db.query(
+            'UPDATE events SET end_time = $1 WHERE id = $2 RETURNING *',
+            [currentEndTime, eventId]
+        );
+
+        // Broadcast the update via WebSocket
+        const updateData = {
+            type: 'EVENT_UPDATE',
+            eventId: parseInt(eventId),
+            data: {
+                end_time: currentEndTime
+            }
+        };
+        
+        req.app.locals.broadcastLineupUpdate(updateData);
+        res.json(result.rows[0]);
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: 'Server error' });
     }
 });
 
