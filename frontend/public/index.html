@@ -27,11 +27,13 @@
     -->
     <script>
       window.initMap = function() {
-        console.log('Google Maps API loaded');
+        // console.log('Google Maps API loaded');
+        // Dispatch a custom event when Google Maps is loaded
+        window.dispatchEvent(new Event('google-maps-loaded'));
       }
     </script>
-    <script async defer
-      src="https://maps.googleapis.com/maps/api/js?key=%REACT_APP_GOOGLE_API_KEY%&libraries=places,geometry&callback=initMap">
+    <script async
+      src="https://maps.googleapis.com/maps/api/js?key=%REACT_APP_GOOGLE_API_KEY%&libraries=places,geometry,marker&callback=initMap">
     </script>
 
     <title>Open Mic Guru</title>

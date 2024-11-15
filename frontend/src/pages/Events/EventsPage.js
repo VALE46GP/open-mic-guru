@@ -69,8 +69,8 @@ const EventsPage = () => {
     setEvents(filteredEvents);
   };
 
-  const handleEventSelect = (event) => {
-    setSelectedEvent(event);
+  const handleEventSelect = (selectedEvents) => {
+    setSelectedEvent(selectedEvents);
   };
 
   return (
@@ -94,11 +94,15 @@ const EventsPage = () => {
               onEventSelect={handleEventSelect}
             />
             {selectedEvent && (
-              <div className="events-page__selected-event">
-                <EventCard
-                  event={selectedEvent}
-                  slotTime={selectedEvent.is_performer ? selectedEvent.performer_slot_time : null}
-                />
+              <div className="events-page__selected-events">
+                {selectedEvent.map(event => (
+                  <EventCard
+                    key={`selected-${event.event_id}`}
+                    event={event}
+                    slotTime={event.is_performer ? event.performer_slot_time : null}
+                    compact={true}
+                  />
+                ))}
               </div>
             )}
           </div>

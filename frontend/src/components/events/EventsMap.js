@@ -1,63 +1,78 @@
-import React, { useEffect, useRef, useCallback } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
+import { MarkerClusterer } from '@googlemaps/markerclusterer';
 import './EventsMap.sass';
 
-const EventsMap = ({ events, userId, center, onEventSelect }) => {
+const EventsMap = ({ events, center }) => {
   const mapRef = useRef(null);
   const map = useRef(null);
   const markers = useRef([]);
-  const mapInitialized = useRef(false); // Track if the map was already initialized
+  const markerClusterer = useRef(null);
+  const [isGoogleLoaded, setIsGoogleLoaded] = useState(false);
 
-  const handleMarkerClick = useCallback((event) => {
-    onEventSelect(event);
-  }, [onEventSelect]);
-
-  // Center the map based on `center` prop only after the map has been initialized
+  // Load Google Maps API
   useEffect(() => {
-    if (center && map.current && mapInitialized.current) {
-      map.current.setCenter(center);
-      map.current.setZoom(11.5);
+    const loadGoogleMaps = () => {
+      if (window.google && window.google.maps) {
+        setIsGoogleLoaded(true);
+        return;
+      }
+
+      console.log('Loading Google Maps API...');
+      const script = document.createElement('script');
+      script.src = `https://maps.googleapis.com/maps/api/js?key=${process.env.REACT_APP_GOOGLE_API_KEY}&libraries=places,geometry`;
+      script.async = true;
+      script.defer = true;
+      script.onload = () => {
+        // console.log('Google Maps API loaded.');
+        setIsGoogleLoaded(true);
+      };
+      script.onerror = () => {
+        console.error('Error loading Google Maps API.');
+      };
+      document.head.appendChild(script);
+    };
+
+    loadGoogleMaps();
+
+    return () => {
+      if (markerClusterer.current) {
+        markerClusterer.current.clearMarkers();
+      }
+      markers.current.forEach(marker => marker.setMap(null));
+      markers.current = [];
+    };
+  }, []);
+
+  // Initialize Map and Clustering
+  useEffect(() => {
+    if (!isGoogleLoaded) {
+      // console.log('Google Maps API is not yet loaded.');
+      return;
     }
-  }, [center]);
+    if (!mapRef.current) {
+      // console.log('Map container ref is not available.');
+      return;
+    }
 
-  const initializeMap = useCallback(() => {
-    if (!mapRef.current || !window.google || !window.google.maps) return;
-
-    // Clear existing markers
-    markers.current.forEach(marker => marker.setMap(null));
-    markers.current = [];
-
-    // Initialize the map if it hasn't been created yet
+    // Initialize the Google Map
     if (!map.current) {
+      // console.log('Initializing Google Map...');
       map.current = new window.google.maps.Map(mapRef.current, {
-        zoom: 12,
+        zoom: 10,
+        center: center || { lat: 37.7749, lng: -122.4194 },
         disableDefaultUI: true,
-        center: { lat: 0, lng: 0 }, // Temporary center; we'll use fitBounds below to adjust
+        styles: [{ featureType: "poi", elementType: "labels", stylers: [{ visibility: "off" }] }],
       });
     }
 
-    if (!events || !events.length) return;
-
+    // Create markers for each event in the `events` prop
     const bounds = new window.google.maps.LatLngBounds();
-
-    // Create markers for each event and extend the bounds
-    events.forEach(event => {
+    const newMarkers = events.map(event => {
       if (event.venue_latitude && event.venue_longitude) {
         const position = {
           lat: Number(event.venue_latitude),
-          lng: Number(event.venue_longitude)
+          lng: Number(event.venue_longitude),
         };
-
-        let fillColor, strokeColor;
-        if (event.is_host) {
-          fillColor = '#f3e5f5';
-          strokeColor = '#7b1fa2';
-        } else if (event.is_performer) {
-          fillColor = '#e3f2fd';
-          strokeColor = '#1976d2';
-        } else {
-          fillColor = '#666666';
-          strokeColor = '#ffffff';
-        }
 
         const marker = new window.google.maps.Marker({
           position,
@@ -65,46 +80,42 @@ const EventsMap = ({ events, userId, center, onEventSelect }) => {
           title: event.event_name,
           icon: {
             path: window.google.maps.SymbolPath.CIRCLE,
-            fillColor: fillColor,
+            fillColor: event.is_host ? '#f3e5f5' : event.is_performer ? '#e3f2fd' : '#666666',
             fillOpacity: 1,
-            strokeColor: strokeColor,
+            strokeColor: event.is_host ? '#7b1fa2' : event.is_performer ? '#1976d2' : '#ffffff',
             strokeWeight: 2,
             scale: 10,
-          }
+          },
         });
 
-        marker.addListener('click', () => {
-          handleMarkerClick(event);
-        });
-
-        markers.current.push(marker);
         bounds.extend(position);
+        return marker;
       }
+      return null;
+    }).filter(marker => marker); // Remove any null markers if event data is incomplete
+
+    markers.current = newMarkers;
+
+    // Initialize clustering with MarkerClusterer
+    if (markerClusterer.current) {
+      markerClusterer.current.clearMarkers();
+    }
+
+    markerClusterer.current = new MarkerClusterer({
+      map: map.current,
+      markers: newMarkers,
     });
 
-    // Adjust the map view to fit all markers within the viewport on the initial load
-    if (!mapInitialized.current && markers.current.length > 0) {
-      map.current.fitBounds(bounds);
-      mapInitialized.current = true; // Set the map as initialized
-    }
-  }, [events, handleMarkerClick]);
+    // Fit map bounds to include all markers
+    map.current.fitBounds(bounds);
 
-  useEffect(() => {
-    if (window.google && window.google.maps) {
-      initializeMap();
-    } else {
-      const checkGoogleMapsLoaded = setInterval(() => {
-        if (window.google && window.google.maps) {
-          clearInterval(checkGoogleMapsLoaded);
-          initializeMap();
-        }
-      }, 100);
+  }, [isGoogleLoaded, center, events]); // Add `events` as a dependency
 
-      return () => clearInterval(checkGoogleMapsLoaded);
-    }
-  }, [initializeMap]);
-
-  return <div ref={mapRef} className="events-map" />;
+  return (
+      <div ref={mapRef} className="events-map" style={{ width: '100%', height: '400px' }}>
+        {!isGoogleLoaded && <div className="events-map__loading">Loading map...</div>}
+      </div>
+  );
 };
 
 export default EventsMap;

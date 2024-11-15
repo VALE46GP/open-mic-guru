@@ -26,11 +26,11 @@ const VenueAutocomplete = ({
                     }
                 );
 
-                console.log('Autocomplete initialized with options:', {
-                    specificCoordinates,
-                    types: specificCoordinates ? ['establishment'] : [],
-                    fields: ['place_id', 'name', 'formatted_address', 'geometry', 'address_components', 'utc_offset_minutes']
-                });
+                // console.log('Autocomplete initialized with options:', {
+                //     specificCoordinates,
+                //     types: specificCoordinates ? ['establishment'] : [],
+                //     fields: ['place_id', 'name', 'formatted_address', 'geometry', 'address_components', 'utc_offset_minutes']
+                // });
 
                 autocomplete.addListener('place_changed', () => {
                     const place = autocomplete.getPlace();

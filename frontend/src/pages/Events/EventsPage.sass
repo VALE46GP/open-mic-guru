@@ -39,3 +39,38 @@
     display: grid
     gap: .5rem
     margin-top: 1rem
+
+  &__selected-events
+    width: 100%
+    display: flex
+    flex-direction: column
+    gap: 0.5rem
+    margin-top: 1rem
+
+  &__selected-events-header
+    display: flex
+    justify-content: space-between
+    align-items: center
+    padding: 0.5rem 1rem
+    border-bottom: 1px solid #eee
+    
+    h3
+      margin: 0
+      font-size: 1.1rem
+      
+  &__close-button
+    background: none
+    border: none
+    font-size: 1.5rem
+    cursor: pointer
+    padding: 0.2rem 0.5rem
+    color: #666
+    
+    &:hover
+      color: #000
+
+  &__selected-events-grid
+    display: grid
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr))
+    gap: 1rem
+    padding: 1rem
