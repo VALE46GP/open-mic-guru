@@ -35,10 +35,34 @@ function CreateEvent() {
                     const data = await response.json();
                     setEventData(data);
                     setNewEventName(data.event?.name || '');
-                    setStartTime(data.event?.start_time ? new Date(data.event.start_time).toISOString().slice(0, 16) : '');
-                    setEndTime(data.event?.end_time ? new Date(data.event.end_time).toISOString().slice(0, 16) : '');
+                    
+                    // Convert UTC dates to local timezone for form input
+                    if (data.event?.start_time) {
+                        const startDate = new Date(data.event.start_time);
+                        setStartTime(startDate.toLocaleString('sv-SE', { 
+                            year: 'numeric',
+                            month: '2-digit',
+                            day: '2-digit',
+                            hour: '2-digit',
+                            minute: '2-digit',
+                            second: '2-digit'
+                        }).slice(0, 16));
+                    }
+                    
+                    if (data.event?.end_time) {
+                        const endDate = new Date(data.event.end_time);
+                        setEndTime(endDate.toLocaleString('sv-SE', { 
+                            year: 'numeric',
+                            month: '2-digit',
+                            day: '2-digit',
+                            hour: '2-digit',
+                            minute: '2-digit',
+                            second: '2-digit'
+                        }).slice(0, 16));
+                    }
+
                     setSlotDuration(data.event?.slot_duration?.minutes ? data.event.slot_duration.minutes.toString() : '0');
-                    setSetupDuration(data.event?.setup_duration?.minutes ? data.event.setup_duration.minutes.toString() : '5'); // Default to 5 if not set
+                    setSetupDuration(data.event?.setup_duration?.minutes ? data.event.setup_duration.minutes.toString() : '5');
                     if (data.venue && isGoogleMapsLoaded) {
                         setSelectedVenue({
                             name: data.venue?.name || '',
