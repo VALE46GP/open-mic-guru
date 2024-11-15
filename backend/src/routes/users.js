@@ -43,16 +43,26 @@ router.post('/register', async (req, res) => {
             
             try {
                 await client.query('BEGIN');
-                const result = await client.query(
-                    `UPDATE users 
+                
+                // Build the update query dynamically based on whether a new password is provided
+                let updateQuery = `
+                    UPDATE users 
                     SET email = $1, 
                         name = $2, 
                         image = $3, 
-                        social_media_accounts = $4::jsonb 
-                    WHERE id = $5 
-                    RETURNING *`,
-                    [email, name, photoUrl, socialMediaJson, userId]
-                );
+                        social_media_accounts = $4::jsonb
+                `;
+                let queryParams = [email, name, photoUrl, socialMediaJson];
+
+                if (hashedPassword) {
+                    updateQuery += `, password = $${queryParams.length + 1}`;
+                    queryParams.push(hashedPassword);
+                }
+
+                updateQuery += ` WHERE id = $${queryParams.length + 1} RETURNING *`;
+                queryParams.push(userId);
+
+                const result = await client.query(updateQuery, queryParams);
 
                 await client.query('COMMIT');
                 return res.status(200).json({ user: result.rows[0] });
@@ -204,6 +214,27 @@ router.post('/upload', async (req, res) => {
     console.error(err);
     res.status(500).json({ error: 'Error generating upload URL' });
   }
+});
+
+router.post('/validate-password', async (req, res) => {
+    try {
+        const { userId, password } = req.body;
+        const result = await db.query('SELECT password FROM users WHERE id = $1', [userId]);
+        
+        if (result.rows.length === 0) {
+            return res.status(404).json({ error: 'User not found' });
+        }
+
+        const isValid = await bcrypt.compare(password, result.rows[0].password);
+        if (!isValid) {
+            return res.status(401).json({ error: 'Invalid password' });
+        }
+
+        res.json({ valid: true });
+    } catch (error) {
+        console.error('Error validating password:', error);
+        res.status(500).json({ error: 'Server error' });
+    }
 });
 
 module.exports = router;

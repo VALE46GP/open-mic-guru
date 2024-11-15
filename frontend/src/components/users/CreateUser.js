@@ -16,6 +16,9 @@ function CreateUser({ initialData, onCancel }) {
     const [success, setSuccess] = useState(false);
     const fileInputRef = useRef(null);
     const navigate = useNavigate();
+    const [oldPassword, setOldPassword] = useState('');
+    const [newPassword, setNewPassword] = useState('');
+    const [passwordError, setPasswordError] = useState(null);
 
     const defaultImageUrl = 'https://open-mic-guru.s3.us-west-1.amazonaws.com/users/user-default.jpg';
 
@@ -33,6 +36,7 @@ function CreateUser({ initialData, onCancel }) {
     const handleInputChange = (setter) => (e) => {
         setter(e.target.value);
         setError(null);
+        setPasswordError(null);
         setSuccess(false);
     };
 
@@ -50,10 +54,50 @@ function CreateUser({ initialData, onCancel }) {
         setSocialMediaAccounts(socialMediaAccounts.filter((_, i) => i !== index));
     };
 
+    const validatePasswordChange = async () => {
+        if (newPassword && !oldPassword) {
+            setPasswordError('Old password is required to change password');
+            return false;
+        }
+
+        if (oldPassword) {
+            try {
+                console.log('Validating old password...');
+                const response = await fetch('/api/users/validate-password', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        userId: initialData.id,
+                        password: oldPassword
+                    })
+                });
+
+                if (!response.ok) {
+                    console.log('Password validation failed:', await response.json());
+                    setPasswordError('Invalid old password');
+                    return false;
+                }
+                console.log('Password validation successful');
+                setPasswordError(null);
+            } catch (error) {
+                console.error('Error validating password:', error);
+                setPasswordError('Error validating password');
+                return false;
+            }
+        }
+        return true;
+    };
+
     const handleRegister = async (e) => {
         e.preventDefault();
         setError(null);
         setSuccess(false);
+
+        if (initialData && newPassword) {
+            console.log('Validating password before update...');
+            const isValid = await validatePasswordChange();
+            if (!isValid) return;
+        }
 
         let photoUrl = profilePhoto;
         if (profilePhoto && profilePhoto instanceof File) {
@@ -83,9 +127,10 @@ function CreateUser({ initialData, onCancel }) {
             isUpdate: !!initialData,
             userId: initialData?.id,
         };
-        if (registerPassword) payload.password = registerPassword;
+        if (newPassword) payload.password = newPassword;
 
         try {
+            console.log('Sending update request with payload:', payload);
             const response = await fetch('/api/users/register', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -93,6 +138,7 @@ function CreateUser({ initialData, onCancel }) {
             });
 
             const result = await response.json();
+            console.log('Update response:', result);
 
             if (!response.ok) {
                 throw new Error(result.error || 'Failed to update user');
@@ -192,7 +238,7 @@ function CreateUser({ initialData, onCancel }) {
 
             {/* BorderBox for Form Fields */}
             <BorderBox className='create-user__form-box'>
-                <form onSubmit={handleRegister} className='create-user__form'>
+                <form className='create-user__form'>
                     <div className='create-user__input-group'>
                         <label htmlFor='email' className='create-user__label'>Email</label>
                         <input
@@ -228,22 +274,59 @@ function CreateUser({ initialData, onCancel }) {
                             className='create-user__input'
                         />
                     </div>
-                    <div className="create-user__button-group">
-                        <button className='create-user__submit-button' type='submit'>
-                            {initialData ? 'Save Changes' : 'Register'}
-                        </button>
-                        {initialData && (
-                            <button 
-                                type="button"
-                                onClick={onCancel}
-                                className='create-user__cancel-button'
-                            >
-                                Cancel
-                            </button>
-                        )}
-                    </div>
                 </form>
             </BorderBox>
+
+            {/* New BorderBox for Password Change */}
+            {initialData && (
+                <BorderBox className='create-user__password-box'>
+                    <h3>Change Password</h3>
+                    {passwordError && (
+                        <p className='create-user__password-error'>{passwordError}</p>
+                    )}
+                    <div className='create-user__input-group'>
+                        <label htmlFor='old-password' className='create-user__label'>Old Password</label>
+                        <input
+                            id='old-password'
+                            type='password'
+                            placeholder='Old Password'
+                            value={oldPassword}
+                            onChange={handleInputChange(setOldPassword)}
+                            className='create-user__input'
+                        />
+                    </div>
+                    <div className='create-user__input-group'>
+                        <label htmlFor='new-password' className='create-user__label'>New Password</label>
+                        <input
+                            id='new-password'
+                            type='password'
+                            placeholder='New Password'
+                            value={newPassword}
+                            onChange={handleInputChange(setNewPassword)}
+                            className='create-user__input'
+                        />
+                    </div>
+                </BorderBox>
+            )}
+
+            {/* Moved buttons outside of BorderBox */}
+            <div className="create-user__button-group">
+                <button 
+                    className='create-user__submit-button' 
+                    onClick={handleRegister}
+                >
+                    {initialData ? 'Save Changes' : 'Register'}
+                </button>
+                {initialData && (
+                    <button 
+                        type="button"
+                        onClick={onCancel}
+                        className='create-user__cancel-button'
+                    >
+                        Cancel
+                    </button>
+                )}
+            </div>
 
             {success && <p className='create-user__success-message'>Profile updated successfully!</p>}
             {error && <p className='create-user__error-message'>{error}</p>}
