@@ -19,7 +19,6 @@ function EventPage() {
     const [error, setError] = useState(null);
     const { getUserId, user } = useAuth();
     const userId = getUserId();
-    console.log('Auth data:', { userId, userName: user?.name });
     const [showDeleteConfirmModal, setShowDeleteConfirmModal] = useState(false);
     const [qrUrl, setQrUrl] = useState('');
     const { lastMessage } = useWebSocketContext();
