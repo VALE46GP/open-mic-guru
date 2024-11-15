@@ -288,12 +288,6 @@ function Lineup({ slots, isHost, onSlotClick, onSlotDelete, currentUserId, curre
                 <div className="lineup__edit-controls">
                     <button onClick={handleSave}>Save</button>
                     <button onClick={handleCancel}>Cancel</button>
-                    <button 
-                        className="lineup__add-slot-button"
-                        onClick={handleAddSlot}
-                    >
-                        Add Slot
-                    </button>
                 </div>
             )}
             
@@ -332,6 +326,15 @@ function Lineup({ slots, isHost, onSlotClick, onSlotDelete, currentUserId, curre
                     )}
                 </Droppable>
             </DragDropContext>
+
+            {isEditing && (
+                <button 
+                    className="lineup__add-slot-button"
+                    onClick={handleAddSlot}
+                >
+                    Add Slot
+                </button>
+            )}
 
             {showModal && (
                 <div className="lineup__modal" onClick={handleOverlayClick}>

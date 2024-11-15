@@ -260,10 +260,10 @@ function EventPage() {
         return date.toLocaleString([], { 
             year: 'numeric', 
             month: 'long', 
-            day: 'numeric', 
-            hour: '2-digit', 
+            day: 'numeric',
+            hour: 'numeric', 
             minute: '2-digit'
-        });
+        }).replace(',', ' at');
     };
 
     return (
@@ -275,10 +275,15 @@ function EventPage() {
             >
                 <h1 className="event-page__title">{eventDetails?.event?.name}</h1>
                 <p>
-                    {formatEventTime(eventDetails?.event?.start_time)} -
-                    {new Date(eventDetails?.event?.start_time).toDateString() === new Date(eventDetails?.event?.end_time).toDateString() ?
-                        formatEventTime(eventDetails?.event?.end_time) :
-                        formatEventTime(eventDetails?.event?.end_time)}
+                    {formatEventTime(eventDetails?.event?.start_time)}
+                    {" - "}
+                    {new Date(eventDetails?.event?.start_time).toDateString() === new Date(eventDetails?.event?.end_time).toDateString() 
+                        ? new Date(eventDetails?.event?.end_time).toLocaleTimeString([], { 
+                            hour: 'numeric', 
+                            minute: '2-digit'
+                        })
+                        : formatEventTime(eventDetails?.event?.end_time)
+                    }
                 </p>
                 <div className="event-page__host-image-container">
                     <Link to={`/users/${eventDetails?.host?.id}`}>
