@@ -31,6 +31,11 @@ function EventCard({ event, slotTime }) {
                     </span>
                 </div>
                 <div className="event-card__meta">
+                    <span className="event-card__meta-item">
+                        Hosted by: <Link to={`/users/${event.host_id}`} className="event-card__host-link">
+                            {event.host_name}
+                        </Link>
+                    </span>
                     {slotTime && (
                         <span className="event-card__meta-item event-card__slot-time">
                             Slot time: {new Date(slotTime).toLocaleTimeString([], {
