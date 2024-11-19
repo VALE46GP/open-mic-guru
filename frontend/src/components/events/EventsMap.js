@@ -45,24 +45,34 @@ const EventsMap = ({ events, center, onEventSelect }) => {
 
   // Initialize Map and Clustering
   useEffect(() => {
-    if (!isGoogleLoaded) {
-      // console.log('Google Maps API is not yet loaded.');
-      return;
-    }
-    if (!mapRef.current) {
-      // console.log('Map container ref is not available.');
-      return;
-    }
+    if (!isGoogleLoaded || !mapRef.current) return;
 
     // Initialize the Google Map
     if (!map.current) {
-      // console.log('Initializing Google Map...');
       map.current = new window.google.maps.Map(mapRef.current, {
         zoom: 10,
         center: center || { lat: 37.7749, lng: -122.4194 },
         disableDefaultUI: true,
         styles: [{ featureType: "poi", elementType: "labels", stylers: [{ visibility: "off" }] }],
       });
+    } else if (center) {
+      // Update map center when it changes
+      map.current.setCenter(center);
+      if (events.length === 1) {
+        map.current.setZoom(15); // Less zoom for single event
+      } else if (events.length === 0) {
+        map.current.setZoom(13); // Current zoom for no events
+      } else {
+        map.current.setZoom(10); // Current zoom for multiple events
+      }
+    }
+
+    // Clear existing markers
+    markers.current.forEach(marker => marker.setMap(null));
+    markers.current = [];
+
+    if (markerClusterer.current) {
+      markerClusterer.current.clearMarkers();
     }
 
     // Create markers for each event in the `events` prop
@@ -88,40 +98,49 @@ const EventsMap = ({ events, center, onEventSelect }) => {
           },
         });
 
-        marker.event = event; // Store event data on marker
+        marker.event = event;
         marker.addListener('click', () => handleMarkerClick(event));
 
         bounds.extend(position);
         return marker;
       }
       return null;
-    }).filter(marker => marker); // Remove any null markers if event data is incomplete
+    }).filter(marker => marker);
 
     markers.current = newMarkers;
 
-    // Initialize clustering with MarkerClusterer
-    if (markerClusterer.current) {
-      markerClusterer.current.clearMarkers();
+    // Only fit bounds if there are markers
+    if (newMarkers.length > 0) {
+      markerClusterer.current = new MarkerClusterer({
+        map: map.current,
+        markers: newMarkers,
+      });
+      
+      // For single marker, set a specific zoom level instead of fitting bounds
+      if (newMarkers.length === 1) {
+        map.current.setCenter(newMarkers[0].getPosition());
+        map.current.setZoom(15);
+      } else {
+        map.current.fitBounds(bounds);
+      }
     }
 
-    markerClusterer.current = new MarkerClusterer({
-      map: map.current,
-      markers: newMarkers,
-    });
-
-    // Fit map bounds to include all markers
-    map.current.fitBounds(bounds);
-
-  }, [isGoogleLoaded, center, events]); // Add `events` as a dependency
+  }, [isGoogleLoaded, center, events]);
 
   const handleMarkerClick = (event) => {
+    const position = {
+      lat: Number(event.venue_latitude),
+      lng: Number(event.venue_longitude)
+    };
+    map.current.setCenter(position);
+    map.current.setZoom(15);
     onEventSelect(event);
   };
 
   return (
-      <div ref={mapRef} className="events-map" style={{ width: '100%', height: '400px' }}>
-        {!isGoogleLoaded && <div className="events-map__loading">Loading map...</div>}
-      </div>
+    <div ref={mapRef} className="events-map">
+      {!isGoogleLoaded && <div className="events-map__loading">Loading map...</div>}
+    </div>
   );
 };
 

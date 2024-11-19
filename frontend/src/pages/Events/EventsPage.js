@@ -58,21 +58,49 @@ const EventsPage = () => {
 
     // Apply location filter
     if (location) {
-      filtered = filtered.filter(event => {
-        if (!event.venue_latitude || !event.venue_longitude) return false;
+      const stateComponent = location.address_components?.find(
+        component => component.types.includes('administrative_area_level_1')
+      );
+
+      if (stateComponent) {
+        // Create a geocoder instance
+        const geocoder = new window.google.maps.Geocoder();
         
-        const eventLocation = new window.google.maps.LatLng(
-          Number(event.venue_latitude),
-          Number(event.venue_longitude)
-        );
-        
-        const distance = window.google.maps.geometry.spherical.computeDistanceBetween(
-          new window.google.maps.LatLng(location.lat, location.lng),
-          eventLocation
-        );
-        
-        return distance <= 24140; // 15 miles in meters
-      });
+        // Filter events by checking if they're within the state's bounds
+        filtered = filtered.filter(event => {
+          if (!event.venue_latitude || !event.venue_longitude) return false;
+          
+          const eventLocation = {
+            lat: Number(event.venue_latitude),
+            lng: Number(event.venue_longitude)
+          };
+
+          // Check if the event is within the state's bounds
+          const bounds = new window.google.maps.LatLngBounds(
+            location.viewport.getSouthWest(),
+            location.viewport.getNorthEast()
+          );
+
+          return bounds.contains(new window.google.maps.LatLng(eventLocation));
+        });
+      } else {
+        // Use radius-based filtering for non-state locations
+        filtered = filtered.filter(event => {
+          if (!event.venue_latitude || !event.venue_longitude) return false;
+          
+          const eventLocation = new window.google.maps.LatLng(
+            Number(event.venue_latitude),
+            Number(event.venue_longitude)
+          );
+          
+          const distance = window.google.maps.geometry.spherical.computeDistanceBetween(
+            new window.google.maps.LatLng(location.lat, location.lng),
+            eventLocation
+          );
+          
+          return distance <= 24140; // 15 miles in meters
+        });
+      }
     }
 
     return filtered;
@@ -88,12 +116,15 @@ const EventsPage = () => {
 
     const location = {
       lat: place.geometry.location.lat(),
-      lng: place.geometry.location.lng()
+      lng: place.geometry.location.lng(),
+      address_components: place.address_components,
+      viewport: place.geometry.viewport
     };
 
     setSelectedLocation(location);
     setMapCenter(location);
-    setFilteredEvents(filterEvents(events, searchTerm, location));
+    const filtered = filterEvents(events, searchTerm, location);
+    setFilteredEvents(filtered);
   };
 
   const handleEventSelect = (selectedEvents) => {
@@ -139,13 +170,21 @@ const EventsPage = () => {
         <div className="events-page__grid">
           {filteredEvents
             .filter(event => new Date(event.start_time) >= new Date())
-            .map(event => (
-              <EventCard 
-                key={`event-${event.event_id}`} 
-                event={event}
-                slotTime={event.is_performer ? event.performer_slot_time : null}
-              />
-            ))}
+            .length > 0 ? (
+            filteredEvents
+              .filter(event => new Date(event.start_time) >= new Date())
+              .map(event => (
+                <EventCard 
+                  key={`event-${event.event_id}`} 
+                  event={event}
+                  slotTime={event.is_performer ? event.performer_slot_time : null}
+                />
+              ))
+          ) : (
+            <div className="events-page__no-events">
+              <p>No events found</p>
+            </div>
+          )}
         </div>
       </div>
 

@@ -17,20 +17,13 @@ const VenueAutocomplete = ({
             if (window.google && window.google.maps && window.google.maps.places && autocompleteInputRef.current) {
                 clearInterval(checkGoogleMapsLoaded);
 
-                // Set types based on specificCoordinates flag
                 const autocomplete = new window.google.maps.places.Autocomplete(
                     autocompleteInputRef.current,
                     {
-                        types: specificCoordinates ? ['establishment'] : [],
+                        types: specificCoordinates ? ['establishment'] : ['(regions)'],
                         fields: ['place_id', 'name', 'formatted_address', 'geometry', 'address_components', 'utc_offset_minutes']
                     }
                 );
-
-                // console.log('Autocomplete initialized with options:', {
-                //     specificCoordinates,
-                //     types: specificCoordinates ? ['establishment'] : [],
-                //     fields: ['place_id', 'name', 'formatted_address', 'geometry', 'address_components', 'utc_offset_minutes']
-                // });
 
                 autocomplete.addListener('place_changed', () => {
                     const place = autocomplete.getPlace();
@@ -39,10 +32,24 @@ const VenueAutocomplete = ({
                         return;
                     }
 
+                    const viewport = place.geometry.viewport;
+                    const location = place.geometry.location;
+
                     const processedPlace = {
                         ...place,
                         name: place.name || place.formatted_address,
-                        address: place.formatted_address
+                        address: place.formatted_address,
+                        geometry: {
+                            ...place.geometry,
+                            location: {
+                                lat: () => location.lat(),
+                                lng: () => location.lng()
+                            },
+                            viewport: viewport ? {
+                                getNorthEast: () => viewport.getNorthEast(),
+                                getSouthWest: () => viewport.getSouthWest()
+                            } : null
+                        }
                     };
 
                     onPlaceSelected(processedPlace);
