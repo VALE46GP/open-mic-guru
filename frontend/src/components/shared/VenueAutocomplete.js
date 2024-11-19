@@ -13,14 +13,15 @@ const VenueAutocomplete = ({
     const [inputValue, setInputValue] = useState(initialValue || "");
 
     useEffect(() => {
+        let autocomplete = null;
         const checkGoogleMapsLoaded = setInterval(() => {
             if (window.google && window.google.maps && window.google.maps.places && autocompleteInputRef.current) {
                 clearInterval(checkGoogleMapsLoaded);
 
-                const autocomplete = new window.google.maps.places.Autocomplete(
+                autocomplete = new window.google.maps.places.Autocomplete(
                     autocompleteInputRef.current,
                     {
-                        types: specificCoordinates ? ['establishment'] : ['(regions)'],
+                        types: [],  // Allow all types of places
                         fields: ['place_id', 'name', 'formatted_address', 'geometry', 'address_components', 'utc_offset_minutes']
                     }
                 );
@@ -41,10 +42,7 @@ const VenueAutocomplete = ({
                         address: place.formatted_address,
                         geometry: {
                             ...place.geometry,
-                            location: {
-                                lat: () => location.lat(),
-                                lng: () => location.lng()
-                            },
+                            location: place.geometry.location,
                             viewport: viewport ? {
                                 getNorthEast: () => viewport.getNorthEast(),
                                 getSouthWest: () => viewport.getSouthWest()
@@ -58,7 +56,12 @@ const VenueAutocomplete = ({
             }
         }, 100);
 
-        return () => clearInterval(checkGoogleMapsLoaded);
+        return () => {
+            clearInterval(checkGoogleMapsLoaded);
+            if (autocomplete) {
+                window.google.maps.event.clearInstanceListeners(autocomplete);
+            }
+        };
     }, [onPlaceSelected, specificCoordinates]);
 
     useEffect(() => {

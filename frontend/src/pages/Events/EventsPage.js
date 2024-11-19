@@ -45,8 +45,8 @@ const EventsPage = () => {
 
   const filterEvents = (events, searchTerm, location) => {
     let filtered = [...events];
-
-    // Apply text search filter
+  
+    // Apply text-based filtering
     if (searchTerm.trim()) {
       const searchLower = searchTerm.toLowerCase();
       filtered = filtered.filter(event =>
@@ -55,54 +55,54 @@ const EventsPage = () => {
         event.host_name.toLowerCase().includes(searchLower)
       );
     }
-
-    // Apply location filter
+  
+    // Apply location-based filtering
     if (location) {
-      const stateComponent = location.address_components?.find(
-        component => component.types.includes('administrative_area_level_1')
+      const isSpecificLocation = location.address_components?.some(component =>
+        ['street_number', 'route', 'postal_code'].includes(component.types[0])
       );
-
-      if (stateComponent) {
-        // Create a geocoder instance
-        const geocoder = new window.google.maps.Geocoder();
-        
-        // Filter events by checking if they're within the state's bounds
+  
+      if (isSpecificLocation && location.lat && location.lng) {
+        // Filter by radius (15 miles in meters)
+        console.log('Using radius filtering for specific location.');
         filtered = filtered.filter(event => {
           if (!event.venue_latitude || !event.venue_longitude) return false;
-          
-          const eventLocation = {
-            lat: Number(event.venue_latitude),
-            lng: Number(event.venue_longitude)
-          };
-
-          // Check if the event is within the state's bounds
-          const bounds = new window.google.maps.LatLngBounds(
-            location.viewport.getSouthWest(),
-            location.viewport.getNorthEast()
-          );
-
-          return bounds.contains(new window.google.maps.LatLng(eventLocation));
-        });
-      } else {
-        // Use radius-based filtering for non-state locations
-        filtered = filtered.filter(event => {
-          if (!event.venue_latitude || !event.venue_longitude) return false;
-          
+  
           const eventLocation = new window.google.maps.LatLng(
             Number(event.venue_latitude),
             Number(event.venue_longitude)
           );
-          
+  
           const distance = window.google.maps.geometry.spherical.computeDistanceBetween(
             new window.google.maps.LatLng(location.lat, location.lng),
             eventLocation
           );
-          
-          return distance <= 24140; // 15 miles in meters
+  
+          return distance <= 16093.33; // 10 miles in meters
         });
+      } else if (location.viewport && Object.keys(location.viewport).length > 0) {
+        // Filter by viewport
+        console.log('Using viewport filtering.');
+        const bounds = new window.google.maps.LatLngBounds(
+          location.viewport.getSouthWest(),
+          location.viewport.getNorthEast()
+        );
+  
+        filtered = filtered.filter(event => {
+          if (!event.venue_latitude || !event.venue_longitude) return false;
+  
+          const eventLocation = new window.google.maps.LatLng(
+            Number(event.venue_latitude),
+            Number(event.venue_longitude)
+          );
+  
+          return bounds.contains(eventLocation);
+        });
+      } else {
+        console.warn('Location has no viewport; skipping viewport filtering.');
       }
     }
-
+  
     return filtered;
   };
 
@@ -115,15 +115,21 @@ const EventsPage = () => {
     if (!place || !place.geometry) return;
 
     const location = {
-      lat: place.geometry.location.lat(),
-      lng: place.geometry.location.lng(),
+      lat: typeof place.geometry.location.lat === 'function' 
+        ? place.geometry.location.lat() 
+        : place.geometry.location.lat,
+      lng: typeof place.geometry.location.lng === 'function' 
+        ? place.geometry.location.lng() 
+        : place.geometry.location.lng,
       address_components: place.address_components,
       viewport: place.geometry.viewport
     };
 
+    console.log('Selected location:', location); // Debugging
     setSelectedLocation(location);
-    setMapCenter(location);
+    setMapCenter({ lat: location.lat, lng: location.lng });
     const filtered = filterEvents(events, searchTerm, location);
+    console.log('Filtered events:', filtered); // Debugging
     setFilteredEvents(filtered);
   };
 
