@@ -7,10 +7,18 @@ const VenueAutocomplete = ({
     onResetComplete, 
     initialValue,
     specificCoordinates = false,
-    placeholder = "Location"
+    placeholder = "Location",
+    onClear
 }) => {
     const autocompleteInputRef = useRef(null);
     const [inputValue, setInputValue] = useState(initialValue || "");
+
+    const handleClear = () => {
+        setInputValue("");
+        if (onClear) {
+            onClear();
+        }
+    };
 
     useEffect(() => {
         let autocomplete = null;
@@ -76,14 +84,25 @@ const VenueAutocomplete = ({
 
     return (
         <div className="venue-autocomplete">
-            <input
-                ref={autocompleteInputRef}
-                type="text"
-                placeholder={placeholder}
-                value={inputValue}
-                onChange={(e) => setInputValue(e.target.value)}
-                className="venue-autocomplete__input"
-            />
+            <div className="venue-autocomplete__input-wrapper">
+                <input
+                    ref={autocompleteInputRef}
+                    type="text"
+                    placeholder={placeholder}
+                    value={inputValue}
+                    onChange={(e) => setInputValue(e.target.value)}
+                    className="venue-autocomplete__input"
+                />
+                {inputValue && (
+                    <button 
+                        className="venue-autocomplete__clear-button"
+                        onClick={handleClear}
+                        aria-label="Clear location"
+                    >
+                        ×
+                    </button>
+                )}
+            </div>
         </div>
     );
 };

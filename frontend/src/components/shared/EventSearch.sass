@@ -1,8 +1,15 @@
 .event-search
     width: 100%
+    position: relative
+
+    &__input-wrapper
+        width: 100%
+        display: flex
+        align-items: center
+        gap: 0.5rem
 
     &__input
-        width: 100%
+        flex: 1
         padding: 0.75rem
         border: 1px solid #ddd
         border-radius: 8px
@@ -12,3 +19,21 @@
             outline: none
             border-color: #0066cc
             box-shadow: 0 0 0 2px rgba(0, 102, 204, 0.1)
+
+    &__clear-button
+        flex-shrink: 0
+        background: none
+        border: none
+        font-size: 1.5rem
+        color: #666
+        cursor: pointer
+        padding: 0.25rem
+        line-height: 1
+        width: 2rem
+        height: 2rem
+        display: flex
+        align-items: center
+        justify-content: center
+        
+        &:hover
+            color: #333

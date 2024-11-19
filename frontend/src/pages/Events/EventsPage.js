@@ -173,10 +173,19 @@ const EventsPage = () => {
               onResetComplete={() => {}}
               placeholder="Filter by location"
               specificCoordinates={false}
+              onClear={() => {
+                setSelectedLocation(null);
+                setMapCenter(null);
+                setFilteredEvents(events);
+              }}
             />
             <EventSearch
               onSearch={handleSearch}
               placeholder="Filter events by name, venue, or host"
+              onClear={() => {
+                setSearchTerm('');
+                setFilteredEvents(filterEvents(events, '', selectedLocation));
+              }}
             />
             {selectedEvent && (
               <div className="events-page__selected-events">
