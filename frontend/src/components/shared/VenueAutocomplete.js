@@ -51,7 +51,10 @@ const VenueAutocomplete = ({
                     };
 
                     onPlaceSelected(processedPlace);
-                    setInputValue(place.formatted_address);
+                    const displayValue = place.name && place.name !== place.formatted_address.split(',')[0]
+                        ? `${place.name}, ${place.formatted_address}`
+                        : place.formatted_address;
+                    setInputValue(displayValue);
                 });
             }
         }, 100);
