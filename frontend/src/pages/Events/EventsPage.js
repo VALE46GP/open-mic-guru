@@ -126,11 +126,19 @@ const EventsPage = () => {
       viewport: place.geometry.viewport
     };
 
-    console.log('Selected location:', location); // Debugging
+    // Store viewport in window for map component to access
+    if (location.viewport) {
+      window.locationViewport = new window.google.maps.LatLngBounds(
+        location.viewport.getSouthWest(),
+        location.viewport.getNorthEast()
+      );
+    } else {
+      window.locationViewport = null;
+    }
+
     setSelectedLocation(location);
     setMapCenter({ lat: location.lat, lng: location.lng });
     const filtered = filterEvents(events, searchTerm, location);
-    console.log('Filtered events:', filtered); // Debugging
     setFilteredEvents(filtered);
   };
 

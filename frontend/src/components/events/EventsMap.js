@@ -56,14 +56,24 @@ const EventsMap = ({ events, center, onEventSelect }) => {
         styles: [{ featureType: "poi", elementType: "labels", stylers: [{ visibility: "off" }] }],
       });
     } else if (center && !map.current.isMarkerClick) {
-      // Only update center and zoom if it's not from a marker click
-      map.current.setCenter(center);
-      if (events.length === 1) {
-        map.current.setZoom(15);
-      } else if (events.length === 0) {
-        map.current.setZoom(13);
+      if (events.length === 0) {
+        // If no events found and we have viewport information from the location filter
+        const locationViewport = window.locationViewport;
+        if (locationViewport) {
+          map.current.fitBounds(locationViewport);
+        } else {
+          // If no viewport info, just center on the selected point with a wider view
+          map.current.setCenter(center);
+          map.current.setZoom(10);
+        }
       } else {
-        map.current.setZoom(10);
+        // Keep existing behavior for when events are found
+        map.current.setCenter(center);
+        if (events.length === 1) {
+          map.current.setZoom(15);
+        } else {
+          map.current.setZoom(10);
+        }
       }
     }
 
