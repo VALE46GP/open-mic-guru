@@ -55,15 +55,15 @@ const EventsMap = ({ events, center, onEventSelect }) => {
         disableDefaultUI: true,
         styles: [{ featureType: "poi", elementType: "labels", stylers: [{ visibility: "off" }] }],
       });
-    } else if (center) {
-      // Update map center when it changes
+    } else if (center && !map.current.isMarkerClick) {
+      // Only update center and zoom if it's not from a marker click
       map.current.setCenter(center);
       if (events.length === 1) {
-        map.current.setZoom(15); // Less zoom for single event
+        map.current.setZoom(15);
       } else if (events.length === 0) {
-        map.current.setZoom(13); // Current zoom for no events
+        map.current.setZoom(13);
       } else {
-        map.current.setZoom(10); // Current zoom for multiple events
+        map.current.setZoom(10);
       }
     }
 
@@ -109,8 +109,8 @@ const EventsMap = ({ events, center, onEventSelect }) => {
 
     markers.current = newMarkers;
 
-    // Only fit bounds if there are markers
-    if (newMarkers.length > 0) {
+    // Only fit bounds if there are markers and not handling a marker click
+    if (newMarkers.length > 0 && !map.current.isMarkerClick) {
       markerClusterer.current = new MarkerClusterer({
         map: map.current,
         markers: newMarkers,
@@ -125,13 +125,26 @@ const EventsMap = ({ events, center, onEventSelect }) => {
       }
     }
 
+    // Reset the marker click flag after all operations are complete
+    setTimeout(() => {
+      if (map.current) {
+        map.current.isMarkerClick = false;
+      }
+    }, 100);
+
   }, [isGoogleLoaded, center, events]);
 
   const handleMarkerClick = (event) => {
+    if (!map.current) return;
+
     const position = {
       lat: Number(event.venue_latitude),
       lng: Number(event.venue_longitude)
     };
+
+    // Set a flag to prevent the useEffect from overriding our zoom/center
+    map.current.isMarkerClick = true;
+
     map.current.setCenter(position);
     map.current.setZoom(15);
     onEventSelect(event);

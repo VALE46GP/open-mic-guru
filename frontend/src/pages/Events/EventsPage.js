@@ -14,6 +14,7 @@ const EventsPage = () => {
   const [selectedLocation, setSelectedLocation] = useState(null);
   const [mapCenter, setMapCenter] = useState(null);
   const [selectedEvent, setSelectedEvent] = useState(null);
+  const [showPastEvents, setShowPastEvents] = useState(false);
   const { getUserId } = useAuth();
   const userId = getUserId();
 
@@ -142,8 +143,16 @@ const EventsPage = () => {
       <div className="events-page__section">
         <BorderBox className="events-page__border-box">
           <div className="events-page__map-section">
+            <div className="events-page__filter-buttons" >
+              <button
+                className="events-page__toggle-past-events"
+                onClick={() => setShowPastEvents(!showPastEvents)}
+              >
+                {showPastEvents ? "Hide Past Events" : "Show Past Events"}
+              </button>
+            </div>
             <EventsMap
-              events={filteredEvents}
+              events={showPastEvents ? filteredEvents : filteredEvents.filter(event => new Date(event.start_time) >= new Date())}
               userId={userId}
               center={mapCenter}
               onEventSelect={handleEventSelect}
