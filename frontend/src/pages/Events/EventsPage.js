@@ -109,6 +109,7 @@ const EventsPage = () => {
 
   const handleSearch = (searchTerm) => {
     setSearchTerm(searchTerm);
+    setSelectedEvent(null);
     setFilteredEvents(filterEvents(events, searchTerm, selectedLocation));
   };
 
@@ -137,6 +138,7 @@ const EventsPage = () => {
     }
 
     setSelectedLocation(location);
+    setSelectedEvent(null);
     setMapCenter({ lat: location.lat, lng: location.lng });
     const filtered = filterEvents(events, searchTerm, location);
     setFilteredEvents(filtered);
