@@ -6,7 +6,6 @@ import { useNavigate, useParams } from 'react-router-dom';
 import VenueAutocomplete from '../shared/VenueAutocomplete';
 import TextInput from '../shared/TextInput';
 import LocationMap from '../shared/LocationMap';
-// import { ReactComponent as EditIcon } from "../../assets/icons/edit.svg";
 import './CreateEvent.sass';
 import BorderBox from '../shared/BorderBox/BorderBox';
 import axios from 'axios';
@@ -17,8 +16,8 @@ function CreateEvent() {
     const [newEventName, setNewEventName] = useState('');
     const [startTime, setStartTime] = useState('');
     const [endTime, setEndTime] = useState('');
-    const [slotDuration, setSlotDuration] = useState('0'); // Initialize with '0' to avoid NaN
-    const [setupDuration, setSetupDuration] = useState('5'); // Initialize with '5' to avoid NaN
+    const [slotDuration, setSlotDuration] = useState('10');
+    const [setupDuration, setSetupDuration] = useState('5');
     const [selectedVenue, setSelectedVenue] = useState(null);
     const [additionalInfo, setAdditionalInfo] = useState('');
     const [resetTrigger, setResetTrigger] = useState(false);
@@ -118,7 +117,7 @@ function CreateEvent() {
         const file = e.target.files[0];
         if (file) {
             setImagePreview(URL.createObjectURL(file));
-            setEventImage(file);  // Store the File object directly
+            setEventImage(file);
         }
     };
 
@@ -268,11 +267,11 @@ function CreateEvent() {
                             />
                         </div>
                         <div className="create-event__input-field">
-                            <label htmlFor="additional-information">Additional Information</label>
+                            <label htmlFor="additional-information">Event Description</label>
                             <textarea
                                 id="additional-information"
                                 className="input-style"
-                                placeholder="Additional Info"
+                                placeholder="Event Description"
                                 value={additionalInfo}
                                 onChange={(e) => setAdditionalInfo(e.target.value)}
                             />
