@@ -139,7 +139,7 @@ function CreateEvent() {
 
         let venueId = await checkOrCreateVenue(selectedVenue);
 
-        let imageUrl = null;
+        let imageUrl = eventImage;
         if (eventImage && eventImage instanceof File) {
             try {
                 const { data } = await axios.post('/api/events/upload', {
@@ -170,17 +170,20 @@ function CreateEvent() {
         };
 
         try {
-            const response = await fetch('/api/events', {
-                method: 'POST',
+            const url = isEditMode ? `/api/events/${eventId}` : '/api/events';
+            const method = isEditMode ? 'PUT' : 'POST';
+            
+            const response = await fetch(url, {
+                method: method,
                 headers: {
                     'Content-Type': 'application/json',
                 },
                 body: JSON.stringify(requestBody)
             });
-            const newEvent = await response.json();
-            navigate(`/events/${newEvent.id}`);
+            const data = await response.json();
+            navigate(`/events/${isEditMode ? eventId : data.id}`);
         } catch (error) {
-            console.error('Error creating event:', error);
+            console.error('Error saving event:', error);
         }
     };
 

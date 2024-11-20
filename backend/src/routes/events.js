@@ -204,17 +204,17 @@ router.post('/', async (req, res) => {
 // PUT an existing event
 router.put('/:eventId', async (req, res) => {
     const { eventId } = req.params;
-    const { name, start_time, end_time, slot_duration, setup_duration, venue_id, additional_info } = req.body;
+    const { name, start_time, end_time, slot_duration, setup_duration, venue_id, additional_info, image } = req.body;
 
     try {
         if (new Date(start_time) >= new Date(end_time)) {
             return res.status(400).json({ error: 'Start time must be before end time' });
         }
 
-        // Update the event in the database
+        // Update the event in the database, including the image field
         const result = await db.query(
-            'UPDATE events SET name = $1, start_time = $2, end_time = $3, slot_duration = $4, setup_duration = $5, venue_id = $6, additional_info = $7 WHERE id = $8 RETURNING *',
-            [name, start_time, end_time, slot_duration, setup_duration, venue_id, additional_info, eventId]
+            'UPDATE events SET name = $1, start_time = $2, end_time = $3, slot_duration = $4, setup_duration = $5, venue_id = $6, additional_info = $7, image = $8 WHERE id = $9 RETURNING *',
+            [name, start_time, end_time, slot_duration, setup_duration, venue_id, additional_info, image, eventId]
         );
 
         if (result.rows.length === 0) {
