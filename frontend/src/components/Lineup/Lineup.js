@@ -40,6 +40,9 @@ function Slot({ slot, onClick, isHost, currentUserId, currentNonUserId, slots, i
                 if (!isEditing) classes.push('clickable');
             }
         } else {
+            if (isOwnSlot) {
+                classes.push('lineup__slot--user-slot');
+            }
             classes.push('lineup__slot--assigned');
             if (!isEditing) classes.push('clickable');
         }

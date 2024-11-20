@@ -24,6 +24,29 @@
             &--editing
                 grid-template-columns: auto 50px 100px 1fr
 
+        &--open
+            border-width: 3px
+            border-radius: 6px
+            border-color: #28a745  // Green border for open slots
+
+            &:focus-visible,
+            &:hover
+                border-color: darken(#28a745, 10%)
+                background-color: #f8f8f8
+
+        &-username
+            text-decoration: none !important
+                
+        &--user-slot
+            border-width: 3px
+            border-radius: 6px
+            border-color: #0066cc  // Blue border for user's slots
+            
+            &:focus-visible,
+            &:hover
+                border-color: darken(#0066cc, 10%)
+                background-color: #f8f8f8
+
     &__slot-number
         text-align: center
         font-weight: bold
@@ -43,7 +66,8 @@
             cursor: pointer
             padding: 4px
             border-radius: 50%
-            
+
+            &:focus-visible,
             &:hover
                 background-color: rgba(255, 0, 0, 0.1)
 
@@ -100,6 +124,7 @@
                 color: white
 
     &__slot-link
+        &:focus-visible,
         &:hover
             text-decoration: none
             
@@ -141,14 +166,16 @@
             &:first-child
                 background-color: #28a745
                 color: white
-                
+
+                &:focus-visible,
                 &:hover
                     background-color: #218838
             
             &:last-child
                 background-color: #dc3545
                 color: white
-                
+
+                &:focus-visible,
                 &:hover
                     background-color: #c82333
             
