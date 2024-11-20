@@ -38,7 +38,7 @@ function UserCard({ user }) {
                             </div>
                         )}
                         <div className={`user-card__details ${user.image ? 'user-card__details--with-image' : ''}`}>
-                            <div className="user-card__title">
+                            <div className="user-card__name">
                                 {user.name}
                             </div>
                             {user.social_media_accounts && user.social_media_accounts.length > 0 && (
@@ -46,9 +46,14 @@ function UserCard({ user }) {
                                     {user.social_media_accounts.map((account, index) => {
                                         const IconComponent = getPlatformIcon(account.platform);
                                         return (
-                                            <a key={index} href={account.url} target="_blank" rel="noopener noreferrer">
+                                            <button
+                                                key={index}
+                                                onClick={() => window.open(account.url, '_blank')}
+                                                className="user-card__social-media-button"
+                                                aria-label={`Visit ${account.platform}`}
+                                            >
                                                 {IconComponent && <IconComponent className="user-card__social-media-icon" />}
-                                            </a>
+                                            </button>
                                         );
                                     })}
                                 </div>

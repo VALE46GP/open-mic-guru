@@ -75,17 +75,23 @@
         object-position: center
 
     &__social-media
+        display: flex
+        gap: 1rem
         margin-top: 0.5rem
 
-        a
-            margin-right: 0.5rem
+        button
+            padding: 0
+            background: none
+            border: none
+            cursor: pointer
             color: #333
             transition: color 0.2s ease
+            width: min-content
 
             &:focus-visible,
             &:hover
                 color: #0066cc
 
     &__social-media-icon
-        width: 24px
-        height: 24px
+        width: 42px
+        height: 42px
