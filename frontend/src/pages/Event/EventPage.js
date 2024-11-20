@@ -211,8 +211,10 @@ function EventPage() {
 
     // Remove the local state update after successful POST
     const handleSlotClick = async (slot, slotName, isHostAssignment) => {
-        // For logged-in users (non-host), use their name from context
-        const finalSlotName = (userId && !isHostAssignment) ? user.name : slotName;
+        // Only use the user's name if no custom name was provided
+        const finalSlotName = (userId && !isHostAssignment && !slotName.trim()) 
+            ? user.name 
+            : slotName;
 
         const response = await fetch('/api/lineup_slots/', {
             method: 'POST',
