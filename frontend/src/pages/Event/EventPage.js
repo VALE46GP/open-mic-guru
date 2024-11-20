@@ -276,14 +276,25 @@ function EventPage() {
                 <p>
                     {formatEventTime(eventDetails?.event?.start_time)}
                     {" - "}
-                    {new Date(eventDetails?.event?.start_time).toDateString() === new Date(eventDetails?.event?.end_time).toDateString() 
-                        ? new Date(eventDetails?.event?.end_time).toLocaleTimeString([], { 
-                            hour: 'numeric', 
+                    {new Date(eventDetails?.event?.start_time).toDateString() === new Date(eventDetails?.event?.end_time).toDateString()
+                        ? new Date(eventDetails?.event?.end_time).toLocaleTimeString([], {
+                            hour: 'numeric',
                             minute: '2-digit'
                         })
                         : formatEventTime(eventDetails?.event?.end_time)
                     }
                 </p>
+                {eventDetails?.event?.image && (
+                    <div className="event-page__image-container">
+                        <img
+                            src={eventDetails.event.image}
+                            alt={eventDetails.event.name}
+                            className="event-page__event-image"
+                        />
+                    </div>
+                )}
+                <p className="event-page__info">Slot Duration: {eventDetails?.event?.slot_duration?.minutes} minutes</p>
+                <p className="event-page__info">Additional Info: {eventDetails?.event?.additional_info}</p>
                 <div className="event-page__host-image-container">
                     <Link to={`/users/${eventDetails?.host?.id}`}>
                         {eventDetails?.host?.image && (
@@ -301,8 +312,6 @@ function EventPage() {
                         {eventDetails?.host?.name}
                     </Link>
                 </p>
-                <p className="event-page__info">Slot Duration: {eventDetails?.event?.slot_duration?.minutes} minutes</p>
-                <p className="event-page__info">Additional Info: {eventDetails?.event?.additional_info}</p>
                 <p className="event-page__info">Location: {eventDetails?.venue?.name}, {eventDetails?.venue?.address}</p>
                 <div className="event-page__map-container">
                     {eventDetails?.venue?.latitude && eventDetails?.venue?.longitude && (

@@ -6,6 +6,7 @@ import VenueAutocomplete from '../../components/shared/VenueAutocomplete';
 import EventSearch from '../../components/shared/EventSearch';
 import BorderBox from '../../components/shared/BorderBox/BorderBox';
 import './EventsPage.sass';
+import { Link } from 'react-router-dom';
 
 const EventsPage = () => {
   const [events, setEvents] = useState([]);
@@ -189,13 +190,15 @@ const EventsPage = () => {
             />
             {selectedEvent && (
               <div className="events-page__selected-events">
-                <EventCard
-                  key={`selected-${selectedEvent.event_id}`}
-                  event={selectedEvent}
-                  placeholder="Filter by location"
-                  slotTime={selectedEvent.is_performer ? selectedEvent.performer_slot_time : null}
-                  compact={true}
-                />
+                <Link to={`/events/${selectedEvent.event_id}`}>
+                  <EventCard
+                    key={`selected-${selectedEvent.event_id}`}
+                    event={selectedEvent}
+                    placeholder="Filter by location"
+                    slotTime={selectedEvent.is_performer ? selectedEvent.performer_slot_time : null}
+                    compact={true}
+                  />
+                </Link>
               </div>
             )}
           </div>
@@ -208,11 +211,12 @@ const EventsPage = () => {
             filteredEvents
               .filter(event => new Date(event.start_time) >= new Date())
               .map(event => (
-                <EventCard 
-                  key={`event-${event.event_id}`} 
-                  event={event}
-                  slotTime={event.is_performer ? event.performer_slot_time : null}
-                />
+                <Link to={`/events/${event.event_id}`} className="event-card-link" key={`event-${event.event_id}`}>
+                  <EventCard 
+                    event={event}
+                    slotTime={event.is_performer ? event.performer_slot_time : null}
+                  />
+                </Link>
               ))
           ) : (
             <div className="events-page__no-events">
@@ -230,11 +234,12 @@ const EventsPage = () => {
               .filter(event => new Date(event.start_time) < new Date())
               .sort((a, b) => new Date(b.start_time) - new Date(a.start_time))
               .map(event => (
-                <EventCard 
-                  key={`event-${event.event_id}`} 
-                  event={event}
-                  slotTime={event.is_performer ? event.performer_slot_time : null}
-                />
+                <Link to={`/events/${event.event_id}`} className="event-card-link" key={`event-${event.event_id}`}>
+                  <EventCard 
+                    event={event}
+                    slotTime={event.is_performer ? event.performer_slot_time : null}
+                  />
+                </Link>
               ))}
           </div>
         </div>

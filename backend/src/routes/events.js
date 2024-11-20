@@ -2,6 +2,16 @@ const express = require('express');
 const router = express.Router();
 const db = require('../db');
 const verifyToken = require('../middleware/verifyToken');
+const AWS = require('aws-sdk');
+
+// Configure AWS SDK (matching users.js pattern)
+AWS.config.update({
+  accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+  secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+  region: process.env.AWS_REGION
+});
+
+const s3 = new AWS.S3();
 
 // GET all events
 router.get('/', async (req, res) => {
@@ -15,6 +25,7 @@ router.get('/', async (req, res) => {
                 e.slot_duration,
                 e.setup_duration,
                 e.additional_info,
+                e.image AS event_image,
                 v.id AS venue_id,
                 v.name AS venue_name,
                 v.address AS venue_address,
@@ -79,6 +90,7 @@ router.get('/:eventId', async (req, res) => {
                 e.slot_duration,
                 e.setup_duration,
                 e.additional_info,
+                e.image AS event_image,
                 v.id AS venue_id,
                 v.name AS venue_name,
                 v.address AS venue_address,
@@ -133,6 +145,7 @@ router.get('/:eventId', async (req, res) => {
                 slot_duration: eventData.slot_duration,
                 setup_duration: eventData.setup_duration,
                 additional_info: eventData.additional_info,
+                image: eventData.event_image,
             },
             venue: {
                 id: eventData.venue_id,
@@ -168,11 +181,17 @@ router.get('/:eventId', async (req, res) => {
 // POST a new event
 router.post('/', async (req, res) => {
     try {
-        const { venue_id, start_time, end_time, slot_duration, setup_duration = 5, name, additional_info, host_id } = req.body;
+        const { venue_id, start_time, end_time, slot_duration, setup_duration = 5, name, additional_info, host_id, image } = req.body;
+
         if (new Date(start_time) >= new Date(end_time)) {
             return res.status(400).json({ error: 'Start time must be before end time' });
         }
-        const result = await db.query('INSERT INTO events (venue_id, start_time, end_time, slot_duration, setup_duration, name, additional_info) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *', [venue_id, start_time, end_time, slot_duration, setup_duration, name, additional_info]);
+
+        const result = await db.query(
+            'INSERT INTO events (venue_id, start_time, end_time, slot_duration, setup_duration, name, additional_info, image) VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *',
+            [venue_id, start_time, end_time, slot_duration, setup_duration, name, additional_info, image]
+        );
+
         const eventId = result.rows[0].id;
         await db.query('INSERT INTO user_roles (user_id, event_id, role) VALUES ($1, $2, \'host\')', [host_id, eventId]);
         res.status(201).json(result.rows[0]);
@@ -276,6 +295,25 @@ router.put('/:eventId/extend', async (req, res) => {
         console.error(err);
         res.status(500).json({ error: 'Server error' });
     }
+});
+
+router.post('/upload', async (req, res) => {
+  const { fileName, fileType } = req.body;
+  const uniqueFileName = `${Date.now()}-${fileName}`;
+  const s3Params = {
+    Bucket: process.env.S3_BUCKET_NAME,
+    Key: `events/${uniqueFileName}`,
+    Expires: 60,
+    ContentType: fileType
+  };
+
+  try {
+    const uploadURL = await s3.getSignedUrlPromise('putObject', s3Params);
+    res.json({ uploadURL });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Error generating upload URL' });
+  }
 });
 
 module.exports = router;

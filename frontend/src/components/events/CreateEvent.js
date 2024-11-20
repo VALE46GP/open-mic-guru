@@ -9,6 +9,7 @@ import LocationMap from '../shared/LocationMap';
 // import { ReactComponent as EditIcon } from "../../assets/icons/edit.svg";
 import './CreateEvent.sass';
 import BorderBox from '../shared/BorderBox/BorderBox';
+import axios from 'axios';
 
 function CreateEvent() {
     const { eventId } = useParams();
@@ -26,6 +27,8 @@ function CreateEvent() {
     const isEditMode = !!eventId;
     const [isGoogleMapsLoaded, setIsGoogleMapsLoaded] = useState(false);
     const [isEditingLocation, setIsEditingLocation] = useState(false);
+    const [eventImage, setEventImage] = useState(null);
+    const [imagePreview, setImagePreview] = useState(null);
 
     useEffect(() => {
         if (eventId) {
@@ -61,7 +64,7 @@ function CreateEvent() {
                         }).slice(0, 16));
                     }
 
-                    setSlotDuration(data.event?.slot_duration?.minutes ? data.event.slot_duration.minutes.toString() : '0');
+                    setSlotDuration(data.event?.slot_duration?.minutes ? data.event.slot_duration.minutes.toString() : '10');
                     setSetupDuration(data.event?.setup_duration?.minutes ? data.event.setup_duration.minutes.toString() : '5');
                     if (data.venue && isGoogleMapsLoaded) {
                         setSelectedVenue({
@@ -111,13 +114,15 @@ function CreateEvent() {
         }
     }, [selectedVenue]);
 
-    const handleSubmit = async () => {
-        console.log("handleSubmit triggered");
-        console.log("Selected venue:", selectedVenue); // Log to ensure venue is set
-        console.log("Event name:", newEventName); // Log event name
-        console.log("Start time:", startTime); // Log start time
-        console.log("End time:", endTime); // Log end time
+    const handleImageChange = (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            setImagePreview(URL.createObjectURL(file));
+            setEventImage(file);  // Store the File object directly
+        }
+    };
 
+    const handleSubmit = async () => {
         if (!selectedVenue) {
             alert("Please select a location from the dropdown.");
             return;
@@ -129,26 +134,46 @@ function CreateEvent() {
 
         let venueId = await checkOrCreateVenue(selectedVenue);
 
-        const hostId = getUserId();
+        let imageUrl = null;
+        if (eventImage && eventImage instanceof File) {
+            try {
+                const { data } = await axios.post('/api/events/upload', {
+                    fileName: eventImage.name,
+                    fileType: eventImage.type
+                });
+
+                await axios.put(data.uploadURL, eventImage, {
+                    headers: { 'Content-Type': eventImage.type },
+                });
+                imageUrl = data.uploadURL.split('?')[0];
+            } catch (error) {
+                console.error('Error uploading image:', error);
+                return;
+            }
+        }
+
+        const requestBody = {
+            name: newEventName,
+            venue_id: venueId,
+            start_time: startTime,
+            end_time: endTime,
+            slot_duration: slotDuration * 60,
+            setup_duration: setupDuration * 60,
+            additional_info: additionalInfo,
+            host_id: getUserId(),
+            image: imageUrl
+        };
+
         try {
-            const response = await fetch(isEditMode ? `/api/events/${eventId}` : '/api/events', {
-                method: isEditMode ? 'PUT' : 'POST',
+            const response = await fetch('/api/events', {
+                method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({
-                    name: newEventName,
-                    venue_id: venueId,
-                    start_time: startTime,
-                    end_time: endTime,
-                    slot_duration: slotDuration * 60, // Convert minutes to seconds
-                    setup_duration: setupDuration * 60, // Convert minutes to seconds
-                    additional_info: additionalInfo,
-                    host_id: hostId,
-                }),
+                body: JSON.stringify(requestBody)
             });
             const newEvent = await response.json();
-            navigate(`/events/${newEvent.id}`); // Navigate to the new event's page
+            navigate(`/events/${newEvent.id}`);
         } catch (error) {
             console.error('Error creating event:', error);
         }
@@ -205,7 +230,12 @@ function CreateEvent() {
                                 id="start-time"
                                 type="datetime-local"
                                 value={startTime}
-                                onChange={(e) => setStartTime(e.target.value)}
+                                onChange={(e) => {
+                                    setStartTime(e.target.value);
+                                    // Add one hour to the selected time
+                                    const endDateTime = e.target.value.slice(0, -5) + (parseInt(e.target.value.slice(-5, -3)) + 1).toString().padStart(2, '0') + ":00";
+                                    setEndTime(endDateTime);
+                                }}
                             />
                         </div>
                         <div className="create-event__input-field">
@@ -246,6 +276,24 @@ function CreateEvent() {
                                 value={additionalInfo}
                                 onChange={(e) => setAdditionalInfo(e.target.value)}
                             />
+                        </div>
+                        <div className="create-event__input-field">
+                            <label htmlFor="event-image">Event Image</label>
+                            <input
+                                type="file"
+                                id="event-image"
+                                accept="image/*"
+                                onChange={handleImageChange}
+                                className="create-event__file-input"
+                                style={{ display: 'block' }}
+                            />
+                            {imagePreview && (
+                                <img
+                                    src={imagePreview}
+                                    alt="Event preview"
+                                    className="create-event__image-preview"
+                                />
+                            )}
                         </div>
                     </div>
                 </BorderBox>
