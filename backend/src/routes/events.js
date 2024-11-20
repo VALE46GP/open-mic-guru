@@ -234,8 +234,6 @@ router.delete('/:eventId', verifyToken, async (req, res) => {
     const { eventId } = req.params;
     const userId = req.user?.userId; // Access the userId from `req.user`
 
-    console.log(`Attempting to delete event ${eventId} by user ${userId}`);
-
     try {
         // Validate if the user is the host of the event
         const hostCheck = await db.query(
@@ -254,8 +252,6 @@ router.delete('/:eventId', verifyToken, async (req, res) => {
             console.log(`User ${userId} is not the host of the event ${eventId}`);
             return res.status(403).json({ error: 'Only the host can delete this event' });
         }
-
-        console.log(`User ${userId} is authorized to delete event ${eventId}`);
 
         // Proceed to delete event
         await db.query('DELETE FROM lineup_slots WHERE event_id = $1', [eventId]);

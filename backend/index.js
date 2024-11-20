@@ -13,7 +13,7 @@ const server = http.createServer(app);
 
 // Global Middleware for Logging Requests
 app.use((req, res, next) => {
-    console.log(`[${new Date().toISOString()}] ${req.method} ${req.url}`);
+    // console.log(`[${new Date().toISOString()}] ${req.method} ${req.url}`); // debugging
     next();
 });
 

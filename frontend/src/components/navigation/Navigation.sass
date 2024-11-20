@@ -1,2 +1,60 @@
-.navbar-toggler
-  width: unset
+.navigation
+    position: fixed
+    top: 0
+    left: 0
+    width: 100%
+    display: flex
+    justify-content: space-between
+    align-items: center
+    padding: 1rem
+    background-color: white
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1)
+    transition: transform 0.3s cubic-bezier(0.4, 0.0, 0.2, 1)
+    z-index: 1000
+
+    &--hidden
+        transform: translateY(-100%)
+
+    &--visible
+        transform: translateY(0)
+
+    &__left
+        font-size: 1.5rem
+        font-weight: bold
+
+    &__logo
+        color: black
+        text-decoration: none
+
+    &__right
+        display: flex
+        align-items: center
+        gap: 1rem
+
+    &__create-event
+        background-color: #28a745
+        color: white
+        font-size: 1.5rem
+        width: 40px
+        height: 40px
+        display: flex
+        align-items: center
+        justify-content: center
+        border-radius: 4px
+        text-decoration: none
+
+    &__user-thumbnail
+        width: 40px
+        height: 40px
+        border-radius: 50%
+        object-fit: cover
+
+    &__login-icon
+        color: black
+        font-size: 1.5rem
+        display: flex
+        align-items: center
+        justify-content: center
+
+.navigation-placeholder
+    height: 72px

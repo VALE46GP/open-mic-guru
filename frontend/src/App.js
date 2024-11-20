@@ -23,7 +23,7 @@ function App() {
             <div className="app__container">
               <div className="app__content">
                 <Routes>
-                  <Route path="/" element={<Navigate to="/testdb" />} />
+                  <Route path="/" element={<EventsPage />} />
                   <Route path="/login" element={<LoginPage />} />
                   <Route path="/testdb" element={<ProtectedRoute element={<TestDbPage />} />} />
                   <Route path="/create-event" element={<ProtectedRoute element={<CreateEventPage />} />} />
