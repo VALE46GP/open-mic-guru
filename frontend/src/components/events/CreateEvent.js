@@ -38,6 +38,12 @@ function CreateEvent() {
                     setEventData(data);
                     setNewEventName(data.event?.name || '');
                     
+                    // Set both image states if event has an image
+                    if (data.event?.image) {
+                        setImagePreview(data.event.image);
+                        setEventImage(data.event.image);
+                    }
+                    
                     // Convert UTC dates to local timezone for form input
                     if (data.event?.start_time) {
                         const startDate = new Date(data.event.start_time);
