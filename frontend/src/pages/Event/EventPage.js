@@ -312,7 +312,19 @@ function EventPage() {
                         {eventDetails?.host?.name}
                     </Link>
                 </p>
-                <p className="event-page__info">Location: {eventDetails?.venue?.name}, {eventDetails?.venue?.address}</p>
+                <p className="event-page__info">
+                    Location: {' '}
+                    <a 
+                        href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
+                            `${eventDetails?.venue?.name}, ${eventDetails?.venue?.address}`
+                        )}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="event-page__location-link"
+                    >
+                        {eventDetails?.venue?.name}, {eventDetails?.venue?.address}
+                    </a>
+                </p>
                 <div className="event-page__map-container">
                     {eventDetails?.venue?.latitude && eventDetails?.venue?.longitude && (
                         <LocationMap
