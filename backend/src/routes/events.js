@@ -232,18 +232,40 @@ router.put('/:eventId', async (req, res) => {
 // DELETE an event
 router.delete('/:eventId', verifyToken, async (req, res) => {
     const { eventId } = req.params;
-    const userId = req.user.id; // Assuming req.user is populated by authentication middleware
+    const userId = req.user?.userId; // Access the userId from `req.user`
+
+    console.log(`Attempting to delete event ${eventId} by user ${userId}`);
 
     try {
-        const hostCheck = await db.query('SELECT host_id FROM events WHERE id = $1', [eventId]);
-        if (hostCheck.rows.length === 0 || hostCheck.rows[0].host_id !== userId) {
+        // Validate if the user is the host of the event
+        const hostCheck = await db.query(
+            'SELECT ur.user_id AS host_id FROM user_roles ur WHERE ur.event_id = $1 AND ur.role = \'host\'',
+            [eventId]
+        );
+
+        if (hostCheck.rows.length === 0) {
+            console.log('Event not found or no host associated with it');
+            return res.status(404).json({ error: 'Event not found' });
+        }
+
+        const hostId = hostCheck.rows[0].host_id;
+
+        if (hostId !== userId) {
+            console.log(`User ${userId} is not the host of the event ${eventId}`);
             return res.status(403).json({ error: 'Only the host can delete this event' });
         }
 
+        console.log(`User ${userId} is authorized to delete event ${eventId}`);
+
+        // Proceed to delete event
+        await db.query('DELETE FROM lineup_slots WHERE event_id = $1', [eventId]);
+        await db.query('DELETE FROM user_roles WHERE event_id = $1', [eventId]);
         await db.query('DELETE FROM events WHERE id = $1', [eventId]);
+
+        console.log(`Event ${eventId} deleted successfully`);
         res.status(204).send();
     } catch (err) {
-        console.error(err);
+        console.error('Error while deleting event:', err);
         res.status(500).json({ error: 'Server error', details: err.message });
     }
 });

@@ -20,9 +20,11 @@ function LoginPage() {
                 body: JSON.stringify({ email, password }),
             });
             const data = await response.json();
+
             if (data.token) {
-                login(data.token);
-                navigate('/testdb'); // Redirect to a protected route after login
+                login(data.token); // Use the `login` function from `useAuth` to store the token
+                console.log('Token saved:', data.token);
+                navigate('/'); // Redirect to a protected route after login
             } else {
                 alert('Login failed');
             }

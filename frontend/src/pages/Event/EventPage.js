@@ -1,12 +1,12 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import LocationMap from '../../components/shared/LocationMap';
-import { useAuth } from '../../hooks/useAuth';
 import BorderBox from '../../components/shared/BorderBox/BorderBox';
 import './EventPage.sass';
 import { QRCodeSVG } from 'qrcode.react';
 import Lineup from '../../components/Lineup/Lineup';
 import { v4 as uuidv4 } from 'uuid';
+import { useAuth } from '../../hooks/useAuth'; // Correct import here
 import { useWebSocketContext } from '../../context/WebSocketContext';
 
 const DEV_IP = '192.168.1.104';
@@ -17,11 +17,13 @@ function EventPage() {
     const [eventDetails, setEventDetails] = useState(null);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState(null);
-    const { getUserId, user } = useAuth();
-    const userId = getUserId();
     const [showDeleteConfirmModal, setShowDeleteConfirmModal] = useState(false);
     const [qrUrl, setQrUrl] = useState('');
     const { lastMessage } = useWebSocketContext();
+
+    // Call useAuth inside the component body
+    const { getUserId, getToken, user } = useAuth();
+    const userId = getUserId();
 
     useEffect(() => {
         // Set a unique identifier cookie for non-users if it doesn't already exist
@@ -66,11 +68,11 @@ function EventPage() {
     // Add WebSocket event handler
     useEffect(() => {
         if (!lastMessage) return;
-    
+
         try {
             const update = JSON.parse(lastMessage.data);
             console.log('Parsed WebSocket update data:', update);
-            
+
             if (update.type === 'LINEUP_UPDATE' && update.eventId === parseInt(eventId)) {
                 console.log('Processing lineup update:', update);
                 setEventDetails(prevDetails => {
@@ -86,7 +88,7 @@ function EventPage() {
                         const filteredLineup = prevDetails.lineup.filter(
                             slot => slot.slot_number !== update.data.slot_number
                         );
-                        
+
                         return {
                             ...prevDetails,
                             lineup: [
@@ -135,7 +137,7 @@ function EventPage() {
 
         // Calculate slots based on duration
         const slotsCount = Math.floor(
-            (new Date(eventDetails.event.end_time) - new Date(eventDetails.event.start_time)) / 
+            (new Date(eventDetails.event.end_time) - new Date(eventDetails.event.start_time)) /
             (1000 * 60 * (eventDetails.event.slot_duration.minutes + eventDetails.event.setup_duration.minutes))
         );
 
@@ -174,46 +176,40 @@ function EventPage() {
         return slots;
     };
 
-    const handleUnsign = async (slotId) => {
-        const response = await fetch(`/api/lineup_slots/${slotId}`, {
-            method: 'DELETE'
-        });
-        if (response.ok) {
-            setEventDetails(prevDetails => ({
-                ...prevDetails,
-                lineup: prevDetails.lineup.filter(slot => slot.slot_id !== slotId)
-            }));
-        } else {
-            console.error('Failed to unsign');
-        }
-    };
-
     const handleDeleteEvent = async (eventId) => {
-        if (window.confirm("Are you sure you want to delete this event?")) {
-            try {
-                const response = await fetch(`/api/events/${eventId}`, {
-                    method: 'DELETE'
-                });
-                if (response.ok) {
-                    navigate('/events'); // Redirect to events list after deletion
-                } else {
-                    console.error('Failed to delete the event');
-                }
-            } catch (error) {
-                console.error('Error deleting event:', error);
-            }
-        }
-    };
+        const token = getToken();
 
-    const toggleDeleteConfirmModal = () => {
-        setShowDeleteConfirmModal(!showDeleteConfirmModal);
+        try {
+            if (!token) {
+                console.error('No token found! Ensure the user is logged in and the token is saved.');
+                return;
+            }
+
+            const response = await fetch(`/api/events/${eventId}`, {
+                method: 'DELETE',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json',
+                },
+            });
+
+            if (!response.ok) {
+                console.error(`Failed to delete event, status: ${response.status}`);
+                throw new Error(`HTTP status ${response.status}`);
+            }
+
+            // console.log('Event deleted successfully');
+            navigate('/events'); // Redirect after deletion
+        } catch (error) {
+            console.error('Failed to delete the event', error);
+        }
     };
 
     // Remove the local state update after successful POST
     const handleSlotClick = async (slot, slotName, isHostAssignment) => {
         // Only use the user's name if no custom name was provided
-        const finalSlotName = (userId && !isHostAssignment && !slotName.trim()) 
-            ? user.name 
+        const finalSlotName = (userId && !isHostAssignment && !slotName.trim())
+            ? user.name
             : slotName;
 
         const response = await fetch('/api/lineup_slots/', {
@@ -258,21 +254,28 @@ function EventPage() {
     // When displaying event times
     const formatEventTime = (dateString) => {
         const date = new Date(dateString);
-        return date.toLocaleString([], { 
-            year: 'numeric', 
-            month: 'long', 
+        return date.toLocaleString([], {
+            year: 'numeric',
+            month: 'long',
             day: 'numeric',
-            hour: 'numeric', 
+            hour: 'numeric',
             minute: '2-digit'
         }).replace(',', ' at');
     };
+
+    const toggleDeleteConfirmModal = () => {
+        setShowDeleteConfirmModal(!showDeleteConfirmModal);
+    };
+
+    if (isLoading) return <div>Loading...</div>;
+    if (error) return <div>Error: {error}</div>;
+    if (!eventDetails) return <div>No event found</div>;
 
     return (
         <div className="event-page">
             <BorderBox
                 onEdit={eventDetails?.host?.id === userId ? () => navigate(`/events/${eventDetails.event.id}/edit`) : null}
                 onDelete={eventDetails?.host?.id === userId ? toggleDeleteConfirmModal : null}
-                maxWidth="600px"
             >
                 <h1 className="event-page__title">{eventDetails?.event?.name}</h1>
                 <p>
@@ -316,7 +319,7 @@ function EventPage() {
                 </p>
                 <p className="event-page__info">
                     Location: {' '}
-                    <a 
+                    <a
                         href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
                             `${eventDetails?.venue?.name}, ${eventDetails?.venue?.address}`
                         )}`}
