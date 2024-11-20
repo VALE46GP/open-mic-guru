@@ -158,7 +158,7 @@ function CreateUser({ initialData, onCancel }) {
 
     return (
         <div className='create-user__container'>
-            <h2 className='create-user__title'>{initialData ? 'Edit Profile' : 'Register'}</h2>
+            <h2 className='create-user__title'>{initialData ? 'Edit Profile' : 'Create New User'}</h2>
 
             {/* BorderBox for Profile Photo */}
             <BorderBox

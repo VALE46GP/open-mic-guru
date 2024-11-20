@@ -27,7 +27,7 @@ const Navigation = () => {
 
     return (
         <>
-            <div className="navigation-placeholder"></div>
+            <div className="navigation__placeholder"></div>
             <nav className={`navigation ${isVisible ? 'navigation--visible' : 'navigation--hidden'}`}>
                 <div className="navigation__left">
                     <Link to="/" className="navigation__logo">

@@ -2,12 +2,14 @@ import React, { useState } from 'react';
 import { useAuth } from '../../hooks/useAuth';
 import { useNavigate } from 'react-router-dom';
 import CreateUser from '../../components/users/CreateUser';
+import './LoginPage.sass';
 
 function LoginPage() {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const { login } = useAuth();
     const navigate = useNavigate();
+    const [showCreateUser, setShowCreateUser] = useState(false);
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -22,9 +24,9 @@ function LoginPage() {
             const data = await response.json();
 
             if (data.token) {
-                login(data.token); // Use the `login` function from `useAuth` to store the token
+                login(data.token);
                 console.log('Token saved:', data.token);
-                navigate('/'); // Redirect to a protected route after login
+                navigate('/');
             } else {
                 alert('Login failed');
             }
@@ -35,23 +37,33 @@ function LoginPage() {
 
     return (
         <div>
-            <h2>Login</h2>
-            <form onSubmit={handleSubmit}>
-                <input
-                    type="email"
-                    placeholder="Email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                />
-                <input
-                    type="password"
-                    placeholder="Password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                />
-                <button type="submit">Login</button>
-            </form>
-            <CreateUser />
+            <button className="login-page__button" onClick={() => setShowCreateUser(!showCreateUser)}>
+                {showCreateUser ? 'Login Existing User' : 'Create New User'}
+            </button>
+            {!showCreateUser ? (
+                <h2>Login Existing User</h2>
+            ) : (
+                <div />
+            )}
+            {showCreateUser ? (
+                <CreateUser />
+            ) : (
+                <form onSubmit={handleSubmit}>
+                    <input
+                        type="email"
+                        placeholder="Email"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                    />
+                    <input
+                        type="password"
+                        placeholder="Password"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                    />
+                    <button type="submit">Login</button>
+                </form>
+            )}
         </div>
     );
 }
