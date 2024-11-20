@@ -363,11 +363,11 @@ function EventPage() {
 
             {showDeleteConfirmModal && (
                 <div className="event-page__modal">
-                    <div className="event-page__modal-content">
+                    <BorderBox className="event-page__modal-content">
                         <h4>Are you sure you want to delete this event?</h4>
                         <button onClick={() => handleDeleteEvent(eventDetails.event.id)}>Confirm</button>
                         <button onClick={toggleDeleteConfirmModal}>Cancel</button>
-                    </div>
+                    </BorderBox>
                 </div>
             )}
         </div>
