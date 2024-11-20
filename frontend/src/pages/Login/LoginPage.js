@@ -25,7 +25,7 @@ function LoginPage() {
 
             if (data.token) {
                 login(data.token);
-                console.log('Token saved:', data.token);
+                // console.log('Token saved:', data.token); // debugging
                 navigate('/');
             } else {
                 alert('Login failed');

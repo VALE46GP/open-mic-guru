@@ -5,7 +5,7 @@ import './EventCard.sass';
 
 function EventCard({ event, slotTime }) {
     return (
-        <Link to={`/events/${event.event_id}`} className="event-card-link">
+        <Link to={`/events/${event.event_id}`} className="event-card__link">
             <div className="event-card__wrapper">
                 {(event.is_host || event.is_performer) && (
                     <div className="event-card__role">

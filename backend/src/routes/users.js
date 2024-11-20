@@ -17,9 +17,19 @@ AWS.config.update({
 const s3 = new AWS.S3();
 
 // GET all users
-router.get('/', verifyToken, async (req, res) => {
+router.get('/', async (req, res) => {
     try {
-        const result = await db.query('SELECT id, email, name, image, social_media_accounts FROM users');
+        const result = await db.query(`
+            SELECT 
+                users.id, 
+                users.name, 
+                users.image, 
+                users.social_media_accounts,
+                ARRAY_AGG(user_roles.role) AS roles
+            FROM users
+            LEFT JOIN user_roles ON users.id = user_roles.user_id
+            GROUP BY users.id
+        `);
         res.json(result.rows);
     } catch (err) {
         console.error(err);

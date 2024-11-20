@@ -12,6 +12,7 @@ import { AuthProvider } from './context/AuthContext';
 import ProtectedRoute from './components/utils/ProtectedRoute';
 import EventsPage from './pages/Events/EventsPage';
 import { WebSocketProvider } from './context/WebSocketContext';
+import UsersPage from './pages/Users/UsersPage';
 
 function App() {
   return (
@@ -32,6 +33,7 @@ function App() {
                   <Route path="/users/:userId" element={<UserPage />} />
                   <Route path="/users/:userId/edit" element={<EditUserPage />} />
                   <Route path="/events" element={<EventsPage />} />
+                  <Route path="/users" element={<UsersPage />} />
                 </Routes>
               </div>
             </div>
