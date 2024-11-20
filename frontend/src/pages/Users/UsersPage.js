@@ -28,7 +28,7 @@ function UsersPage() {
 
     return (
         <div className="users-page">
-            <h2>All Users</h2>
+            <h1>Users</h1>
             <div className="users-page__list">
                 {users.map(user => (
                     <UserCard key={user.id} user={user} />

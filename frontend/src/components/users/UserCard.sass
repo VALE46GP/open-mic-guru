@@ -9,7 +9,7 @@
 
     &__role
         position: absolute
-        top: -0.5rem
+        top: -0.75rem
         right: 0.5rem
         z-index: 1
 
@@ -73,3 +73,19 @@
         height: 100%
         object-fit: cover
         object-position: center
+
+    &__social-media
+        margin-top: 0.5rem
+
+        a
+            margin-right: 0.5rem
+            color: #333
+            transition: color 0.2s ease
+
+            &:focus-visible,
+            &:hover
+                color: #0066cc
+
+    &__social-media-icon
+        width: 24px
+        height: 24px

@@ -2,6 +2,7 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import BorderBox from '../shared/BorderBox/BorderBox';
 import './UserCard.sass';
+import { socialMediaPlatforms } from '../utils/socialMediaPlatforms';
 
 function UserCard({ user }) {
     const roles = user.roles || [];
@@ -10,6 +11,11 @@ function UserCard({ user }) {
     console.log('--------------------------------');
     const hasHostRole = roles.includes('host');
     const hasPerformerRole = roles.includes('performer');
+
+    const getPlatformIcon = (platformName) => {
+        const platform = socialMediaPlatforms.find((p) => p.name === platformName);
+        return platform ? platform.icon : null;
+    };
 
     return (
         <Link to={`/users/${user.id}`} className="user-card__link">
@@ -35,6 +41,18 @@ function UserCard({ user }) {
                             <div className="user-card__title">
                                 {user.name}
                             </div>
+                            {user.social_media_accounts && user.social_media_accounts.length > 0 && (
+                                <div className="user-card__social-media">
+                                    {user.social_media_accounts.map((account, index) => {
+                                        const IconComponent = getPlatformIcon(account.platform);
+                                        return (
+                                            <a key={index} href={account.url} target="_blank" rel="noopener noreferrer">
+                                                {IconComponent && <IconComponent className="user-card__social-media-icon" />}
+                                            </a>
+                                        );
+                                    })}
+                                </div>
+                            )}
                         </div>
                     </div>
                 </BorderBox>
