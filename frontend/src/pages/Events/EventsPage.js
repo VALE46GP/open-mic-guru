@@ -211,12 +211,11 @@ const EventsPage = () => {
             filteredEvents
               .filter(event => new Date(event.start_time) >= new Date())
               .map(event => (
-                <Link to={`/events/${event.event_id}`} className="event-card-link" key={`event-${event.event_id}`}>
-                  <EventCard 
-                    event={event}
-                    slotTime={event.is_performer ? event.performer_slot_time : null}
-                  />
-                </Link>
+                <EventCard 
+                  key={`event-${event.event_id}`}
+                  event={event}
+                  slotTime={event.is_performer ? event.performer_slot_time : null}
+                />
               ))
           ) : (
             <div className="events-page__no-events">
@@ -234,12 +233,11 @@ const EventsPage = () => {
               .filter(event => new Date(event.start_time) < new Date())
               .sort((a, b) => new Date(b.start_time) - new Date(a.start_time))
               .map(event => (
-                <Link to={`/events/${event.event_id}`} className="event-card-link" key={`event-${event.event_id}`}>
-                  <EventCard 
-                    event={event}
-                    slotTime={event.is_performer ? event.performer_slot_time : null}
-                  />
-                </Link>
+                <EventCard 
+                  key={`event-${event.event_id}`}
+                  event={event}
+                  slotTime={event.is_performer ? event.performer_slot_time : null}
+                />
               ))}
           </div>
         </div>

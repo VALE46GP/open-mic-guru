@@ -136,6 +136,7 @@ router.get('/:userId', async (req, res) => {
             SELECT DISTINCT
                 e.id AS event_id,
                 e.name AS event_name,
+                e.image AS event_image,
                 e.start_time,
                 e.end_time,
                 e.slot_duration,
