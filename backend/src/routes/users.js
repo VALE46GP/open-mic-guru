@@ -158,6 +158,7 @@ router.get('/:userId', async (req, res) => {
                 e.additional_info,
                 v.id AS venue_id,
                 v.name AS venue_name,
+                u.name AS host_name,
                 CASE 
                     WHEN e.host_id = $1 THEN true 
                     ELSE false 
@@ -176,6 +177,7 @@ router.get('/:userId', async (req, res) => {
                     ) AS performer_slot_time
             FROM events e
             JOIN venues v ON e.venue_id = v.id
+            JOIN users u ON e.host_id = u.id
             LEFT JOIN lineup_slots ls ON e.id = ls.event_id 
                 AND ls.user_id = $1
             WHERE e.host_id = $1 OR ls.user_id = $1
