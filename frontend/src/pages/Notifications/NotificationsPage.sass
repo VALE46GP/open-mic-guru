@@ -2,18 +2,13 @@
 $color-primary: #007bff
 $color-bg-light: #f8f9fa
 $color-border: #eee
-$color-text-secondary: #666
+$color-text-secondary: #a6a6a6
 $border-radius: 4px
 $spacing-unit: 16px
 
 .notifications
   max-width: 800px
   margin: 0 auto
-  //padding: $spacing-unit * 1.25
-  //background: white
-  //box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1)
-  //border-radius: $border-radius * 2
-  //text-align: left
 
   &__header
     display: flex
@@ -116,11 +111,6 @@ $spacing-unit: 16px
     color: #333
     line-height: 1.4
 
-  &__time
-    color: $color-text-secondary
-    font-size: 0.875rem
-    display: block
-
   &__empty
     text-align: center
     color: $color-text-secondary
@@ -151,6 +141,7 @@ $spacing-unit: 16px
     flex-shrink: 0
     margin-top: 8px
 
+    &:focus-visible,
     &:hover
       background: darken($color-primary, 10%)
     
@@ -197,6 +188,12 @@ $spacing-unit: 16px
   
   &__time
     font-size: 0.875rem
-    color: $color-text-secondary
     display: block
     margin-bottom: 0.125rem
+
+    &--read
+      color: $color-text-secondary
+
+  p
+    &:last-child
+      margin-bottom: 0

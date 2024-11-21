@@ -75,18 +75,22 @@ router.get('/', verifyToken, async (req, res) => {
 router.post('/mark-read', verifyToken, async (req, res) => {
     try {
         const { notification_ids } = req.body;
-        const userId = req.user.id;
+        const userId = req.user.userId;
 
-        await db.query(
+        const result = await db.query(
             `UPDATE notifications 
              SET is_read = TRUE, 
                  read_at = NOW() 
              WHERE id = ANY($1) 
-             AND user_id = $2`,
+             AND user_id = $2
+             RETURNING *`,
             [notification_ids, userId]
         );
 
-        res.json({ success: true });
+        res.json({ 
+            success: true,
+            updatedNotifications: result.rows 
+        });
     } catch (err) {
         console.error('Error marking notifications as read:', err);
         res.status(500).json({ error: 'Server error' });

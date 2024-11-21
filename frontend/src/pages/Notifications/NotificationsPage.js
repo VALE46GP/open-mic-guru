@@ -8,6 +8,7 @@ function NotificationsPage() {
     const { notifications, markAsRead } = useNotifications();
     const [expandedEvents, setExpandedEvents] = useState(new Set());
     const [groupedNotifications, setGroupedNotifications] = useState({});
+    const [locallyViewedNotifications, setLocallyViewedNotifications] = useState(new Set());
 
     useEffect(() => {
         // Group notifications by event_id
@@ -51,13 +52,23 @@ function NotificationsPage() {
         } else {
             setExpandedEvents(prev => new Set([...prev, eventId]));
             
-            // Mark all unread notifications for this event as read
+            // Mark all unread notifications for this event as read in backend
             const unreadNotifications = groupedNotifications[eventId].notifications
                 .filter(n => !n.is_read)
                 .map(n => n.id);
                 
             if (unreadNotifications.length > 0) {
-                await markAsRead(unreadNotifications);
+                try {
+                    await markAsRead(unreadNotifications);
+                    // Update the local state to track which notifications we've seen
+                    setLocallyViewedNotifications(prev => {
+                        const next = new Set(prev);
+                        unreadNotifications.forEach(id => next.add(id));
+                        return next;
+                    });
+                } catch (error) {
+                    console.error('Error marking notifications as read:', error);
+                }
             }
         }
     };
@@ -95,9 +106,19 @@ function NotificationsPage() {
                                     .map(notification => (
                                         <div 
                                             key={notification.id}
-                                            className={`notifications__message ${notification.is_read ? 'notifications__message--read' : ''}`}
+                                            className={`notifications__message ${
+                                                notification.is_read && !locallyViewedNotifications.has(notification.id)
+                                                    ? 'notifications__message--read' 
+                                                    : ''
+                                            }`}
                                         >
-                                            <span className="notifications__time">
+                                            <span
+                                                className={`notifications__time ${
+                                                    notification.is_read && !locallyViewedNotifications.has(notification.id)
+                                                        ? 'notifications__time--read'
+                                                        : ''
+                                                }`}
+                                            >
                                                 {new Date(notification.created_at).toLocaleDateString()}
                                             </span>
                                             <p>{notification.message}</p>
