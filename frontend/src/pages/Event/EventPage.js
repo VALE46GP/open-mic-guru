@@ -118,13 +118,16 @@ function EventPage() {
                     return prevDetails;
                 });
             } else if (update.type === 'EVENT_UPDATE' && update.eventId === parseInt(eventId)) {
-                setEventDetails(prevDetails => ({
-                    ...prevDetails,
-                    event: {
-                        ...prevDetails.event,
-                        end_time: update.data.end_time
-                    }
-                }));
+                setEventDetails(prevDetails => {
+                    if (!prevDetails) return null;
+                    return {
+                        ...prevDetails,
+                        event: {
+                            ...prevDetails.event,
+                            ...update.data
+                        }
+                    };
+                });
             }
         } catch (error) {
             console.error('Error processing WebSocket message:', error);

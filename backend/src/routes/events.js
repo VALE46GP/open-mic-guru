@@ -222,7 +222,13 @@ router.put('/:eventId', async (req, res) => {
             return res.status(400).json({ error: 'Start time must be before end time' });
         }
 
-        // Update the event in the database, including the image field
+        // Get the original event details to check what changed
+        const originalEvent = await db.query(
+            'SELECT name, venue_id FROM events WHERE id = $1',
+            [eventId]
+        );
+
+        // Update the event in the database
         const result = await db.query(
             'UPDATE events SET name = $1, start_time = $2, end_time = $3, slot_duration = $4, setup_duration = $5, venue_id = $6, additional_info = $7, image = $8 WHERE id = $9 RETURNING *',
             [name, start_time, end_time, slot_duration, setup_duration, venue_id, additional_info, image, eventId]
@@ -232,7 +238,54 @@ router.put('/:eventId', async (req, res) => {
             return res.status(404).json({ error: 'Event not found' });
         }
 
-        // Send back the updated event data
+        // Get venue details if venue changed
+        let venueChange = '';
+        if (venue_id !== originalEvent.rows[0].venue_id) {
+            const venueResult = await db.query(
+                'SELECT name FROM venues WHERE id = $1',
+                [venue_id]
+            );
+            venueChange = ` Location changed to ${venueResult.rows[0].name}.`;
+        }
+
+        // Get all unique users in the lineup
+        const lineupUsers = await db.query(
+            'SELECT DISTINCT user_id FROM lineup_slots WHERE event_id = $1 AND user_id IS NOT NULL',
+            [eventId]
+        );
+
+        // Create notifications for all users in the lineup
+        const { createNotification } = require('../utils/notifications');
+        for (const user of lineupUsers.rows) {
+            try {
+                await createNotification(
+                    user.user_id,
+                    'event_update',
+                    `"${name}" has been updated.${venueChange}`,
+                    eventId
+                );
+            } catch (err) {
+                console.error('Error creating notification for user:', user.user_id, err);
+            }
+        }
+
+        // Broadcast the update via WebSocket with all updated event data
+        const updateData = {
+            type: 'EVENT_UPDATE',
+            eventId: parseInt(eventId),
+            data: {
+                name,
+                start_time,
+                end_time,
+                slot_duration,
+                setup_duration,
+                venue_id,
+                additional_info,
+                image
+            }
+        };
+
+        req.app.locals.broadcastLineupUpdate(updateData);
         res.json(result.rows[0]);
     } catch (err) {
         console.error(err);
@@ -284,7 +337,7 @@ router.put('/:eventId/extend', async (req, res) => {
     try {
         // Get current event details
         const eventQuery = await db.query(
-            'SELECT end_time, slot_duration, setup_duration FROM events WHERE id = $1',
+            'SELECT end_time, slot_duration, setup_duration, name FROM events WHERE id = $1',
             [eventId]
         );
 
@@ -307,6 +360,28 @@ router.put('/:eventId/extend', async (req, res) => {
             'UPDATE events SET end_time = $1 WHERE id = $2 RETURNING *',
             [currentEndTime, eventId]
         );
+
+        // Get all unique users in the lineup
+        const lineupUsers = await db.query(
+            'SELECT DISTINCT user_id FROM lineup_slots WHERE event_id = $1 AND user_id IS NOT NULL',
+            [eventId]
+        );
+
+        // Create notifications for all users in the lineup
+        const { createNotification } = require('../utils/notifications');
+        for (const user of lineupUsers.rows) {
+            try {
+                await createNotification(
+                    user.user_id,
+                    'event_update',
+                    `The end time for "${event.name}" has been extended`,
+                    eventId
+                );
+            } catch (err) {
+                console.error('Error creating notification for user:', user.user_id, err);
+                // Continue with other notifications even if one fails
+            }
+        }
 
         // Broadcast the update via WebSocket
         const updateData = {
