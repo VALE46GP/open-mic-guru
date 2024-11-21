@@ -8,16 +8,6 @@ router.post('/', async (req, res) => {
     const nonUserId = req.cookies?.nonUserId || null;
     const ipAddress = req.ip;
 
-    console.log("Request received:", {
-        event_id,
-        user_id,
-        slot_number,
-        slot_name,
-        isHostAssignment,
-        nonUserId,
-        ipAddress
-    });
-
     // Validate that non-users provide a name for the slot
     if (!user_id && !slot_name && !isHostAssignment) {
         return res.status(400).json({ error: 'Non-users must provide a name' });
@@ -37,7 +27,6 @@ router.post('/', async (req, res) => {
         }
 
         const hostId = hostResult.rows[0].host_id;
-        console.log("Host ID found:", hostId);
 
         // Step 2: If host assignment, set user_id, non_user_identifier and ip_address to NULL
         if (user_id === hostId && isHostAssignment) {
@@ -135,7 +124,6 @@ router.post('/', async (req, res) => {
         };
 
         // Before broadcasting the update
-        console.log("Broadcasting lineup data:", lineupData);
         req.app.locals.broadcastLineupUpdate(lineupData);
         res.status(201).json(result.rows[0]);
     } catch (err) {

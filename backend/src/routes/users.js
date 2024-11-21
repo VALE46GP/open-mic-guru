@@ -137,7 +137,7 @@ router.get('/:userId', async (req, res) => {
 
         // Fetch user details including social media accounts
         const userQuery = await db.query(
-            'SELECT id, email, name, image, social_media_accounts FROM users WHERE id = $1',
+            'SELECT id, name, image, social_media_accounts FROM users WHERE id = $1',
             [userId]
         );
         if (userQuery.rows.length === 0) {
