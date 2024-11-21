@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const db = require('../db');
+const { createNotification } = require('../utils/notifications');
 
 // POST a new lineup slot
 router.post('/', async (req, res) => {
@@ -27,6 +28,27 @@ router.post('/', async (req, res) => {
         }
 
         const hostId = hostResult.rows[0].host_id;
+
+        // Check/create notification preferences for host
+        try {
+            const prefsResult = await db.query(
+                'SELECT * FROM notification_preferences WHERE user_id = $1',
+                [hostId]
+            );
+            
+            if (prefsResult.rows.length === 0) {
+                // Create default preferences
+                await db.query(
+                    `INSERT INTO notification_preferences 
+                     (user_id, notify_event_updates, notify_signup_notifications, notify_other) 
+                     VALUES ($1, true, true, true)`,
+                    [hostId]
+                );
+                console.log('Created default notification preferences for host:', hostId);
+            }
+        } catch (err) {
+            console.error('Error checking/creating notification preferences:', err);
+        }
 
         // Step 2: If host assignment, set user_id, non_user_identifier and ip_address to NULL
         if (user_id === hostId && isHostAssignment) {
@@ -122,6 +144,20 @@ router.post('/', async (req, res) => {
                 ip_address: ipAddressForSlot
             }
         };
+
+        // Create notification for event host
+        try {
+            await createNotification(
+                hostId,
+                'lineup_signup',
+                `Someone has signed up for slot ${slot_number} in your event`,
+                event_id,
+                result.rows[0].slot_id
+            );
+        } catch (err) {
+            console.error('Failed to create notification:', err);
+            // Don't return here, continue with the response
+        }
 
         // Before broadcasting the update
         req.app.locals.broadcastLineupUpdate(lineupData);

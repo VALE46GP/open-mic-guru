@@ -5,6 +5,7 @@ const venueRoutes = require('./venues');
 const authRoutes = require('./auth');
 const lineupSlotsRoutes = require('./lineup_slots');
 const cookieParser = require('cookie-parser');
+const notificationRoutes = require('./notifications');
 // const path = require("path");
 
 module.exports = (app) => {
@@ -15,6 +16,7 @@ module.exports = (app) => {
     app.use('/auth', authRoutes);
     app.use(testdbRoutes);
     app.use('/lineup_slots', lineupSlotsRoutes);
+    app.use('/notifications', notificationRoutes);
 
     // app.get('*', (req, res) => {
     //     res.sendFile(path.join(__dirname, '../frontend/src/index.html'));

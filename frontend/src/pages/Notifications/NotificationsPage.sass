@@ -1,0 +1,132 @@
+// Variables
+$color-primary: #007bff
+$color-bg-light: #f8f9fa
+$color-border: #eee
+$color-text-secondary: #666
+$border-radius: 4px
+$spacing-unit: 16px
+
+.notifications
+  max-width: 800px
+  margin: 0 auto
+  //padding: $spacing-unit * 1.25
+  //background: white
+  //box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1)
+  //border-radius: $border-radius * 2
+  //text-align: left
+
+  &__header
+    display: flex
+    justify-content: space-between
+    align-items: center
+    margin-bottom: $spacing-unit * 1.5
+    flex-wrap: wrap
+    gap: $spacing-unit
+
+  &__title
+    font-size: 1.75rem
+    margin: 0
+    color: #333
+
+  &__tabs
+    display: flex
+    gap: $spacing-unit * 0.625
+    flex: 1
+    justify-content: center
+    min-width: 200px
+
+  &__tab
+    padding: $spacing-unit * 0.5 $spacing-unit
+    border: 1px solid $color-primary
+    border-radius: $border-radius
+    background: transparent
+    color: $color-primary
+    cursor: pointer
+    transition: all 0.2s ease
+    font-weight: 500
+
+    &:focus-visible,
+    &:hover
+      background: rgba($color-primary, 0.1)
+
+    &--active
+      background: $color-primary
+      color: white
+
+  &__mark-all
+    padding: $spacing-unit * 0.5 $spacing-unit
+    background: $color-primary
+    color: white
+    border: none
+    border-radius: $border-radius
+    cursor: pointer
+    transition: all 0.2s ease
+    font-weight: 500
+
+    &:focus-visible,
+    &:hover
+      background: darken($color-primary, 10%)
+
+  &__list
+    border: 1px solid $color-border
+    border-radius: $border-radius
+    overflow: hidden
+
+  &__item
+    display: flex
+    gap: $spacing-unit
+    padding: $spacing-unit
+    align-items: center
+    justify-content: space-between
+    text-align: left
+
+    &--unread
+      position: relative
+
+  &__button-column
+    display: flex
+    flex-direction: column
+    justify-content: center
+    flex: 0
+
+  &__message-column
+    flex: 1
+
+  &__status-icon
+    background: none
+    border: none
+    padding: 0
+    cursor: pointer
+    color: $color-primary
+    display: flex
+    align-items: center
+    justify-content: center
+    min-width: 24px
+    height: 24px
+    transition: transform 0.2s ease, color 0.2s ease
+    flex-shrink: 0
+
+    &:focus-visible,
+    &:hover
+      transform: scale(1.1)
+      color: darken($color-primary, 10%)
+
+    svg
+      width: 20px
+      height: 20px
+
+  &__message
+    margin: 0
+    color: #333
+    line-height: 1.4
+
+  &__time
+    color: $color-text-secondary
+    font-size: 0.875rem
+    display: block
+
+  &__empty
+    text-align: center
+    color: $color-text-secondary
+    padding: $spacing-unit * 2
+    font-size: 1.1rem

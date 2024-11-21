@@ -1,4 +1,4 @@
-import React, { createContext, useContext } from 'react';
+import React, { createContext, useContext, useEffect } from 'react';
 import useWebSocket from 'react-use-websocket';
 
 const WebSocketContext = createContext(null);
@@ -10,6 +10,12 @@ export const WebSocketProvider = ({ children }) => {
         shouldReconnect: (closeEvent) => true,
         reconnectAttempts: 10,
         reconnectInterval: 3000,
+        onError: (event) => {
+            console.error('WebSocket error:', event);
+        },
+        onClose: (event) => {
+            console.log('WebSocket connection closed');
+        }
     });
 
     return (
