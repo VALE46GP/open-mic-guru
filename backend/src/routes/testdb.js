@@ -8,22 +8,18 @@ router.get('/testdb', async (req, res) => {
         const venuesCountQuery = await db.query('SELECT COUNT(*) AS venues_count FROM venues');
         const eventsCountQuery = await db.query('SELECT COUNT(*) AS events_count FROM events');
         const linksCountQuery = await db.query('SELECT COUNT(*) AS links_count FROM links');
-        const userRolesCountQuery = await db.query('SELECT COUNT(*) AS user_roles_count FROM user_roles');
 
         const upcomingEventsQuery = await db.query(`
-            SELECT e.id, e.start_time, v.name AS venue_name, e.venue_id, e.additional_info, ur.user_id AS host_id
+            SELECT e.id, e.start_time, v.name AS venue_name, e.venue_id, e.additional_info, e.host_id
             FROM events e
             JOIN venues v ON e.venue_id = v.id
-            LEFT JOIN user_roles ur ON e.id = ur.event_id AND ur.role = 'host'
             WHERE e.start_time > NOW()
             ORDER BY e.start_time ASC
             LIMIT 5
         `);
 
         const eventsQuery = await db.query(`
-            SELECT e.id, e.start_time, e.name, e.venue_id, e.additional_info, e.slot_duration, ur.user_id AS host_id
-            FROM events e
-            LEFT JOIN user_roles ur ON e.id = ur.event_id AND ur.role = 'host'
+            SELECT e.id, e.start_time, e.name, e.venue_id, e.additional_info, e.slot_duration, e.host_id
         `);
         const usersQuery = await db.query('SELECT * FROM users');
         const venuesQuery = await db.query('SELECT * FROM venues');
@@ -34,7 +30,6 @@ router.get('/testdb', async (req, res) => {
                 venues: venuesCountQuery.rows[0].venues_count,
                 events: eventsCountQuery.rows[0].events_count,
                 links: linksCountQuery.rows[0].links_count,
-                userRoles: userRolesCountQuery.rows[0].user_roles_count
             },
             upcomingEvents: upcomingEventsQuery.rows,
             users: usersQuery.rows,

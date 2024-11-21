@@ -31,7 +31,7 @@ router.get('/', async (req, res) => {
                 v.address AS venue_address,
                 v.latitude AS venue_latitude,
                 v.longitude AS venue_longitude,
-                u.id AS host_id,
+                e.host_id,
                 u.name AS host_name,
                 ls.user_id AS performer_id,
                 ls.slot_number,
@@ -42,8 +42,7 @@ router.get('/', async (req, res) => {
                     ) AS performer_slot_time
             FROM events e
             JOIN venues v ON e.venue_id = v.id
-            LEFT JOIN user_roles ur ON e.id = ur.event_id AND ur.role = 'host'
-            LEFT JOIN users u ON ur.user_id = u.id
+            LEFT JOIN users u ON e.host_id = u.id
             LEFT JOIN lineup_slots ls ON e.id = ls.event_id
         `);
 
@@ -101,8 +100,7 @@ router.get('/:eventId', async (req, res) => {
                 u.image AS host_image
             FROM events e
                      JOIN venues v ON e.venue_id = v.id
-                     JOIN user_roles ur ON e.id = ur.event_id AND ur.role = 'host'
-                     JOIN users u ON ur.user_id = u.id
+                     JOIN users u ON e.host_id = u.id
             WHERE e.id = $1;
 
         `, [eventId]);
@@ -188,12 +186,10 @@ router.post('/', async (req, res) => {
         }
 
         const result = await db.query(
-            'INSERT INTO events (venue_id, start_time, end_time, slot_duration, setup_duration, name, additional_info, image) VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *',
-            [venue_id, start_time, end_time, slot_duration, setup_duration, name, additional_info, image]
+            'INSERT INTO events (venue_id, start_time, end_time, slot_duration, setup_duration, name, additional_info, image, host_id) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING *',
+            [venue_id, start_time, end_time, slot_duration, setup_duration, name, additional_info, image, host_id]
         );
 
-        const eventId = result.rows[0].id;
-        await db.query('INSERT INTO user_roles (user_id, event_id, role) VALUES ($1, $2, \'host\')', [host_id, eventId]);
         res.status(201).json(result.rows[0]);
     } catch (err) {
         console.error(err);
@@ -237,7 +233,7 @@ router.delete('/:eventId', verifyToken, async (req, res) => {
     try {
         // Validate if the user is the host of the event
         const hostCheck = await db.query(
-            'SELECT ur.user_id AS host_id FROM user_roles ur WHERE ur.event_id = $1 AND ur.role = \'host\'',
+            'SELECT host_id FROM events WHERE id = $1',
             [eventId]
         );
 
@@ -255,7 +251,6 @@ router.delete('/:eventId', verifyToken, async (req, res) => {
 
         // Proceed to delete event
         await db.query('DELETE FROM lineup_slots WHERE event_id = $1', [eventId]);
-        await db.query('DELETE FROM user_roles WHERE event_id = $1', [eventId]);
         await db.query('DELETE FROM events WHERE id = $1', [eventId]);
 
         console.log(`Event ${eventId} deleted successfully`);

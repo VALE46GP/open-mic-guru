@@ -18,7 +18,7 @@ router.post('/', async (req, res) => {
     try {
         // Step 1: Check if the current user is the event host
         const hostResult = await db.query(
-            `SELECT user_id AS host_id FROM user_roles WHERE event_id = $1 AND role = 'host'`,
+            `SELECT host_id FROM events WHERE id = $1`,
             [event_id]
         );
 
