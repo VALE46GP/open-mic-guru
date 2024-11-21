@@ -68,6 +68,11 @@ export function NotificationsProvider({ children }) {
                     setUnreadCount(prev => prev + 1);
                 }
                 
+                if (data.type === 'LINEUP_UPDATE') {
+                    console.log('Received lineup update, refreshing notifications');
+                    fetchNotifications();
+                }
+                
                 if (data.type === 'EVENT_UPDATE' && data.eventId) {
                     fetchNotifications();
                 }

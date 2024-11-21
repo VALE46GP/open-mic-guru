@@ -74,6 +74,44 @@ $spacing-unit: 16px
     &--unread
       position: relative
 
+  &__top-button-row
+    display: flex
+    gap: 2rem
+    margin-bottom: 1rem
+
+  &__top-button-container
+    display: flex
+    flex-direction: column
+    justify-content: center
+    align-items: center
+    padding-left: 1px
+
+  &__delete-button
+    padding: 0
+    margin: auto
+    background: white
+    border: none
+    color: $color-text-secondary
+    width: 28px
+    height: 28px
+    transition: all 0.2s ease
+
+    svg
+      width: 28px
+      height: 28px
+
+    &:focus-visible,
+    &:hover
+      background: white
+      color: $color-text-secondary
+
+    &--active
+      color: $color-primary
+
+      &:focus-visible,
+      &:hover
+        color: darken($color-primary, 10%)
+
   &__button-column
     display: flex
     flex-direction: column
@@ -110,6 +148,7 @@ $spacing-unit: 16px
       background: $color-primary
       color: white
 
+    &:focus-visible,
     &:hover
       background: rgba($color-primary, 0.1)
       
@@ -134,14 +173,20 @@ $spacing-unit: 16px
 
     &:focus-visible,
     &:hover
-      //background: darken($color-primary, 10%)
       background: white
       color: darken($color-primary, 10%)
 
     &--expanded
-      //background: darken($color-primary, 10%)
       background: white
       color: darken($color-primary, 10%)
+
+    &--has-unread
+      background: #ff4444
+      color: white
+
+      &:focus-visible,
+      &:hover
+        background: darken(#ff4444, 10%)
 
     svg
       width: 32px
@@ -185,20 +230,17 @@ $spacing-unit: 16px
     margin-bottom: 1rem
   
   &__badge
-    position: absolute
-    top: -6px
-    left: -6px
-    background-color: #ff4444
-    color: white
-    border-radius: 50%
-    width: 20px
-    height: 20px
+    font-size: 14px
+    font-weight: bold
+    width: 32px
+    height: 32px
     display: flex
     align-items: center
     justify-content: center
-    font-size: 11px
-    font-weight: bold
-  
+    background-color: #ff4444
+    color: white
+    border-radius: 50%
+
   &__event-card
     flex: 1
 
@@ -229,3 +271,7 @@ $spacing-unit: 16px
   p
     &:last-child
       margin-bottom: 0
+
+  &__badge
+    font-size: 14px
+    font-weight: bold

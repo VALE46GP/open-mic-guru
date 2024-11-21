@@ -128,25 +128,33 @@ function NotificationsPage() {
     return (
         <div className="notifications">
             <h1 className="notifications__title">Notifications</h1>
-            <div className="notifications__header-actions">
-                <button 
-                    className={`notifications__select-button ${
-                        selectedEvents.size === Object.keys(groupedNotifications).length ? 
-                        'notifications__select-button--selected' : ''
-                    }`}
-                    onClick={handleSelectAll}
-                    title="Select All"
-                >
-                    {selectedEvents.size === Object.keys(groupedNotifications).length && "✓"}
-                </button>
-                <button
-                    className="notifications__delete-button"
-                    onClick={handleDeleteClick}
-                    disabled={selectedEvents.size === 0}
-                    title="Delete Selected"
-                >
-                    <FaTrash size={20} />
-                </button>
+            <div className="notifications__top-button-row">
+                <div className="notifications__top-button-container">
+                    <button
+                        className={`notifications__select-button ${
+                            selectedEvents.size === Object.keys(groupedNotifications).length ? 
+                            'notifications__select-button--selected' : ''
+                        }`}
+                        onClick={handleSelectAll}
+                        title="Select All"
+                    >
+                        {selectedEvents.size === Object.keys(groupedNotifications).length && "✓"}
+                    </button>
+                </div>
+                <div className="notifications__top-button-container">
+                    <button
+                        className="notifications__delete-button"
+                        className={`notifications__delete-button ${
+                            selectedEvents.size ?
+                                'notifications__delete-button--active' : ''
+                        }`}
+                        onClick={handleDeleteClick}
+                        disabled={selectedEvents.size === 0}
+                        title="Delete Selected"
+                    >
+                        <FaTrash size={20} />
+                    </button>
+                </div>
             </div>
             <div className="notifications__list">
                 {Object.entries(groupedNotifications)
@@ -171,16 +179,20 @@ function NotificationsPage() {
                                         )}
                                     </button>
                                     <button
-                                        className={`notifications__toggle-button ${expandedEvents.has(eventId) ? 'notifications__toggle-button--expanded' : ''}`}
+                                        className={`notifications__toggle-button ${
+                                            expandedEvents.has(eventId) ? 'notifications__toggle-button--expanded' : ''
+                                        } ${data.unreadCount > 0 && !expandedEvents.has(eventId) ? 'notifications__toggle-button--has-unread' : ''}`}
                                         onClick={() => handleEventClick(eventId)}
                                         title={expandedEvents.has(eventId) ? "Collapse notifications" : "Show notifications"}
                                     >
-                                        {expandedEvents.has(eventId) ? <BsChevronDown/> :
-                                            <BsChevronRight/>}
-                                        {data.unreadCount > 0 && (
-                                            <div className="notifications__badge">
+                                        {expandedEvents.has(eventId) ? (
+                                            <BsChevronDown/>
+                                        ) : data.unreadCount > 0 ? (
+                                            <span className="notifications__badge">
                                                 {data.unreadCount}
-                                            </div>
+                                            </span>
+                                        ) : (
+                                            <BsChevronRight/>
                                         )}
                                     </button>
                                 </div>
