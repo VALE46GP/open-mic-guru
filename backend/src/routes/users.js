@@ -25,7 +25,14 @@ router.get('/', async (req, res) => {
                 users.name, 
                 users.image, 
                 users.social_media_accounts,
-                ARRAY_AGG(user_roles.role) AS roles
+                ARRAY_AGG(user_roles.role) AS roles,
+                CASE 
+                    WHEN EXISTS (
+                        SELECT 1 FROM lineup_slots 
+                        WHERE lineup_slots.user_id = users.id
+                    ) THEN true
+                    ELSE false
+                END AS is_performer
             FROM users
             LEFT JOIN user_roles ON users.id = user_roles.user_id
             GROUP BY users.id

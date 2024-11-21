@@ -278,16 +278,18 @@ function EventPage() {
                 onDelete={eventDetails?.host?.id === userId ? toggleDeleteConfirmModal : null}
             >
                 <h1 className="event-page__title">{eventDetails?.event?.name}</h1>
-                <p>
+                <p className="event-page__time">
                     {formatEventTime(eventDetails?.event?.start_time)}
                     {" - "}
-                    {new Date(eventDetails?.event?.start_time).toDateString() === new Date(eventDetails?.event?.end_time).toDateString()
-                        ? new Date(eventDetails?.event?.end_time).toLocaleTimeString([], {
-                            hour: 'numeric',
-                            minute: '2-digit'
-                        })
-                        : formatEventTime(eventDetails?.event?.end_time)
-                    }
+                    <span className="event-page__end-time">
+                        {new Date(eventDetails?.event?.start_time).toDateString() === new Date(eventDetails?.event?.end_time).toDateString()
+                            ? new Date(eventDetails?.event?.end_time).toLocaleTimeString([], {
+                                hour: 'numeric',
+                                minute: '2-digit'
+                            })
+                            : formatEventTime(eventDetails?.event?.end_time)
+                        }
+                    </span>
                 </p>
                 {eventDetails?.event?.image && (
                     <div className="event-page__image-container">

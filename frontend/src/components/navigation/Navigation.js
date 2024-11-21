@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
-import { FaPlus, FaSignInAlt, FaHome } from 'react-icons/fa';
+import { FaPlus, FaSignInAlt, FaHome, FaUsers } from 'react-icons/fa';
 import './Navigation.sass';
 
 const Navigation = () => {
@@ -35,6 +35,9 @@ const Navigation = () => {
                     </Link>
                 </div>
                 <div className="navigation__right">
+                    <Link to="/users" className="navigation__users-link">
+                        <FaUsers />
+                    </Link>
                     <Link to="/create-event" className="navigation__create-event">
                         <FaPlus />
                     </Link>

@@ -10,7 +10,7 @@ function UserCard({ user }) {
     console.log('User roles:', roles);
     console.log('--------------------------------');
     const hasHostRole = roles.includes('host');
-    const hasPerformerRole = roles.includes('performer');
+    const hasPerformerRole = user.is_performer;
 
     const getPlatformIcon = (platformName) => {
         const platform = socialMediaPlatforms.find((p) => p.name === platformName);
