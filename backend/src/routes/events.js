@@ -38,10 +38,17 @@ function getUpdateMessage(originalEvent, updatedFields) {
         changes.push('Venue has been changed');
     }
     
-    if (updatedFields.slot_duration !== undefined && 
-        originalEvent.slot_duration && 
-        updatedFields.slot_duration.minutes !== originalEvent.slot_duration.minutes) {
-        changes.push(`Slot duration changed from ${originalEvent.slot_duration.minutes} to ${updatedFields.slot_duration.minutes} minutes`);
+    if (updatedFields.slot_duration !== undefined && originalEvent.slot_duration) {
+        const newDuration = typeof updatedFields.slot_duration === 'object' 
+            ? updatedFields.slot_duration.minutes 
+            : Math.floor(updatedFields.slot_duration / 60);
+        const oldDuration = typeof originalEvent.slot_duration === 'object'
+            ? originalEvent.slot_duration.minutes
+            : Math.floor(originalEvent.slot_duration / 60);
+        
+        if (newDuration !== oldDuration) {
+            changes.push(`Slot duration changed from ${oldDuration} to ${newDuration} minutes`);
+        }
     }
 
     return changes.join(', ');
@@ -258,7 +265,7 @@ router.put('/:eventId', async (req, res) => {
 
         // Get the original event details to check what changed
         const originalEvent = await db.query(
-            'SELECT name, venue_id, start_time, end_time, slot_duration FROM events WHERE id = $1',
+            'SELECT name, venue_id, start_time, end_time, slot_duration, setup_duration FROM events WHERE id = $1',
             [eventId]
         );
 
@@ -266,7 +273,9 @@ router.put('/:eventId', async (req, res) => {
             ...(name !== undefined && { name }),
             ...(start_time !== undefined && { start_time }),
             ...(end_time !== undefined && { end_time }),
-            ...(venue_id !== undefined && { venue_id })
+            ...(venue_id !== undefined && { venue_id }),
+            ...(slot_duration !== undefined && { slot_duration }),
+            ...(setup_duration !== undefined && { setup_duration })
         });
 
         if (updateMessage) {

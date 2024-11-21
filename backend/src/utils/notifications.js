@@ -48,6 +48,8 @@ async function createNotification(userId, type, message, eventId = null, lineupS
                 e.name as event_name,
                 e.start_time as event_start_time,
                 e.image as event_image,
+                e.slot_duration,
+                e.setup_duration,
                 v.name as venue_name,
                 u.name as host_name
             FROM notifications n
