@@ -18,15 +18,15 @@ export function NotificationsProvider({ children }) {
                 return;
             }
 
-            console.log('Fetching notifications...');
+            console.log('Token being used:', token);
             const response = await fetch('/api/notifications', {
                 method: 'GET',
-                credentials: 'include',
                 headers: {
                     'Authorization': `Bearer ${token}`,
                     'Content-Type': 'application/json',
                     'Accept': 'application/json'
-                }
+                },
+                credentials: 'include'
             });
 
             if (!response.ok) {
@@ -89,6 +89,7 @@ export function NotificationsProvider({ children }) {
         markAsRead: async (notificationIds) => {
             try {
                 const token = getToken();
+                console.log('Current token:', token);
                 if (!token) return;
 
                 const response = await fetch('/api/notifications/mark-read', {
