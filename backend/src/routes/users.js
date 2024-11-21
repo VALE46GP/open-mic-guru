@@ -9,9 +9,9 @@ const AWS = require('aws-sdk');
 
 // Configure AWS SDK
 AWS.config.update({
-  accessKeyId: process.env.AWS_ACCESS_KEY_ID,
-  secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
-  region: process.env.AWS_REGION
+    accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+    region: process.env.AWS_REGION
 });
 
 const s3 = new AWS.S3();
@@ -20,18 +20,18 @@ const s3 = new AWS.S3();
 router.get('/', async (req, res) => {
     try {
         const result = await db.query(`
-            SELECT 
-                users.id, 
-                users.name, 
-                users.image, 
-                users.social_media_accounts,
-                CASE 
-                    WHEN EXISTS (
-                        SELECT 1 FROM lineup_slots 
-                        WHERE lineup_slots.user_id = users.id
-                    ) THEN true
-                    ELSE false
-                END AS is_performer
+            SELECT users.id,
+                   users.name,
+                   users.image,
+                   users.social_media_accounts,
+                   CASE
+                       WHEN EXISTS(
+                               SELECT 1
+                               FROM lineup_slots
+                               WHERE lineup_slots.user_id = users.id
+                           ) THEN true
+                       ELSE false
+                       END AS is_performer
             FROM users
             GROUP BY users.id
         `);
@@ -55,16 +55,16 @@ router.post('/register', async (req, res) => {
         if (isUpdate) {
             const socialMediaJson = JSON.stringify(socialMediaAccounts || []);
             const client = await db.connect();
-            
+
             try {
                 await client.query('BEGIN');
-                
+
                 // Build the update query dynamically based on whether a new password is provided
                 let updateQuery = `
-                    UPDATE users 
-                    SET email = $1, 
-                        name = $2, 
-                        image = $3, 
+                    UPDATE users
+                    SET email                 = $1,
+                        name                  = $2,
+                        image                 = $3,
                         social_media_accounts = $4::jsonb
                 `;
                 let queryParams = [email, name, photoUrl, socialMediaJson];
@@ -90,16 +90,15 @@ router.post('/register', async (req, res) => {
         } else {
             const socialMediaJson = JSON.stringify(socialMediaAccounts || []);
             const result = await db.query(
-                `INSERT INTO users (email, password, name, image, social_media_accounts) 
-                VALUES ($1, $2, $3, $4, $5) 
-                RETURNING *`,
+                `INSERT INTO users (email, password, name, image, social_media_accounts)
+                 VALUES ($1, $2, $3, $4, $5) RETURNING *`,
                 [email, hashedPassword, name, photoUrl, socialMediaJson]
             );
             return res.status(201).json({ user: result.rows[0] });
         }
     } catch (err) {
         console.error('Database Error:', err);
-        return res.status(500).json({ 
+        return res.status(500).json({
             error: 'Server error',
             details: err.message
         });
@@ -148,39 +147,38 @@ router.get('/:userId', async (req, res) => {
 
         // Fetch both hosted events and events where user is in lineup
         const eventsQuery = await db.query(`
-            SELECT DISTINCT
-                e.id AS event_id,
-                e.name AS event_name,
-                e.image AS event_image,
-                e.start_time,
-                e.end_time,
-                e.slot_duration,
-                e.additional_info,
-                v.id AS venue_id,
-                v.name AS venue_name,
-                u.name AS host_name,
-                CASE 
-                    WHEN e.host_id = $1 THEN true 
-                    ELSE false 
-                END AS is_host,
-                CASE 
-                    WHEN ls.user_id IS NOT NULL THEN true 
-                    ELSE false 
-                END AS is_performer,
-                ls.slot_number,
-                e.slot_duration,
-                e.setup_duration,
-                e.start_time + 
-                    (INTERVAL '1 minute' * 
-                        (ls.slot_number - 1) * 
-                        (EXTRACT(EPOCH FROM e.slot_duration + e.setup_duration) / 60)
-                    ) AS performer_slot_time
+            SELECT DISTINCT e.id    AS event_id,
+                            e.name  AS event_name,
+                            e.image AS event_image,
+                            e.start_time,
+                            e.end_time,
+                            e.slot_duration,
+                            e.additional_info,
+                            v.id    AS venue_id,
+                            v.name  AS venue_name,
+                            u.name  AS host_name,
+                            CASE
+                                WHEN e.host_id = $1 THEN true
+                                ELSE false
+                                END AS is_host,
+                            CASE
+                                WHEN ls.user_id IS NOT NULL THEN true
+                                ELSE false
+                                END AS is_performer,
+                            ls.slot_number,
+                            e.slot_duration,
+                            e.setup_duration,
+                            e.start_time +
+                            (INTERVAL '1 minute' * (ls.slot_number - 1) *
+                                (EXTRACT (EPOCH FROM e.slot_duration + e.setup_duration) / 60)
+                                )   AS performer_slot_time
             FROM events e
-            JOIN venues v ON e.venue_id = v.id
-            JOIN users u ON e.host_id = u.id
-            LEFT JOIN lineup_slots ls ON e.id = ls.event_id 
+                     JOIN venues v ON e.venue_id = v.id
+                     JOIN users u ON e.host_id = u.id
+                     LEFT JOIN lineup_slots ls ON e.id = ls.event_id
                 AND ls.user_id = $1
-            WHERE e.host_id = $1 OR ls.user_id = $1
+            WHERE e.host_id = $1
+               OR ls.user_id = $1
             ORDER BY e.start_time DESC
         `, [userId]);
 
@@ -213,29 +211,29 @@ router.delete('/:userId', verifyToken, async (req, res) => {
 });
 
 router.post('/upload', async (req, res) => {
-  const { fileName, fileType, userId } = req.body;
-  const uniqueFileName = `${userId}-${fileName}`;
-  const s3Params = {
-    Bucket: process.env.S3_BUCKET_NAME,
-    Key: `users/${uniqueFileName}`,
-    Expires: 60,
-    ContentType: fileType
-  };
+    const { fileName, fileType, userId } = req.body;
+    const uniqueFileName = `${userId}-${fileName}`;
+    const s3Params = {
+        Bucket: process.env.S3_BUCKET_NAME,
+        Key: `users/${uniqueFileName}`,
+        Expires: 60,
+        ContentType: fileType
+    };
 
-  try {
-    const uploadURL = await s3.getSignedUrlPromise('putObject', s3Params);
-    res.json({ uploadURL });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: 'Error generating upload URL' });
-  }
+    try {
+        const uploadURL = await s3.getSignedUrlPromise('putObject', s3Params);
+        res.json({ uploadURL });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: 'Error generating upload URL' });
+    }
 });
 
 router.post('/validate-password', async (req, res) => {
     try {
         const { userId, password } = req.body;
         const result = await db.query('SELECT password FROM users WHERE id = $1', [userId]);
-        
+
         if (result.rows.length === 0) {
             return res.status(404).json({ error: 'User not found' });
         }

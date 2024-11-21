@@ -15,33 +15,36 @@ import { WebSocketProvider } from './context/WebSocketContext';
 import UsersPage from './pages/Users/UsersPage';
 
 function App() {
-  return (
-    <WebSocketProvider>
-      <Router>
-        <AuthProvider>
-          <div className="app">
-            <Navigation />
-            <div className="app__container">
-              <div className="app__content">
-                <Routes>
-                  <Route path="/" element={<EventsPage />} />
-                  <Route path="/login" element={<LoginPage />} />
-                  <Route path="/testdb" element={<ProtectedRoute element={<TestDbPage />} />} />
-                  <Route path="/create-event" element={<ProtectedRoute element={<CreateEventPage />} />} />
-                  <Route path="/events/:eventId" element={<EventPage />} />
-                  <Route path="/events/:eventId/edit" element={<ProtectedRoute element={<CreateEventPage />} />} />
-                  <Route path="/users/:userId" element={<UserPage />} />
-                  <Route path="/users/:userId/edit" element={<EditUserPage />} />
-                  <Route path="/events" element={<EventsPage />} />
-                  <Route path="/users" element={<UsersPage />} />
-                </Routes>
-              </div>
-            </div>
-          </div>
-        </AuthProvider>
-      </Router>
-    </WebSocketProvider>
-  );
+    return (
+        <WebSocketProvider>
+            <Router>
+                <AuthProvider>
+                    <div className="app">
+                        <Navigation/>
+                        <div className="app__container">
+                            <div className="app__content">
+                                <Routes>
+                                    <Route path="/" element={<EventsPage/>}/>
+                                    <Route path="/login" element={<LoginPage/>}/>
+                                    <Route path="/testdb"
+                                           element={<ProtectedRoute element={<TestDbPage/>}/>}/>
+                                    <Route path="/create-event" element={<ProtectedRoute
+                                        element={<CreateEventPage/>}/>}/>
+                                    <Route path="/events/:eventId" element={<EventPage/>}/>
+                                    <Route path="/events/:eventId/edit" element={<ProtectedRoute
+                                        element={<CreateEventPage/>}/>}/>
+                                    <Route path="/users/:userId" element={<UserPage/>}/>
+                                    <Route path="/users/:userId/edit" element={<EditUserPage/>}/>
+                                    <Route path="/events" element={<EventsPage/>}/>
+                                    <Route path="/users" element={<UsersPage/>}/>
+                                </Routes>
+                            </div>
+                        </div>
+                    </div>
+                </AuthProvider>
+            </Router>
+        </WebSocketProvider>
+    );
 }
 
 export default App;

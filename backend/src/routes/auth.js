@@ -5,14 +5,14 @@ const router = express.Router();
 
 // Initialize Google OAuth strategy with Passport
 passport.use(new GoogleStrategy({
-    clientID: process.env.GOOGLE_CLIENT_ID,
-    clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-    callbackURL: "/auth/google/callback"
-  },
-  function(accessToken, refreshToken, profile, cb) {
-    // Callback function after successful Google authentication
-    return cb(null, profile);
-  }
+        clientID: process.env.GOOGLE_CLIENT_ID,
+        clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+        callbackURL: "/auth/google/callback"
+    },
+    function (accessToken, refreshToken, profile, cb) {
+        // Callback function after successful Google authentication
+        return cb(null, profile);
+    }
 ));
 
 // Route to start Google OAuth flow

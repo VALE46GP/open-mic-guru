@@ -104,7 +104,10 @@ function EventPage() {
                         console.log('Reordering slots:', update.data);
                         const updatedLineup = prevDetails.lineup.map(slot => {
                             const updatedSlot = update.data.slots.find(s => s.slot_id === slot.slot_id);
-                            return updatedSlot ? { ...slot, slot_number: updatedSlot.slot_number } : slot;
+                            return updatedSlot ? {
+                                ...slot,
+                                slot_number: updatedSlot.slot_number
+                            } : slot;
                         });
 
                         return {
@@ -300,8 +303,10 @@ function EventPage() {
                         />
                     </div>
                 )}
-                <p className="event-page__info">Slot Duration: {eventDetails?.event?.slot_duration?.minutes} minutes</p>
-                <p className="event-page__info">Additional Info: {eventDetails?.event?.additional_info}</p>
+                <p className="event-page__info">Slot
+                    Duration: {eventDetails?.event?.slot_duration?.minutes} minutes</p>
+                <p className="event-page__info">Additional
+                    Info: {eventDetails?.event?.additional_info}</p>
                 <div className="event-page__host-image-container">
                     <Link to={`/users/${eventDetails?.host?.id}`}>
                         {eventDetails?.host?.image && (
@@ -367,7 +372,8 @@ function EventPage() {
                 <div className="event-page__modal">
                     <BorderBox className="event-page__modal-content">
                         <h4>Are you sure you want to delete this event?</h4>
-                        <button onClick={() => handleDeleteEvent(eventDetails.event.id)}>Confirm</button>
+                        <button onClick={() => handleDeleteEvent(eventDetails.event.id)}>Confirm
+                        </button>
                         <button onClick={toggleDeleteConfirmModal}>Cancel</button>
                     </BorderBox>
                 </div>

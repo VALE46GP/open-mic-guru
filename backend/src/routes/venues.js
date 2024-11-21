@@ -8,10 +8,10 @@ router.post('/checkOrCreate', async (req, res) => {
 
     try {
         let venue = await db.query(
-            'SELECT * FROM venues WHERE name = $1 AND address = $2', 
+            'SELECT * FROM venues WHERE name = $1 AND address = $2',
             [name, address]
         );
-        
+
         if (venue.rows.length > 0) {
             res.json({ venueId: venue.rows[0].id });
         } else {

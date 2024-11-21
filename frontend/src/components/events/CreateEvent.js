@@ -37,17 +37,17 @@ function CreateEvent() {
                     const data = await response.json();
                     setEventData(data);
                     setNewEventName(data.event?.name || '');
-                    
+
                     // Set both image states if event has an image
                     if (data.event?.image) {
                         setImagePreview(data.event.image);
                         setEventImage(data.event.image);
                     }
-                    
+
                     // Convert UTC dates to local timezone for form input
                     if (data.event?.start_time) {
                         const startDate = new Date(data.event.start_time);
-                        setStartTime(startDate.toLocaleString('sv-SE', { 
+                        setStartTime(startDate.toLocaleString('sv-SE', {
                             year: 'numeric',
                             month: '2-digit',
                             day: '2-digit',
@@ -56,10 +56,10 @@ function CreateEvent() {
                             second: '2-digit'
                         }).slice(0, 16));
                     }
-                    
+
                     if (data.event?.end_time) {
                         const endDate = new Date(data.event.end_time);
-                        setEndTime(endDate.toLocaleString('sv-SE', { 
+                        setEndTime(endDate.toLocaleString('sv-SE', {
                             year: 'numeric',
                             month: '2-digit',
                             day: '2-digit',
@@ -172,7 +172,7 @@ function CreateEvent() {
         try {
             const url = isEditMode ? `/api/events/${eventId}` : '/api/events';
             const method = isEditMode ? 'PUT' : 'POST';
-            
+
             const response = await fetch(url, {
                 method: method,
                 headers: {
@@ -338,8 +338,10 @@ function CreateEvent() {
                 </BorderBox>
             </div>
             <div className="create-event__button-container">
-                <button className="create-event__submit-button" onClick={handleSubmit}>{isEditMode ? 'Save' : 'Submit'}</button>
-                {isEditMode && <button className="create-event__cancel-button" onClick={() => navigate(-1)}>Cancel</button>}
+                <button className="create-event__submit-button"
+                        onClick={handleSubmit}>{isEditMode ? 'Save' : 'Submit'}</button>
+                {isEditMode && <button className="create-event__cancel-button"
+                                       onClick={() => navigate(-1)}>Cancel</button>}
             </div>
         </div>
     );

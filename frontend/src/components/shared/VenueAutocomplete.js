@@ -1,15 +1,15 @@
 import React, { useEffect, useRef, useState } from 'react';
 import './VenueAutocomplete.sass';
 
-const VenueAutocomplete = ({ 
-    onPlaceSelected, 
-    resetTrigger, 
-    onResetComplete, 
-    initialValue,
-    specificCoordinates = false,
-    placeholder = "Location",
-    onClear
-}) => {
+const VenueAutocomplete = ({
+                               onPlaceSelected,
+                               resetTrigger,
+                               onResetComplete,
+                               initialValue,
+                               specificCoordinates = false,
+                               placeholder = "Location",
+                               onClear
+                           }) => {
     const autocompleteInputRef = useRef(null);
     const [inputValue, setInputValue] = useState(initialValue || "");
 
@@ -94,7 +94,7 @@ const VenueAutocomplete = ({
                     className="venue-autocomplete__input"
                 />
                 {inputValue && (
-                    <button 
+                    <button
                         className="venue-autocomplete__clear-button"
                         onClick={handleClear}
                         aria-label="Clear location"

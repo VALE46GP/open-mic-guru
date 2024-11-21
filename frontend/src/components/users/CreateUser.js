@@ -206,7 +206,7 @@ function CreateUser({ initialData, onCancel }) {
                             </select>
 
                             {/* Display selected platform icon */}
-                            {PlatformIcon && <PlatformIcon className="create-user__social-icon" />}
+                            {PlatformIcon && <PlatformIcon className="create-user__social-icon"/>}
 
                             {/* URL input */}
                             <input
@@ -224,14 +224,15 @@ function CreateUser({ initialData, onCancel }) {
                                 className='create-user__delete-social-button'
                                 aria-label="Delete Social Media Account"
                             >
-                                <DeleteIcon className="create-user__delete-icon" />
+                                <DeleteIcon className="create-user__delete-icon"/>
                             </button>
                         </div>
                     );
                 })}
 
                 {/* Button to add a new social media account */}
-                <button type='button' onClick={addSocialMediaAccount} className='create-user__add-social-button'>
+                <button type='button' onClick={addSocialMediaAccount}
+                        className='create-user__add-social-button'>
                     Add Social Media Account
                 </button>
             </BorderBox>
@@ -252,7 +253,8 @@ function CreateUser({ initialData, onCancel }) {
                     </div>
                     {!initialData && (
                         <div className='create-user__input-group'>
-                            <label htmlFor='password' className='create-user__label'>Password</label>
+                            <label htmlFor='password'
+                                   className='create-user__label'>Password</label>
                             <input
                                 id='password'
                                 type='password'
@@ -285,7 +287,8 @@ function CreateUser({ initialData, onCancel }) {
                         <p className='create-user__password-error'>{passwordError}</p>
                     )}
                     <div className='create-user__input-group'>
-                        <label htmlFor='old-password' className='create-user__label'>Old Password</label>
+                        <label htmlFor='old-password' className='create-user__label'>Old
+                            Password</label>
                         <input
                             id='old-password'
                             type='password'
@@ -296,7 +299,8 @@ function CreateUser({ initialData, onCancel }) {
                         />
                     </div>
                     <div className='create-user__input-group'>
-                        <label htmlFor='new-password' className='create-user__label'>New Password</label>
+                        <label htmlFor='new-password' className='create-user__label'>New
+                            Password</label>
                         <input
                             id='new-password'
                             type='password'
@@ -311,14 +315,14 @@ function CreateUser({ initialData, onCancel }) {
 
             {/* Moved buttons outside of BorderBox */}
             <div className="create-user__button-group">
-                <button 
-                    className='create-user__submit-button' 
+                <button
+                    className='create-user__submit-button'
                     onClick={handleRegister}
                 >
                     {initialData ? 'Save Changes' : 'Register'}
                 </button>
                 {initialData && (
-                    <button 
+                    <button
                         type="button"
                         onClick={onCancel}
                         className='create-user__cancel-button'
@@ -328,7 +332,8 @@ function CreateUser({ initialData, onCancel }) {
                 )}
             </div>
 
-            {success && <p className='create-user__success-message'>Profile updated successfully!</p>}
+            {success &&
+                <p className='create-user__success-message'>Profile updated successfully!</p>}
             {error && <p className='create-user__error-message'>{error}</p>}
         </div>
     );

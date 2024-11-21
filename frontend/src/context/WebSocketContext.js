@@ -5,7 +5,7 @@ const WebSocketContext = createContext(null);
 
 export const WebSocketProvider = ({ children }) => {
     const socketUrl = `ws://${window.location.hostname}:3001/ws`;
-    
+
     const { sendMessage, lastMessage, readyState } = useWebSocket(socketUrl, {
         shouldReconnect: (closeEvent) => true,
         reconnectAttempts: 10,

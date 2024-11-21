@@ -27,7 +27,7 @@ afterAll(() => {
 // Mock VenueAutocomplete as a simple input
 jest.mock('../shared/VenueAutocomplete', () => {
     return function MockVenueAutocomplete() {
-        return <input placeholder="Location" data-testid="mock-autocomplete" />;
+        return <input placeholder="Location" data-testid="mock-autocomplete"/>;
     };
 });
 
@@ -38,7 +38,7 @@ describe('CreateEvent Component', () => {
             <AuthProvider>
                 <MemoryRouter initialEntries={['/create-event']}>
                     <Routes>
-                        <Route path="/create-event" element={<CreateEvent />} />
+                        <Route path="/create-event" element={<CreateEvent/>}/>
                     </Routes>
                 </MemoryRouter>
             </AuthProvider>

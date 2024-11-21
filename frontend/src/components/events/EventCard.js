@@ -10,7 +10,8 @@ function EventCard({ event, slotTime }) {
                 {(event.is_host || event.is_performer) && (
                     <div className="event-card__role">
                         {event.is_host && <span className="event-card__role-badge host">Host</span>}
-                        {event.is_performer && <span className="event-card__role-badge performer">Performer</span>}
+                        {event.is_performer &&
+                            <span className="event-card__role-badge performer">Performer</span>}
                     </div>
                 )}
                 <BorderBox className="event-card">
@@ -24,7 +25,8 @@ function EventCard({ event, slotTime }) {
                                 />
                             </div>
                         )}
-                        <div className={`event-card__details ${event.event_image ? 'event-card__details--with-image' : ''}`}>
+                        <div
+                            className={`event-card__details ${event.event_image ? 'event-card__details--with-image' : ''}`}>
                             <div className="event-card__title">
                                 {event.event_name}
                             </div>
@@ -45,9 +47,9 @@ function EventCard({ event, slotTime }) {
                             {slotTime && (
                                 <span className="event-card__meta-item event-card__slot-time">
                                     Slot time: {new Date(slotTime).toLocaleTimeString([], {
-                                        hour: '2-digit',
-                                        minute: '2-digit'
-                                    })}
+                                    hour: '2-digit',
+                                    minute: '2-digit'
+                                })}
                                 </span>
                             )}
                         </div>

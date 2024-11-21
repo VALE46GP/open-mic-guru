@@ -37,16 +37,17 @@ function LoginPage() {
 
     return (
         <div>
-            <button className="login-page__button" onClick={() => setShowCreateUser(!showCreateUser)}>
+            <button className="login-page__button"
+                    onClick={() => setShowCreateUser(!showCreateUser)}>
                 {showCreateUser ? 'Login Existing User' : 'Create New User'}
             </button>
             {!showCreateUser ? (
                 <h2>Login Existing User</h2>
             ) : (
-                <div />
+                <div/>
             )}
             {showCreateUser ? (
-                <CreateUser />
+                <CreateUser/>
             ) : (
                 <form onSubmit={handleSubmit}>
                     <input

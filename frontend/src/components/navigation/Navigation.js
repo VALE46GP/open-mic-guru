@@ -28,18 +28,19 @@ const Navigation = () => {
     return (
         <>
             <div className="navigation__placeholder"></div>
-            <nav className={`navigation ${isVisible ? 'navigation--visible' : 'navigation--hidden'}`}>
+            <nav
+                className={`navigation ${isVisible ? 'navigation--visible' : 'navigation--hidden'}`}>
                 <div className="navigation__left">
                     <Link to="/" className="navigation__logo">
-                        <FaHome />
+                        <FaHome/>
                     </Link>
                 </div>
                 <div className="navigation__right">
                     <Link to="/users" className="navigation__users-link">
-                        <FaUsers />
+                        <FaUsers/>
                     </Link>
                     <Link to="/create-event" className="navigation__create-event">
-                        <FaPlus />
+                        <FaPlus/>
                     </Link>
                     {isAuthenticated && user ? (
                         <Link to={`/users/${user.id}`}>
@@ -51,7 +52,7 @@ const Navigation = () => {
                         </Link>
                     ) : (
                         <Link to="/login" className="navigation__login-icon">
-                            <FaSignInAlt />
+                            <FaSignInAlt/>
                         </Link>
                     )}
                 </div>

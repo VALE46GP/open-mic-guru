@@ -23,7 +23,8 @@ function UserCard({ user }) {
                 {(hasHostRole || hasPerformerRole) && (
                     <div className="user-card__role">
                         {hasHostRole && <span className="user-card__role-badge host">Host</span>}
-                        {hasPerformerRole && <span className="user-card__role-badge performer">Performer</span>}
+                        {hasPerformerRole &&
+                            <span className="user-card__role-badge performer">Performer</span>}
                     </div>
                 )}
                 <BorderBox className="user-card">
@@ -37,7 +38,8 @@ function UserCard({ user }) {
                                 />
                             </div>
                         )}
-                        <div className={`user-card__details ${user.image ? 'user-card__details--with-image' : ''}`}>
+                        <div
+                            className={`user-card__details ${user.image ? 'user-card__details--with-image' : ''}`}>
                             <div className="user-card__name">
                                 {user.name}
                             </div>
@@ -52,7 +54,8 @@ function UserCard({ user }) {
                                                 className="user-card__social-media-button"
                                                 aria-label={`Visit ${account.platform}`}
                                             >
-                                                {IconComponent && <IconComponent className="user-card__social-media-icon" />}
+                                                {IconComponent && <IconComponent
+                                                    className="user-card__social-media-icon"/>}
                                             </button>
                                         );
                                     })}

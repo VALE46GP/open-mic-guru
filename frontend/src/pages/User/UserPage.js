@@ -38,8 +38,8 @@ function UserPage() {
 
     const currentEvents = userData?.events.filter(event => new Date(event.start_time) >= new Date()) || [];
     const pastEvents = (userData?.events
-      .filter(event => new Date(event.start_time) < new Date())
-      .sort((a, b) => new Date(b.start_time) - new Date(a.start_time))) || [];
+        .filter(event => new Date(event.start_time) < new Date())
+        .sort((a, b) => new Date(b.start_time) - new Date(a.start_time))) || [];
 
     return (
         <div className="user-page">
@@ -58,14 +58,14 @@ function UserPage() {
                 </div>
                 {isOwnProfile && (
                     <div className="user-page__actions">
-                        <button 
-                            onClick={() => navigate(`/users/${userId}/edit`)} 
+                        <button
+                            onClick={() => navigate(`/users/${userId}/edit`)}
                             className="user-page__edit-button"
                         >
                             Edit Profile
                         </button>
-                        <button 
-                            onClick={handleLogout} 
+                        <button
+                            onClick={handleLogout}
                             className="user-page__logout-button"
                         >
                             Logout
@@ -83,8 +83,10 @@ function UserPage() {
                                 const IconComponent = getPlatformIcon(account.platform);
                                 return (
                                     <div key={index} className="user-page__social-media-item">
-                                        <a href={account.url} target="_blank" rel="noopener noreferrer">
-                                            {IconComponent && <IconComponent className="user-page__social-media-icon" />}
+                                        <a href={account.url} target="_blank"
+                                           rel="noopener noreferrer">
+                                            {IconComponent && <IconComponent
+                                                className="user-page__social-media-icon"/>}
                                             <span>{account.platform}</span>
                                         </a>
                                     </div>
@@ -95,11 +97,26 @@ function UserPage() {
                 </>
             )}
 
-            <div className="user-page__events-section">
-                <h2>Upcoming Events</h2>
-                {currentEvents.length > 0 ? (
+            <h2>Upcoming Events</h2>
+            {currentEvents.length > 0 ? (
+                <div className="user-page__events-grid">
+                    {currentEvents.map((event) => (
+                        <EventCard
+                            key={`event-${event.event_id}`}
+                            event={event}
+                            slotTime={event.is_performer ? event.performer_slot_time : null}
+                        />
+                    ))}
+                </div>
+            ) : (
+                <p>No upcoming events</p>
+            )}
+
+            {pastEvents.length > 0 && (
+                <>
+                    <h2>Past Events</h2>
                     <div className="user-page__events-grid">
-                        {currentEvents.map((event) => (
+                        {pastEvents.map((event) => (
                             <EventCard
                                 key={`event-${event.event_id}`}
                                 event={event}
@@ -107,25 +124,8 @@ function UserPage() {
                             />
                         ))}
                     </div>
-                ) : (
-                    <p>No upcoming events</p>
-                )}
-
-                {pastEvents.length > 0 && (
-                    <>
-                        <h2>Past Events</h2>
-                        <div className="user-page__events-grid">
-                            {pastEvents.map((event) => (
-                                <EventCard
-                                    key={`event-${event.event_id}`}
-                                    event={event}
-                                    slotTime={event.is_performer ? event.performer_slot_time : null}
-                                />
-                            ))}
-                        </div>
-                    </>
-                )}
-            </div>
+                </>
+            )}
         </div>
     );
 }

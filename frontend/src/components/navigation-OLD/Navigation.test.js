@@ -16,7 +16,7 @@ describe('Navigation Component', () => {
 
         render(
             <MemoryRouter>
-                <Navigation />
+                <Navigation/>
             </MemoryRouter>
         );
 
@@ -37,7 +37,7 @@ describe('Navigation Component', () => {
 
         render(
             <MemoryRouter>
-                <Navigation />
+                <Navigation/>
             </MemoryRouter>
         );
 

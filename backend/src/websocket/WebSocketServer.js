@@ -1,7 +1,7 @@
 const WebSocket = require('ws');
 
 function initializeWebSocketServer(server) {
-    const wss = new WebSocket.Server({ 
+    const wss = new WebSocket.Server({
         server,
         path: '/ws'
     });

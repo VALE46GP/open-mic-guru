@@ -4,14 +4,14 @@ import { ReactComponent as DeleteIcon } from "../../../assets/icons/delete.svg";
 import './BorderBox.sass';
 
 const BorderBox = ({
-    children,
-    onEdit,
-    onDelete,
-    className = '',
-    maxWidth
-}) => {
+                       children,
+                       onEdit,
+                       onDelete,
+                       className = '',
+                       maxWidth
+                   }) => {
     const style = maxWidth ? { maxWidth } : {};
-    
+
     return (
         <div className={`border-box ${className}`} style={style}>
             {(onEdit || onDelete) && (
@@ -22,7 +22,7 @@ const BorderBox = ({
                             onClick={onEdit}
                             aria-label="Edit"
                         >
-                            <EditIcon className="border-box__icon" />
+                            <EditIcon className="border-box__icon"/>
                         </button>
                     )}
                     {onDelete && (
@@ -31,7 +31,7 @@ const BorderBox = ({
                             onClick={onDelete}
                             aria-label="Delete"
                         >
-                            <DeleteIcon className="border-box__icon" />
+                            <DeleteIcon className="border-box__icon"/>
                         </button>
                     )}
                 </div>

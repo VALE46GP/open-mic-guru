@@ -6,9 +6,9 @@ const AWS = require('aws-sdk');
 
 // Configure AWS SDK (matching users.js pattern)
 AWS.config.update({
-  accessKeyId: process.env.AWS_ACCESS_KEY_ID,
-  secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
-  region: process.env.AWS_REGION
+    accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+    region: process.env.AWS_REGION
 });
 
 const s3 = new AWS.S3();
@@ -17,33 +17,31 @@ const s3 = new AWS.S3();
 router.get('/', async (req, res) => {
     try {
         const result = await db.query(`
-            SELECT DISTINCT
-                e.id AS event_id,
-                e.name AS event_name,
-                e.start_time,
-                e.end_time,
-                e.slot_duration,
-                e.setup_duration,
-                e.additional_info,
-                e.image AS event_image,
-                v.id AS venue_id,
-                v.name AS venue_name,
-                v.address AS venue_address,
-                v.latitude AS venue_latitude,
-                v.longitude AS venue_longitude,
-                e.host_id,
-                u.name AS host_name,
-                ls.user_id AS performer_id,
-                ls.slot_number,
-                e.start_time + 
-                    (INTERVAL '1 minute' * 
-                        (ls.slot_number - 1) * 
-                        (EXTRACT(EPOCH FROM e.slot_duration + e.setup_duration) / 60)
-                    ) AS performer_slot_time
+            SELECT DISTINCT e.id        AS event_id,
+                            e.name      AS event_name,
+                            e.start_time,
+                            e.end_time,
+                            e.slot_duration,
+                            e.setup_duration,
+                            e.additional_info,
+                            e.image     AS event_image,
+                            v.id        AS venue_id,
+                            v.name      AS venue_name,
+                            v.address   AS venue_address,
+                            v.latitude  AS venue_latitude,
+                            v.longitude AS venue_longitude,
+                            e.host_id,
+                            u.name      AS host_name,
+                            ls.user_id  AS performer_id,
+                            ls.slot_number,
+                            e.start_time +
+                            (INTERVAL '1 minute' * (ls.slot_number - 1) *
+                                (EXTRACT (EPOCH FROM e.slot_duration + e.setup_duration) / 60)
+                                )       AS performer_slot_time
             FROM events e
-            JOIN venues v ON e.venue_id = v.id
-            LEFT JOIN users u ON e.host_id = u.id
-            LEFT JOIN lineup_slots ls ON e.id = ls.event_id
+                     JOIN venues v ON e.venue_id = v.id
+                     LEFT JOIN users u ON e.host_id = u.id
+                     LEFT JOIN lineup_slots ls ON e.id = ls.event_id
         `);
 
         // Group performers by event
@@ -81,23 +79,22 @@ router.get('/:eventId', async (req, res) => {
         const ipAddress = req.ip;
 
         const eventQuery = await db.query(`
-            SELECT
-                e.id AS event_id,
-                e.name AS event_name,
-                e.start_time,
-                e.end_time,
-                e.slot_duration,
-                e.setup_duration,
-                e.additional_info,
-                e.image AS event_image,
-                v.id AS venue_id,
-                v.name AS venue_name,
-                v.address AS venue_address,
-                v.latitude AS venue_latitude,
-                v.longitude AS venue_longitude,
-                u.id AS host_id,
-                u.name AS host_name,
-                u.image AS host_image
+            SELECT e.id        AS event_id,
+                   e.name      AS event_name,
+                   e.start_time,
+                   e.end_time,
+                   e.slot_duration,
+                   e.setup_duration,
+                   e.additional_info,
+                   e.image     AS event_image,
+                   v.id        AS venue_id,
+                   v.name      AS venue_name,
+                   v.address   AS venue_address,
+                   v.latitude  AS venue_latitude,
+                   v.longitude AS venue_longitude,
+                   u.id        AS host_id,
+                   u.name      AS host_name,
+                   u.image     AS host_image
             FROM events e
                      JOIN venues v ON e.venue_id = v.id
                      JOIN users u ON e.host_id = u.id
@@ -111,24 +108,23 @@ router.get('/:eventId', async (req, res) => {
 
         const eventData = eventQuery.rows[0];
         const lineupQuery = await db.query(`
-            SELECT 
-                ls.id AS slot_id, 
-                ls.slot_number,
-                ls.event_id,
-                ls.non_user_identifier,
-                ls.ip_address,
-                u.name AS user_name, 
-                u.id AS user_id, 
-                u.image AS user_image,
-                ls.slot_name,
-                ls.non_user_identifier,
-                ls.ip_address,
-                CASE 
-                    WHEN ls.non_user_identifier = $1 OR ls.ip_address = $2 THEN true 
-                    ELSE false 
-                END AS is_current_non_user
+            SELECT ls.id   AS slot_id,
+                   ls.slot_number,
+                   ls.event_id,
+                   ls.non_user_identifier,
+                   ls.ip_address,
+                   u.name  AS user_name,
+                   u.id    AS user_id,
+                   u.image AS user_image,
+                   ls.slot_name,
+                   ls.non_user_identifier,
+                   ls.ip_address,
+                   CASE
+                       WHEN ls.non_user_identifier = $1 OR ls.ip_address = $2 THEN true
+                       ELSE false
+                       END AS is_current_non_user
             FROM lineup_slots ls
-            LEFT JOIN users u ON ls.user_id = u.id
+                     LEFT JOIN users u ON ls.user_id = u.id
             WHERE ls.event_id = $3
             ORDER BY ls.slot_number ASC
         `, [nonUserId, ipAddress, eventId]);
@@ -160,7 +156,7 @@ router.get('/:eventId', async (req, res) => {
             lineup: lineup
         };
 
-        res.json({ 
+        res.json({
             event: eventDetails.event,
             venue: eventDetails.venue,
             host: eventDetails.host,
@@ -179,7 +175,17 @@ router.get('/:eventId', async (req, res) => {
 // POST a new event
 router.post('/', async (req, res) => {
     try {
-        const { venue_id, start_time, end_time, slot_duration, setup_duration = 5, name, additional_info, host_id, image } = req.body;
+        const {
+            venue_id,
+            start_time,
+            end_time,
+            slot_duration,
+            setup_duration = 5,
+            name,
+            additional_info,
+            host_id,
+            image
+        } = req.body;
 
         if (new Date(start_time) >= new Date(end_time)) {
             return res.status(400).json({ error: 'Start time must be before end time' });
@@ -200,7 +206,16 @@ router.post('/', async (req, res) => {
 // PUT an existing event
 router.put('/:eventId', async (req, res) => {
     const { eventId } = req.params;
-    const { name, start_time, end_time, slot_duration, setup_duration, venue_id, additional_info, image } = req.body;
+    const {
+        name,
+        start_time,
+        end_time,
+        slot_duration,
+        setup_duration,
+        venue_id,
+        additional_info,
+        image
+    } = req.body;
 
     try {
         if (new Date(start_time) >= new Date(end_time)) {
@@ -278,8 +293,8 @@ router.put('/:eventId/extend', async (req, res) => {
         }
 
         const event = eventQuery.rows[0];
-        const totalMinutesPerSlot = 
-            event.slot_duration.minutes + 
+        const totalMinutesPerSlot =
+            event.slot_duration.minutes +
             event.setup_duration.minutes;
 
         // Calculate new end time
@@ -301,7 +316,7 @@ router.put('/:eventId/extend', async (req, res) => {
                 end_time: currentEndTime
             }
         };
-        
+
         req.app.locals.broadcastLineupUpdate(updateData);
         res.json(result.rows[0]);
     } catch (err) {
@@ -311,22 +326,22 @@ router.put('/:eventId/extend', async (req, res) => {
 });
 
 router.post('/upload', async (req, res) => {
-  const { fileName, fileType } = req.body;
-  const uniqueFileName = `${Date.now()}-${fileName}`;
-  const s3Params = {
-    Bucket: process.env.S3_BUCKET_NAME,
-    Key: `events/${uniqueFileName}`,
-    Expires: 60,
-    ContentType: fileType
-  };
+    const { fileName, fileType } = req.body;
+    const uniqueFileName = `${Date.now()}-${fileName}`;
+    const s3Params = {
+        Bucket: process.env.S3_BUCKET_NAME,
+        Key: `events/${uniqueFileName}`,
+        Expires: 60,
+        ContentType: fileType
+    };
 
-  try {
-    const uploadURL = await s3.getSignedUrlPromise('putObject', s3Params);
-    res.json({ uploadURL });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: 'Error generating upload URL' });
-  }
+    try {
+        const uploadURL = await s3.getSignedUrlPromise('putObject', s3Params);
+        res.json({ uploadURL });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: 'Error generating upload URL' });
+    }
 });
 
 module.exports = router;

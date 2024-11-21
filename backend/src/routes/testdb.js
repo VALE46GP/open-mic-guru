@@ -10,12 +10,16 @@ router.get('/testdb', async (req, res) => {
         const linksCountQuery = await db.query('SELECT COUNT(*) AS links_count FROM links');
 
         const upcomingEventsQuery = await db.query(`
-            SELECT e.id, e.start_time, v.name AS venue_name, e.venue_id, e.additional_info, e.host_id
+            SELECT e.id,
+                   e.start_time,
+                   v.name AS venue_name,
+                   e.venue_id,
+                   e.additional_info,
+                   e.host_id
             FROM events e
-            JOIN venues v ON e.venue_id = v.id
+                     JOIN venues v ON e.venue_id = v.id
             WHERE e.start_time > NOW()
-            ORDER BY e.start_time ASC
-            LIMIT 5
+            ORDER BY e.start_time ASC LIMIT 5
         `);
 
         const eventsQuery = await db.query(`

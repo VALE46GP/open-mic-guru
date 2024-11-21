@@ -22,7 +22,7 @@ function UsersPage() {
                 console.error('Error fetching users:', error);
             }
         };
-    
+
         fetchUsers();
     }, []);
 
@@ -31,7 +31,7 @@ function UsersPage() {
             <h1>Users</h1>
             <div className="users-page__list">
                 {users.map(user => (
-                    <UserCard key={user.id} user={user} />
+                    <UserCard key={user.id} user={user}/>
                 ))}
             </div>
         </div>

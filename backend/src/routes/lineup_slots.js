@@ -8,7 +8,15 @@ router.post('/', async (req, res) => {
     const nonUserId = req.cookies?.nonUserId || null;
     const ipAddress = req.ip;
 
-    console.log("Request received:", { event_id, user_id, slot_number, slot_name, isHostAssignment, nonUserId, ipAddress });
+    console.log("Request received:", {
+        event_id,
+        user_id,
+        slot_number,
+        slot_name,
+        isHostAssignment,
+        nonUserId,
+        ipAddress
+    });
 
     // Validate that non-users provide a name for the slot
     if (!user_id && !slot_name && !isHostAssignment) {
@@ -18,7 +26,9 @@ router.post('/', async (req, res) => {
     try {
         // Step 1: Check if the current user is the event host
         const hostResult = await db.query(
-            `SELECT host_id FROM events WHERE id = $1`,
+            `SELECT host_id
+             FROM events
+             WHERE id = $1`,
             [event_id]
         );
 
@@ -32,9 +42,10 @@ router.post('/', async (req, res) => {
         // Step 2: If host assignment, set user_id, non_user_identifier and ip_address to NULL
         if (user_id === hostId && isHostAssignment) {
             const result = await db.query(`
-                INSERT INTO lineup_slots (event_id, user_id, slot_number, slot_name, non_user_identifier, ip_address) 
-                VALUES ($1, NULL, $2, $3, NULL, NULL)
-                RETURNING id AS slot_id, slot_number, slot_name, user_id
+                INSERT INTO lineup_slots (event_id, user_id, slot_number, slot_name,
+                                          non_user_identifier, ip_address)
+                VALUES ($1, NULL, $2, $3, NULL,
+                        NULL) RETURNING id AS slot_id, slot_number, slot_name, user_id
             `, [event_id, slot_number, slot_name]);
 
             return res.status(201).json(result.rows[0]);
@@ -45,12 +56,19 @@ router.post('/', async (req, res) => {
         const nonUserIdForSlot = user_id ? null : (isHostAssignment ? null : nonUserId); // Set to NULL if user is logged in or if host assignment
         const ipAddressForSlot = user_id ? null : (isHostAssignment ? null : ipAddress); // Set to NULL if user is logged in or if host assignment
 
-        console.log("Proceeding with regular slot assignment:", { userIdForSlot, nonUserIdForSlot, ipAddressForSlot });
+        console.log("Proceeding with regular slot assignment:", {
+            userIdForSlot,
+            nonUserIdForSlot,
+            ipAddressForSlot
+        });
 
         if (user_id) {
             // Check if the user (logged-in non-host) has already signed up for a slot in this event
             const existingUserSlot = await db.query(
-                `SELECT id FROM lineup_slots WHERE event_id = $1 AND user_id = $2`,
+                `SELECT id
+                 FROM lineup_slots
+                 WHERE event_id = $1
+                   AND user_id = $2`,
                 [event_id, user_id]
             );
 
@@ -60,9 +78,10 @@ router.post('/', async (req, res) => {
         } else {
             // Check if the non-user has already signed up for a slot in this event
             const existingNonUserSlot = await db.query(
-                `SELECT id FROM lineup_slots 
-                 WHERE event_id = $1 
-                 AND non_user_identifier = $2`,
+                `SELECT id
+                 FROM lineup_slots
+                 WHERE event_id = $1
+                   AND non_user_identifier = $2`,
                 [event_id, nonUserIdForSlot]
             );
 
@@ -74,18 +93,19 @@ router.post('/', async (req, res) => {
         // Proceed with sign-up for a non-host, ensuring no duplicate slot assignment
         const result = await db.query(`
             WITH inserted AS (
-                INSERT INTO lineup_slots (event_id, user_id, slot_number, slot_name, non_user_identifier, ip_address) 
-                VALUES ($1, $2, $3, $4, $5, $6) 
+            INSERT
+            INTO lineup_slots (event_id, user_id, slot_number, slot_name, non_user_identifier,
+                               ip_address)
+            VALUES ($1, $2, $3, $4, $5, $6)
                 RETURNING *
-            )
-            SELECT 
-                inserted.id AS slot_id,
-                inserted.slot_number,
-                inserted.slot_name,
-                inserted.user_id,
-                u.image AS user_image
+                )
+            SELECT inserted.id AS slot_id,
+                   inserted.slot_number,
+                   inserted.slot_name,
+                   inserted.user_id,
+                   u.image     AS user_image
             FROM inserted
-            LEFT JOIN users u ON inserted.user_id = u.id
+                     LEFT JOIN users u ON inserted.user_id = u.id
         `, [event_id, userIdForSlot, slot_number, slot_name, nonUserIdForSlot, ipAddressForSlot]);
 
         // After successful slot creation, broadcast the update
@@ -113,7 +133,7 @@ router.post('/', async (req, res) => {
                 ip_address: ipAddressForSlot
             }
         };
-        
+
         // Before broadcasting the update
         console.log("Broadcasting lineup data:", lineupData);
         req.app.locals.broadcastLineupUpdate(lineupData);
@@ -129,9 +149,13 @@ router.get('/:eventId', async (req, res) => {
     const { eventId } = req.params;
     try {
         const result = await db.query(`
-            SELECT ls.id AS slot_id, ls.slot_number, u.name AS user_name, u.id AS user_id, ls.slot_name
+            SELECT ls.id AS  slot_id,
+                   ls.slot_number,
+                   u.name AS user_name,
+                   u.id AS   user_id,
+                   ls.slot_name
             FROM lineup_slots ls
-            LEFT JOIN users u ON ls.user_id = u.id
+                     LEFT JOIN users u ON ls.user_id = u.id
             WHERE ls.event_id = $1
             ORDER BY ls.slot_number ASC
         `, [eventId]);
@@ -146,21 +170,21 @@ router.get('/:eventId', async (req, res) => {
 router.delete('/:slotId', async (req, res) => {
     try {
         const { slotId } = req.params;
-        
+
         // Get slot and event details before deletion
         const slotQuery = await db.query(`
-            SELECT ls.*, e.start_time, e.slot_duration, e.setup_duration 
+            SELECT ls.*, e.start_time, e.slot_duration, e.setup_duration
             FROM lineup_slots ls
-            JOIN events e ON ls.event_id = e.id
+                     JOIN events e ON ls.event_id = e.id
             WHERE ls.id = $1
         `, [slotId]);
-        
+
         if (slotQuery.rows.length === 0) {
             return res.status(404).json({ error: 'Slot not found' });
         }
-        
+
         const slot = slotQuery.rows[0];
-        
+
         // Calculate slot start time
         const slotStartTime = new Date(slot.start_time);
         const slotIndex = slot.slot_number - 1;
@@ -181,10 +205,10 @@ router.delete('/:slotId', async (req, res) => {
                 slot_start_time: slotStartTime
             }
         };
-        
+
         console.log('Broadcasting delete update:', lineupData);
         req.app.locals.broadcastLineupUpdate(lineupData);
-        
+
         res.status(200).json({ message: 'Slot deleted successfully' });
     } catch (err) {
         console.error('Error deleting slot:', err);
@@ -195,7 +219,7 @@ router.delete('/:slotId', async (req, res) => {
 // Add this new endpoint for reordering slots
 router.put('/reorder', async (req, res) => {
     const { slots } = req.body;
-    
+
     try {
         // Get event_id for the first slot to use in broadcast
         const eventQuery = await db.query(
@@ -206,14 +230,14 @@ router.put('/reorder', async (req, res) => {
 
         // Use a transaction to ensure all updates succeed or none do
         await db.query('BEGIN');
-        
+
         for (const slot of slots) {
             await db.query(
                 'UPDATE lineup_slots SET slot_number = $1 WHERE id = $2',
                 [slot.slot_number, slot.slot_id]
             );
         }
-        
+
         await db.query('COMMIT');
 
         // Broadcast the update via WebSocket
@@ -223,9 +247,9 @@ router.put('/reorder', async (req, res) => {
             action: 'REORDER',
             data: { slots }
         };
-        
+
         req.app.locals.broadcastLineupUpdate(lineupData);
-        
+
         res.json({ message: 'Slots reordered successfully' });
     } catch (err) {
         await db.query('ROLLBACK');

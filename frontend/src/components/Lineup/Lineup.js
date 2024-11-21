@@ -4,9 +4,19 @@ import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 import BorderBox from '../shared/BorderBox/BorderBox';
 import './Lineup.sass';
 
-function Slot({ slot, onClick, isHost, currentUserId, currentNonUserId, slots, isEditing, provided, isDragging }) {
-    const isOwnSlot = 
-        (currentUserId && slot.user_id === currentUserId) || 
+function Slot({
+                  slot,
+                  onClick,
+                  isHost,
+                  currentUserId,
+                  currentNonUserId,
+                  slots,
+                  isEditing,
+                  provided,
+                  isDragging
+              }) {
+    const isOwnSlot =
+        (currentUserId && slot.user_id === currentUserId) ||
         (!currentUserId && slot.non_user_identifier === currentNonUserId);
 
     const hasExistingSlot = () => {
@@ -20,20 +30,20 @@ function Slot({ slot, onClick, isHost, currentUserId, currentNonUserId, slots, i
     };
 
     const canInteract = !isEditing && (
-        isHost || 
-        isOwnSlot || 
+        isHost ||
+        isOwnSlot ||
         (slot.slot_name === "Open" && !hasExistingSlot())
     );
 
     const getSlotClass = () => {
         let classes = ['lineup__slot'];
-        
+
         if (isDragging) {
             classes.push('lineup__slot--dragging');
         }
-        
+
         if (!canInteract && !isEditing) return classes.join(' ');
-        
+
         if (slot.slot_name === "Open") {
             if (isHost || !hasExistingSlot()) {
                 classes.push('lineup__slot--open');
@@ -46,7 +56,7 @@ function Slot({ slot, onClick, isHost, currentUserId, currentNonUserId, slots, i
             classes.push('lineup__slot--assigned');
             if (!isEditing) classes.push('clickable');
         }
-        
+
         return classes.join(' ');
     };
 
@@ -74,11 +84,15 @@ function Slot({ slot, onClick, isHost, currentUserId, currentNonUserId, slots, i
             role="button"
             tabIndex={0}
         >
-            <div className={`lineup__slot-content ${isEditing ? 'lineup__slot-content--editing' : ''}`}>
-                {isEditing && <DragHandle />}
+            <div
+                className={`lineup__slot-content ${isEditing ? 'lineup__slot-content--editing' : ''}`}>
+                {isEditing && <DragHandle/>}
                 <div className="lineup__slot-number">{slot.slot_number}</div>
                 <div className="lineup__slot-time">
-                    {new Date(slot.slot_start_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                    {new Date(slot.slot_start_time).toLocaleTimeString([], {
+                        hour: '2-digit',
+                        minute: '2-digit'
+                    })}
                 </div>
                 <div className="lineup__slot-artist">
                     {slot.user_id ? (
@@ -103,9 +117,9 @@ function Slot({ slot, onClick, isHost, currentUserId, currentNonUserId, slots, i
                                             onClick={(e) => e.stopPropagation()}
                                             aria-label={`View ${slot.slot_name}'s profile picture`}
                                         >
-                                            <img 
-                                                src={slot.user_image} 
-                                                alt={`${slot.slot_name}'s profile`} 
+                                            <img
+                                                src={slot.user_image}
+                                                alt={`${slot.slot_name}'s profile`}
                                                 className="lineup__slot-user-image"
                                             />
                                         </Link>
@@ -124,7 +138,15 @@ function Slot({ slot, onClick, isHost, currentUserId, currentNonUserId, slots, i
     return slotContent;
 }
 
-function Lineup({ slots, isHost, onSlotClick, onSlotDelete, currentUserId, currentNonUser, userName }) {
+function Lineup({
+                    slots,
+                    isHost,
+                    onSlotClick,
+                    onSlotDelete,
+                    currentUserId,
+                    currentNonUser,
+                    userName
+                }) {
     const [showModal, setShowModal] = useState(false);
     const [currentSlot, setCurrentSlot] = useState(null);
     const [currentSlotName, setCurrentSlotName] = useState('');
@@ -137,7 +159,7 @@ function Lineup({ slots, isHost, onSlotClick, onSlotDelete, currentUserId, curre
     }, [slots]);
 
     const handleSlotClick = (slot) => {
-        const isOwnSlot = currentUserId 
+        const isOwnSlot = currentUserId
             ? slot.user_id === currentUserId
             : slot.non_user_identifier === currentNonUser?.identifier;
 
@@ -172,7 +194,7 @@ function Lineup({ slots, isHost, onSlotClick, onSlotDelete, currentUserId, curre
         // First check if this is a non-user (no currentUserId)
         if (!currentUserId) {
             // Check if the name is already taken in any slot
-            const isNameTaken = slots.some(slot => 
+            const isNameTaken = slots.some(slot =>
                 slot.slot_name.toLowerCase() === currentSlotName.toLowerCase() &&
                 slot.slot_number !== currentSlot.slot_number
             );
@@ -232,7 +254,7 @@ function Lineup({ slots, isHost, onSlotClick, onSlotDelete, currentUserId, curre
     const calculateNewSlotTime = (slotIndex) => {
         const firstSlot = editedSlots[0];
         if (!firstSlot?.slot_start_time) return new Date();
-        
+
         const startTime = new Date(firstSlot.slot_start_time);
         const totalMinutesPerSlot = slots[0]?.slot_duration?.minutes + slots[0]?.setup_duration?.minutes;
         startTime.setMinutes(startTime.getMinutes() + (slotIndex * totalMinutesPerSlot));
@@ -278,7 +300,7 @@ function Lineup({ slots, isHost, onSlotClick, onSlotDelete, currentUserId, curre
 
                 if (!eventUpdateResponse.ok) throw new Error('Failed to update event end time');
             }
-            
+
             setIsEditing(false);
             setNewSlotsCount(0);
         } catch (error) {
@@ -301,17 +323,17 @@ function Lineup({ slots, isHost, onSlotClick, onSlotDelete, currentUserId, curre
                     <button onClick={handleCancel}>Cancel</button>
                 </div>
             )}
-            
+
             <DragDropContext onDragEnd={handleDragEnd}>
                 <Droppable droppableId="lineup">
                     {(provided) => (
-                        <div 
+                        <div
                             className="lineup__slots"
                             ref={provided.innerRef}
                             {...provided.droppableProps}
                         >
                             {editedSlots.map((slot, index) => (
-                                <Draggable 
+                                <Draggable
                                     key={`slot-${slot.slot_number}-${slot.slot_id || 'open'}`}
                                     draggableId={`slot-${slot.slot_number}-${slot.slot_id || 'open'}`}
                                     index={index}
@@ -339,7 +361,7 @@ function Lineup({ slots, isHost, onSlotClick, onSlotDelete, currentUserId, curre
             </DragDropContext>
 
             {isEditing && (
-                <button 
+                <button
                     className="lineup__add-slot-button"
                     onClick={handleAddSlot}
                 >
@@ -351,7 +373,11 @@ function Lineup({ slots, isHost, onSlotClick, onSlotDelete, currentUserId, curre
                 <div className="lineup__modal" onClick={handleOverlayClick}>
                     <div className="lineup__modal-content" onClick={e => e.stopPropagation()}>
                         <p>Slot #{currentSlot.slot_number}</p>
-                        <p>Estimated start time: {new Date(currentSlot.slot_start_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
+                        <p>Estimated start
+                            time: {new Date(currentSlot.slot_start_time).toLocaleTimeString([], {
+                                hour: '2-digit',
+                                minute: '2-digit'
+                            })}</p>
 
                         {(isHost || currentSlot.user_id === currentUserId) && currentSlot.slot_name !== "Open" ? (
                             <>
@@ -366,7 +392,8 @@ function Lineup({ slots, isHost, onSlotClick, onSlotDelete, currentUserId, curre
                             </>
                         ) : (
                             <>
-                                <p>This slot is currently {currentSlot.slot_name === "Open" ? "open" : "taken"}.</p>
+                                <p>This slot is
+                                    currently {currentSlot.slot_name === "Open" ? "open" : "taken"}.</p>
                                 {isHost && !slots.some(s => s.user_id === currentUserId) && (
                                     <button
                                         onClick={() => {

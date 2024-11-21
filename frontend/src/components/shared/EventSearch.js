@@ -2,10 +2,10 @@ import React, { useState } from 'react';
 import './EventSearch.sass';
 
 const EventSearch = ({
-    onSearch,
-    placeholder = "Filter events by name, venue, or host",
-    onClear
-}) => {
+                         onSearch,
+                         placeholder = "Filter events by name, venue, or host",
+                         onClear
+                     }) => {
     const [searchTerm, setSearchTerm] = useState('');
 
     const handleChange = (e) => {
@@ -33,7 +33,7 @@ const EventSearch = ({
                     className="event-search__input"
                 />
                 {searchTerm && (
-                    <button 
+                    <button
                         className="event-search__clear-button"
                         onClick={handleClear}
                         aria-label="Clear search"
