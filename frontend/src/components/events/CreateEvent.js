@@ -28,6 +28,14 @@ function CreateEvent() {
     const [isEditingLocation, setIsEditingLocation] = useState(false);
     const [eventImage, setEventImage] = useState(null);
     const [imagePreview, setImagePreview] = useState(null);
+    const [eventTypes, setEventTypes] = useState([]);
+
+    const EVENT_TYPE_OPTIONS = [
+        { label: 'Music', value: 'music' },
+        { label: 'Comedy', value: 'comedy' },
+        { label: 'Spoken Word', value: 'spoken_word' },
+        { label: 'Other', value: 'other' }
+    ];
 
     useEffect(() => {
         if (eventId) {
@@ -80,6 +88,7 @@ function CreateEvent() {
                         });
                     }
                     setAdditionalInfo(data.event?.additional_info || '');
+                    setEventTypes(data.event?.types || []);
                 } catch (error) {
                     console.error('Error fetching event details:', error);
                 }
@@ -166,7 +175,8 @@ function CreateEvent() {
             setup_duration: setupDuration * 60,
             additional_info: additionalInfo,
             host_id: getUserId(),
-            image: imageUrl
+            image: imageUrl,
+            types: eventTypes
         };
 
         try {
@@ -302,6 +312,30 @@ function CreateEvent() {
                                     className="create-event__image-preview"
                                 />
                             )}
+                        </div>
+                        <div className="create-event__input-field">
+                            <label>Event Type</label>
+                            <div className="create-event__checkboxes">
+                                {EVENT_TYPE_OPTIONS.map(option => (
+                                    <div key={option.value} className="create-event__checkbox-group">
+                                        <label className="create-event__checkbox-label">
+                                            <input
+                                                type="checkbox"
+                                                className="create-event__checkbox"
+                                                checked={eventTypes.includes(option.value)}
+                                                onChange={(e) => {
+                                                    if (e.target.checked) {
+                                                        setEventTypes([...eventTypes, option.value]);
+                                                    } else {
+                                                        setEventTypes(eventTypes.filter(type => type !== option.value));
+                                                    }
+                                                }}
+                                            />
+                                            {option.label}
+                                        </label>
+                                    </div>
+                                ))}
+                            </div>
                         </div>
                     </div>
                 </BorderBox>

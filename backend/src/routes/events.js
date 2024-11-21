@@ -50,6 +50,23 @@ function getUpdateMessage(originalEvent, updatedFields) {
             changes.push(`Slot duration changed from ${oldDuration} to ${newDuration} minutes`);
         }
     }
+    
+    if (updatedFields.types && 
+        (!originalEvent.types || 
+         JSON.stringify(updatedFields.types.sort()) !== JSON.stringify(originalEvent.types.sort()))) {
+        const oldTypes = (originalEvent.types || [])
+            .map(t => t.charAt(0).toUpperCase() + t.slice(1).replace('_', ' '));
+        const newTypes = updatedFields.types
+            .map(t => t.charAt(0).toUpperCase() + t.slice(1).replace('_', ' '));
+        
+        if (oldTypes.length === 0) {
+            changes.push(`Event types added: ${newTypes.join(', ')}`);
+        } else if (newTypes.length === 0) {
+            changes.push('Event types removed');
+        } else {
+            changes.push(`Event types changed to ${newTypes.join(', ')}`);
+        }
+    }
 
     return changes.join(', ');
 }
@@ -65,6 +82,7 @@ router.get('/', async (req, res) => {
                             e.slot_duration,
                             e.setup_duration,
                             e.additional_info,
+                            e.types AS event_types,
                             e.image     AS event_image,
                             v.id        AS venue_id,
                             v.name      AS venue_name,
@@ -127,6 +145,7 @@ router.get('/:eventId', async (req, res) => {
                    e.slot_duration,
                    e.setup_duration,
                    e.additional_info,
+                   e.types AS event_types,
                    e.image     AS event_image,
                    v.id        AS venue_id,
                    v.name      AS venue_name,
@@ -181,6 +200,7 @@ router.get('/:eventId', async (req, res) => {
                 setup_duration: eventData.setup_duration,
                 additional_info: eventData.additional_info,
                 image: eventData.event_image,
+                event_types: eventData.event_types
             },
             venue: {
                 id: eventData.venue_id,
@@ -225,7 +245,8 @@ router.post('/', async (req, res) => {
             name,
             additional_info,
             host_id,
-            image
+            image,
+            types
         } = req.body;
 
         if (new Date(start_time) >= new Date(end_time)) {
@@ -233,8 +254,8 @@ router.post('/', async (req, res) => {
         }
 
         const result = await db.query(
-            'INSERT INTO events (venue_id, start_time, end_time, slot_duration, setup_duration, name, additional_info, image, host_id) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING *',
-            [venue_id, start_time, end_time, slot_duration, setup_duration, name, additional_info, image, host_id]
+            'INSERT INTO events (venue_id, start_time, end_time, slot_duration, setup_duration, name, additional_info, image, host_id, types) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) RETURNING *',
+            [venue_id, start_time, end_time, slot_duration, setup_duration, name, additional_info, image, host_id, types]
         );
 
         res.status(201).json(result.rows[0]);
@@ -255,7 +276,8 @@ router.put('/:eventId', async (req, res) => {
         setup_duration,
         venue_id,
         additional_info,
-        image
+        image,
+        types
     } = req.body;
 
     try {
@@ -265,7 +287,7 @@ router.put('/:eventId', async (req, res) => {
 
         // Get the original event details to check what changed
         const originalEvent = await db.query(
-            'SELECT name, venue_id, start_time, end_time, slot_duration, setup_duration FROM events WHERE id = $1',
+            'SELECT name, venue_id, start_time, end_time, slot_duration, setup_duration, types FROM events WHERE id = $1',
             [eventId]
         );
 
@@ -275,7 +297,8 @@ router.put('/:eventId', async (req, res) => {
             ...(end_time !== undefined && { end_time }),
             ...(venue_id !== undefined && { venue_id }),
             ...(slot_duration !== undefined && { slot_duration }),
-            ...(setup_duration !== undefined && { setup_duration })
+            ...(setup_duration !== undefined && { setup_duration }),
+            ...(types !== undefined && { types })
         });
 
         if (updateMessage) {
@@ -302,8 +325,8 @@ router.put('/:eventId', async (req, res) => {
 
         // Update the event in the database
         const result = await db.query(
-            'UPDATE events SET name = $1, start_time = $2, end_time = $3, slot_duration = $4, setup_duration = $5, venue_id = $6, additional_info = $7, image = $8 WHERE id = $9 RETURNING *',
-            [name, start_time, end_time, slot_duration, setup_duration, venue_id, additional_info, image, eventId]
+            'UPDATE events SET name = $1, start_time = $2, end_time = $3, slot_duration = $4, setup_duration = $5, venue_id = $6, additional_info = $7, image = $8, types = $9 WHERE id = $10 RETURNING *',
+            [name, start_time, end_time, slot_duration, setup_duration, venue_id, additional_info, image, types, eventId]
         );
 
         if (result.rows.length === 0) {
@@ -332,7 +355,8 @@ router.put('/:eventId', async (req, res) => {
                 setup_duration,
                 venue_id,
                 additional_info,
-                image
+                image,
+                types
             }
         };
 

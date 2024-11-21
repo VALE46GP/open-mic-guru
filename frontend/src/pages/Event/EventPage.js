@@ -285,18 +285,36 @@ function EventPage() {
             >
                 <h1 className="event-page__title">{eventDetails?.event?.name}</h1>
                 <p className="event-page__time">
-                    {formatEventTime(eventDetails?.event?.start_time)}
+                    {new Date(eventDetails?.event?.start_time).toLocaleString([], {
+                        month: 'short',
+                        day: 'numeric',
+                        hour: 'numeric',
+                        minute: '2-digit'
+                    })}
                     {" - "}
                     <span className="event-page__end-time">
                         {new Date(eventDetails?.event?.start_time).toDateString() === new Date(eventDetails?.event?.end_time).toDateString()
-                            ? new Date(eventDetails?.event?.end_time).toLocaleTimeString([], {
+                            ? new Date(eventDetails?.event?.end_time).toLocaleString([], {
                                 hour: 'numeric',
                                 minute: '2-digit'
                             })
-                            : formatEventTime(eventDetails?.event?.end_time)
+                            : new Date(eventDetails?.event?.end_time).toLocaleString([], {
+                                month: 'short',
+                                day: 'numeric',
+                                hour: 'numeric',
+                                minute: '2-digit'
+                            })
                         }
                     </span>
                 </p>
+                {eventDetails?.event?.types && eventDetails.event.types.length > 0 && (
+                    <div className="event-page__info">
+                        <p>Event Type: {eventDetails.event.types.map(type =>
+                            type.charAt(0).toUpperCase() + type.slice(1).replace('_', ' ')
+                        ).join(', ')}
+                        </p>
+                    </div>
+                )}
                 {eventDetails?.event?.image && (
                     <div className="event-page__image-container">
                         <img
