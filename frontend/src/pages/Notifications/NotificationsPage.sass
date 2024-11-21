@@ -79,9 +79,42 @@ $spacing-unit: 16px
     flex-direction: column
     justify-content: center
     flex: 0
+    height: 100%
 
   &__message-column
     flex: 1
+
+  &__event-row
+    display: flex
+    position: relative
+    gap: 1rem
+    align-items: center
+
+  &__toggle-button
+    background: $color-primary
+    color: white
+    border: none
+    border-radius: 50%
+    width: 32px
+    height: 32px
+    display: flex
+    align-items: center
+    justify-content: center
+    cursor: pointer
+    transition: all 0.2s ease
+    position: relative
+    flex-shrink: 0
+
+    &:focus-visible,
+    &:hover
+      background: darken($color-primary, 10%)
+
+    &--expanded
+      background: darken($color-primary, 10%)
+
+    svg
+      width: 16px
+      height: 16px
 
   &__status-icon
     background: none
@@ -119,38 +152,6 @@ $spacing-unit: 16px
 
   &__event-group
     margin-bottom: 1rem
-
-  &__event-row
-    display: flex
-    gap: 1rem
-    align-items: flex-start
-
-  &__toggle-button
-    background: $color-primary
-    color: white
-    border: none
-    border-radius: 50%
-    width: 32px
-    height: 32px
-    display: flex
-    align-items: center
-    justify-content: center
-    cursor: pointer
-    transition: all 0.2s ease
-    position: relative
-    flex-shrink: 0
-    margin-top: 8px
-
-    &:focus-visible,
-    &:hover
-      background: darken($color-primary, 10%)
-    
-    &--expanded
-      background: darken($color-primary, 10%)
-
-    svg
-      width: 16px
-      height: 16px
   
   &__badge
     position: absolute

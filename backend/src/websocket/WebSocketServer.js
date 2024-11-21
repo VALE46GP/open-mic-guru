@@ -1,4 +1,5 @@
 const WebSocket = require('ws');
+const jwt = require('jsonwebtoken');
 
 function initializeWebSocketServer(server) {
     const wss = new WebSocket.Server({
@@ -6,32 +7,45 @@ function initializeWebSocketServer(server) {
         path: '/ws'
     });
 
-    wss.on('connection', (ws) => {
-        // console.log('Client connected to WebSocket');
+    const clients = new Map();
 
-        ws.on('message', (message) => {
-            console.log('Received:', message);
-            ws.send(`Message received: ${message}`);
-        });
-
-        // ws.on('close', () => {
-        //     console.log('Client disconnected from WebSocket');
-        // });
-
-        ws.on('error', (error) => {
-            console.error('WebSocket error:', error);
-        });
+    wss.on('connection', (ws, req) => {
+        const url = new URL(req.url, 'ws://localhost');
+        const token = url.searchParams.get('token');
+        
+        if (token) {
+            try {
+                const decoded = jwt.verify(token, process.env.JWT_SECRET);
+                const userId = decoded.userId;
+                clients.set(ws, userId);
+                
+                ws.on('close', () => {
+                    clients.delete(ws);
+                });
+            } catch (err) {
+                console.error('Invalid token:', err);
+            }
+        }
     });
 
-    function broadcastLineupUpdate(lineupData) {
+    function broadcastNotification(data) {
+        const targetUserId = data.userId;
         wss.clients.forEach(client => {
-            if (client.readyState === WebSocket.OPEN) {
-                client.send(JSON.stringify(lineupData));
+            if (client.readyState === WebSocket.OPEN && clients.get(client) === targetUserId) {
+                client.send(JSON.stringify(data));
             }
         });
     }
 
-    return { wss, broadcastLineupUpdate };
+    function broadcastLineupUpdate(data) {
+        wss.clients.forEach(client => {
+            if (client.readyState === WebSocket.OPEN) {
+                client.send(JSON.stringify(data));
+            }
+        });
+    }
+
+    return { wss, broadcastNotification, broadcastLineupUpdate };
 }
 
 module.exports = initializeWebSocketServer;

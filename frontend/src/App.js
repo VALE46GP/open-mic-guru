@@ -18,9 +18,9 @@ import NotificationsPage from './pages/Notifications/NotificationsPage';
 
 function App() {
     return (
-        <WebSocketProvider>
-            <Router>
-                <AuthProvider>
+        <Router>
+            <AuthProvider>
+                <WebSocketProvider>
                     <NotificationsProvider>
                         <div className="app">
                             <Navigation/>
@@ -46,9 +46,9 @@ function App() {
                             </div>
                         </div>
                     </NotificationsProvider>
-                </AuthProvider>
-            </Router>
-        </WebSocketProvider>
+                </WebSocketProvider>
+            </AuthProvider>
+        </Router>
     );
 }
 

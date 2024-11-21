@@ -40,9 +40,38 @@ async function createNotification(userId, type, message, eventId = null, lineupS
         );
         
         console.log('Notification created:', result.rows[0]);
+
+        // Get complete notification data for broadcast
+        const notificationData = await db.query(`
+            SELECT 
+                n.*,
+                e.name as event_name,
+                e.start_time as event_start_time,
+                e.image as event_image,
+                v.name as venue_name,
+                u.name as host_name
+            FROM notifications n
+            LEFT JOIN events e ON n.event_id = e.id
+            LEFT JOIN venues v ON e.venue_id = v.id
+            LEFT JOIN users u ON e.host_id = u.id
+            WHERE n.id = $1
+        `, [result.rows[0].id]);
+
+        // Broadcast the notification
+        if (global.app && global.app.locals.broadcastNotification) {
+            const notificationPayload = {
+                type: 'NOTIFICATION_UPDATE',
+                userId: userId,
+                notification: notificationData.rows[0]
+            };
+            console.log('Broadcasting notification:', notificationPayload);
+            global.app.locals.broadcastNotification(notificationPayload);
+        }
+
+        return result.rows[0];
     } catch (err) {
         console.error('Error creating notification:', err);
-        throw err; // Re-throw to see the error in the lineup_slots route
+        throw err;
     }
 }
 

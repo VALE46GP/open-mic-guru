@@ -52,16 +52,26 @@ export function NotificationsProvider({ children }) {
 
     useEffect(() => {
         if (lastMessage) {
+            console.log('WebSocket message received:', lastMessage);
             try {
                 const data = JSON.parse(lastMessage.data);
-                if (data.type === 'NOTIFICATION') {
+                console.log('Parsed WebSocket data:', data);
+                
+                if ((data.type === 'NOTIFICATION_UPDATE' || data.type === 'NEW_NOTIFICATION') 
+                    && data.userId === getUserId()) {
+                    console.log('Adding new notification:', data.notification);
+                    setNotifications(prev => [data.notification, ...prev]);
+                    setUnreadCount(prev => prev + 1);
+                }
+                
+                if (data.type === 'EVENT_UPDATE' && data.eventId) {
                     fetchNotifications();
                 }
             } catch (error) {
                 console.error('Error processing WebSocket message:', error);
             }
         }
-    }, [lastMessage]);
+    }, [lastMessage, getUserId]);
 
     const value = {
         notifications,

@@ -36,8 +36,9 @@ app.use(express.json());
 app.use(passport.initialize());
 
 // Initialize WebSocket server and store broadcast function
-const { broadcastLineupUpdate } = initializeWebSocketServer(server);
+const { broadcastLineupUpdate, broadcastNotification } = initializeWebSocketServer(server);
 app.locals.broadcastLineupUpdate = broadcastLineupUpdate;
+app.locals.broadcastNotification = broadcastNotification;
 
 // Define routes
 routes(app);
