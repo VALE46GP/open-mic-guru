@@ -25,8 +25,9 @@ $spacing-unit: 16px
 
   &__title
     font-size: 1.75rem
-    margin: 0
+    margin: 2rem 0
     color: #333
+    text-align: center
 
   &__tabs
     display: flex
@@ -66,11 +67,6 @@ $spacing-unit: 16px
     &:focus-visible,
     &:hover
       background: darken($color-primary, 10%)
-
-  &__list
-    border: 1px solid $color-border
-    border-radius: $border-radius
-    overflow: hidden
 
   &__item
     display: flex
@@ -130,3 +126,77 @@ $spacing-unit: 16px
     color: $color-text-secondary
     padding: $spacing-unit * 2
     font-size: 1.1rem
+
+  &__event-group
+    margin-bottom: 1rem
+
+  &__event-row
+    display: flex
+    gap: 1rem
+    align-items: flex-start
+
+  &__toggle-button
+    background: $color-primary
+    color: white
+    border: none
+    border-radius: 50%
+    width: 32px
+    height: 32px
+    display: flex
+    align-items: center
+    justify-content: center
+    cursor: pointer
+    transition: all 0.2s ease
+    position: relative
+    flex-shrink: 0
+    margin-top: 8px
+
+    &:hover
+      background: darken($color-primary, 10%)
+    
+    &--expanded
+      background: darken($color-primary, 10%)
+
+    svg
+      width: 16px
+      height: 16px
+  
+  &__badge
+    position: absolute
+    top: -6px
+    left: -6px
+    background-color: #ff4444
+    color: white
+    border-radius: 50%
+    width: 20px
+    height: 20px
+    display: flex
+    align-items: center
+    justify-content: center
+    font-size: 11px
+    font-weight: bold
+  
+  &__event-card
+    flex: 1
+
+  &__messages
+    margin: 0.5rem 0 0 48px
+    padding-left: 1rem
+    border-left: 2px solid $color-border
+    text-align: left
+
+  &__message
+    padding: 0.5rem 0
+    color: #333
+    
+    &:last-child
+      border-bottom: none
+    
+    &--read
+      color: $color-text-secondary
+  
+  &__time
+    font-size: 0.875rem
+    color: $color-text-secondary
+    display: block
+    margin-bottom: 0.125rem

@@ -25,19 +25,27 @@ router.get('/', verifyToken, async (req, res) => {
         console.log('Fetching notifications for user:', userId);
         
         let query = `
-            SELECT n.*, 
-                   e.name as event_name,
-                   e.start_time as event_start_time
+            SELECT 
+                n.*,
+                e.name as event_name,
+                e.start_time as event_start_time,
+                e.image as event_image,
+                v.name as venue_name,
+                u.name as host_name,
+                u.image as host_image
             FROM notifications n
             LEFT JOIN events e ON n.event_id = e.id
+            LEFT JOIN venues v ON e.venue_id = v.id
+            LEFT JOIN users u ON e.host_id = u.id
             WHERE n.user_id = $1
+            ORDER BY n.created_at DESC
         `;
 
         if (unreadOnly) {
             query += ' AND n.is_read = FALSE';
         }
 
-        query += ` ORDER BY n.created_at DESC LIMIT $2 OFFSET $3`;
+        query += ` LIMIT $2 OFFSET $3`;
 
         console.log('Executing query:', query);
         console.log('Query parameters:', [userId, limit, offset]);

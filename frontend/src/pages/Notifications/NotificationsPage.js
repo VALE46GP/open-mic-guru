@@ -1,80 +1,113 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNotifications } from '../../context/NotificationsContext';
-import BorderBox from '../../components/shared/BorderBox/BorderBox';
-import { BsCircle, BsCheckCircleFill } from 'react-icons/bs';
+import EventCard from '../../components/events/EventCard';
 import './NotificationsPage.sass';
+import { BsChevronDown, BsChevronRight } from 'react-icons/bs';
 
 function NotificationsPage() {
     const { notifications, markAsRead } = useNotifications();
-    const [selectedTab, setSelectedTab] = useState('all');
+    const [expandedEvents, setExpandedEvents] = useState(new Set());
+    const [groupedNotifications, setGroupedNotifications] = useState({});
 
-    const filteredNotifications = selectedTab === 'unread'
-        ? notifications.filter(n => !n.is_read)
-        : notifications;
+    useEffect(() => {
+        // Group notifications by event_id
+        const grouped = notifications.reduce((acc, notification) => {
+            if (!notification.event_id) return acc;
+            
+            if (!acc[notification.event_id]) {
+                acc[notification.event_id] = {
+                    event: {
+                        event_id: notification.event_id,
+                        event_name: notification.event_name,
+                        name: notification.event_name, // EventCard expects 'name'
+                        start_time: notification.event_start_time,
+                        venue_name: notification.venue_name || 'Unknown Venue',
+                        host_name: notification.host_name || 'Unknown Host',
+                        event_image: notification.event_image
+                    },
+                    notifications: [],
+                    unreadCount: 0
+                };
+            }
+            
+            acc[notification.event_id].notifications.push(notification);
+            if (!notification.is_read) {
+                acc[notification.event_id].unreadCount++;
+            }
+            
+            return acc;
+        }, {});
+        
+        setGroupedNotifications(grouped);
+    }, [notifications]);
 
-    const handleMarkAsRead = async (notificationId) => {
-        await markAsRead([notificationId]);
-    };
-
-    const handleMarkAllAsRead = async () => {
-        const unreadIds = notifications
-            .filter(n => !n.is_read)
-            .map(n => n.id);
-        if (unreadIds.length > 0) {
-            await markAsRead(unreadIds);
+    const handleEventClick = async (eventId) => {
+        if (expandedEvents.has(eventId)) {
+            setExpandedEvents(prev => {
+                const next = new Set(prev);
+                next.delete(eventId);
+                return next;
+            });
+        } else {
+            setExpandedEvents(prev => new Set([...prev, eventId]));
+            
+            // Mark all unread notifications for this event as read
+            const unreadNotifications = groupedNotifications[eventId].notifications
+                .filter(n => !n.is_read)
+                .map(n => n.id);
+                
+            if (unreadNotifications.length > 0) {
+                await markAsRead(unreadNotifications);
+            }
         }
     };
 
     return (
         <div className="notifications">
-            <div className="notifications__header">
-                <h1 className="notifications__title">Notifications</h1>
-                <div className="notifications__tabs">
-                    <button 
-                        className={`notifications__tab ${selectedTab === 'all' ? 'notifications__tab--active' : ''}`}
-                        onClick={() => setSelectedTab('all')}
-                    >
-                        All
-                    </button>
-                    <button 
-                        className={`notifications__tab ${selectedTab === 'unread' ? 'notifications__tab--active' : ''}`}
-                        onClick={() => setSelectedTab('unread')}
-                    >
-                        Unread
-                    </button>
-                </div>
-                <button 
-                    className="notifications__mark-all"
-                    onClick={handleMarkAllAsRead}
-                >
-                    Mark all as read
-                </button>
-            </div>
-
+            <h1 className="notifications__title">Notifications</h1>
             <div className="notifications__list">
-                {filteredNotifications.length === 0 ? (
-                    <p className="notifications__empty">No notifications to display</p>
-                ) : (
-                    filteredNotifications.map(notification => (
-                        <BorderBox key={notification.id} className="notifications__item">
+                {Object.entries(groupedNotifications).map(([eventId, data]) => (
+                    <div key={eventId} className="notifications__event-group">
+                        <div className="notifications__event-row">
                             <div className="notifications__button-column">
                                 <button
-                                    onClick={() => handleMarkAsRead(notification.id)}
-                                    className="notifications__status-icon"
-                                    title={notification.is_read ? "Read" : "Mark as read"}
+                                    className={`notifications__toggle-button ${expandedEvents.has(eventId) ? 'notifications__toggle-button--expanded' : ''}`}
+                                    onClick={() => handleEventClick(eventId)}
+                                    title={expandedEvents.has(eventId) ? "Collapse notifications" : "Show notifications"}
                                 >
-                                    {notification.is_read ? <BsCheckCircleFill /> : <BsCircle />}
+                                    {expandedEvents.has(eventId) ? <BsChevronDown /> : <BsChevronRight />}
+                                    {data.unreadCount > 0 && (
+                                        <div className="notifications__badge">
+                                            {data.unreadCount}
+                                        </div>
+                                    )}
                                 </button>
                             </div>
-                            <div className="notifications__message-column">
-                                <span className="notifications__time">
-                                    {new Date(notification.created_at).toLocaleDateString()}
-                                </span>
-                                <p className="notifications__message">{notification.message}</p>
+                            <div className="notifications__event-card">
+                                <EventCard event={data.event} />
                             </div>
-                        </BorderBox>
-                    ))
-                )}
+                        </div>
+                        
+                        {expandedEvents.has(eventId) && (
+                            <div className="notifications__messages">
+                                {data.notifications
+                                    .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
+                                    .map(notification => (
+                                        <div 
+                                            key={notification.id}
+                                            className={`notifications__message ${notification.is_read ? 'notifications__message--read' : ''}`}
+                                        >
+                                            <span className="notifications__time">
+                                                {new Date(notification.created_at).toLocaleDateString()}
+                                            </span>
+                                            <p>{notification.message}</p>
+                                        </div>
+                                    ))
+                                }
+                            </div>
+                        )}
+                    </div>
+                ))}
             </div>
         </div>
     );
