@@ -147,10 +147,11 @@ router.post('/', async (req, res) => {
 
         // Create notification for event host
         try {
+            const slotUserName = slot_name || 'Anonymous';
             await createNotification(
                 hostId,
                 'lineup_signup',
-                `Someone has signed up for slot ${slot_number} in your event`,
+                `${slotUserName} has signed up for slot ${slot_number}`,
                 event_id,
                 result.rows[0].slot_id
             );

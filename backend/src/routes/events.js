@@ -13,6 +13,40 @@ AWS.config.update({
 
 const s3 = new AWS.S3();
 
+function getUpdateMessage(originalEvent, updatedFields) {
+    const changes = [];
+    
+    if (updatedFields.name !== undefined && updatedFields.name !== originalEvent.name) {
+        changes.push(`Name changed to "${updatedFields.name}"`);
+    }
+    
+    if (updatedFields.start_time !== undefined && 
+        new Date(updatedFields.start_time).getTime() !== new Date(originalEvent.start_time).getTime()) {
+        const oldTime = new Date(originalEvent.start_time).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+        const newTime = new Date(updatedFields.start_time).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+        changes.push(`Start time changed from ${oldTime} to ${newTime}`);
+    }
+    
+    if (updatedFields.end_time !== undefined && 
+        new Date(updatedFields.end_time).getTime() !== new Date(originalEvent.end_time).getTime()) {
+        const oldTime = new Date(originalEvent.end_time).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+        const newTime = new Date(updatedFields.end_time).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+        changes.push(`End time changed from ${oldTime} to ${newTime}`);
+    }
+    
+    if (updatedFields.venue_id !== undefined && updatedFields.venue_id !== originalEvent.venue_id) {
+        changes.push('Venue has been changed');
+    }
+    
+    if (updatedFields.slot_duration !== undefined && 
+        originalEvent.slot_duration && 
+        updatedFields.slot_duration.minutes !== originalEvent.slot_duration.minutes) {
+        changes.push(`Slot duration changed from ${originalEvent.slot_duration.minutes} to ${updatedFields.slot_duration.minutes} minutes`);
+    }
+
+    return changes.join(', ');
+}
+
 // GET all events
 router.get('/', async (req, res) => {
     try {
@@ -224,9 +258,38 @@ router.put('/:eventId', async (req, res) => {
 
         // Get the original event details to check what changed
         const originalEvent = await db.query(
-            'SELECT name, venue_id FROM events WHERE id = $1',
+            'SELECT name, venue_id, start_time, end_time, slot_duration FROM events WHERE id = $1',
             [eventId]
         );
+
+        const updateMessage = getUpdateMessage(originalEvent.rows[0], {
+            ...(name !== undefined && { name }),
+            ...(start_time !== undefined && { start_time }),
+            ...(end_time !== undefined && { end_time }),
+            ...(venue_id !== undefined && { venue_id })
+        });
+
+        if (updateMessage) {
+            // Create notifications for all users in the lineup
+            const lineupUsers = await db.query(
+                'SELECT DISTINCT user_id FROM lineup_slots WHERE event_id = $1 AND user_id IS NOT NULL',
+                [eventId]
+            );
+
+            const { createNotification } = require('../utils/notifications');
+            for (const user of lineupUsers.rows) {
+                try {
+                    await createNotification(
+                        user.user_id,
+                        'event_update',
+                        updateMessage,
+                        eventId
+                    );
+                } catch (err) {
+                    console.error('Error creating notification for user:', user.user_id, err);
+                }
+            }
+        }
 
         // Update the event in the database
         const result = await db.query(
@@ -246,27 +309,6 @@ router.put('/:eventId', async (req, res) => {
                 [venue_id]
             );
             venueChange = ` Location changed to ${venueResult.rows[0].name}.`;
-        }
-
-        // Get all unique users in the lineup
-        const lineupUsers = await db.query(
-            'SELECT DISTINCT user_id FROM lineup_slots WHERE event_id = $1 AND user_id IS NOT NULL',
-            [eventId]
-        );
-
-        // Create notifications for all users in the lineup
-        const { createNotification } = require('../utils/notifications');
-        for (const user of lineupUsers.rows) {
-            try {
-                await createNotification(
-                    user.user_id,
-                    'event_update',
-                    `"${name}" has been updated.${venueChange}`,
-                    eventId
-                );
-            } catch (err) {
-                console.error('Error creating notification for user:', user.user_id, err);
-            }
         }
 
         // Broadcast the update via WebSocket with all updated event data
