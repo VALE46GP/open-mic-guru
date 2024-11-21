@@ -17,12 +17,12 @@ router.get('/', verifyToken, async (req, res) => {
     console.log('Received GET request for notifications');
     try {
         const userId = req.user.userId;
+        console.log('User ID:', userId);
+        
         const page = parseInt(req.query.page) || 1;
         const limit = parseInt(req.query.limit) || 10;
         const offset = (page - 1) * limit;
         const unreadOnly = req.query.unread === 'true';
-        
-        console.log('Fetching notifications for user:', userId);
         
         let query = `
             SELECT 
@@ -32,7 +32,13 @@ router.get('/', verifyToken, async (req, res) => {
                 e.image as event_image,
                 v.name as venue_name,
                 u.name as host_name,
-                u.image as host_image
+                u.image as host_image,
+                e.host_id = n.user_id as is_host,
+                EXISTS (
+                    SELECT 1 FROM lineup_slots ls 
+                    WHERE ls.event_id = e.id 
+                    AND ls.user_id = n.user_id
+                ) as is_performer
             FROM notifications n
             LEFT JOIN events e ON n.event_id = e.id
             LEFT JOIN venues v ON e.venue_id = v.id
@@ -47,17 +53,21 @@ router.get('/', verifyToken, async (req, res) => {
 
         query += ` LIMIT $2 OFFSET $3`;
 
-        console.log('Executing query:', query);
-        console.log('Query parameters:', [userId, limit, offset]);
+        console.log('Query:', query);
+        console.log('Parameters:', [userId, limit, offset]);
         
         const result = await db.query(query, [userId, limit, offset]);
-        console.log('Query results:', result.rows);
+        console.log('Query result count:', result.rows.length);
+        if (result.rows.length > 0) {
+            console.log('First notification:', result.rows[0]);
+        }
 
         // Get total count for pagination
         const countResult = await db.query(
             'SELECT COUNT(*) FROM notifications WHERE user_id = $1',
             [userId]
         );
+        console.log('Total count:', countResult.rows[0].count);
 
         res.json({
             notifications: result.rows,
@@ -66,7 +76,7 @@ router.get('/', verifyToken, async (req, res) => {
             totalPages: Math.ceil(parseInt(countResult.rows[0].count) / limit)
         });
     } catch (err) {
-        console.error('Error in GET /notifications:', err);
+        console.error('Detailed error in GET /notifications:', err);
         res.status(500).json({ error: 'Server error' });
     }
 });

@@ -18,6 +18,7 @@ export function NotificationsProvider({ children }) {
                 return;
             }
 
+            console.log('Fetching notifications...');
             const response = await fetch('/api/notifications', {
                 method: 'GET',
                 credentials: 'include',
@@ -29,14 +30,17 @@ export function NotificationsProvider({ children }) {
             });
 
             if (!response.ok) {
+                const errorText = await response.text();
                 console.error('Notifications fetch failed:', {
                     status: response.status,
-                    statusText: response.statusText
+                    statusText: response.statusText,
+                    error: errorText
                 });
                 return;
             }
 
             const data = await response.json();
+            console.log('Received notifications:', data);
             setNotifications(data.notifications || []);
             setUnreadCount((data.notifications || []).filter(n => !n.is_read).length);
         } catch (error) {

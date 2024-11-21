@@ -24,7 +24,9 @@ function NotificationsPage() {
                         start_time: notification.event_start_time,
                         venue_name: notification.venue_name || 'Unknown Venue',
                         host_name: notification.host_name || 'Unknown Host',
-                        event_image: notification.event_image
+                        event_image: notification.event_image,
+                        is_host: notification.is_host,
+                        is_performer: notification.is_performer
                     },
                     notifications: [],
                     unreadCount: 0
