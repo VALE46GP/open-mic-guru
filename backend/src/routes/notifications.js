@@ -164,4 +164,27 @@ router.put('/preferences', verifyToken, async (req, res) => {
     }
 });
 
+router.delete('/', verifyToken, async (req, res) => {
+    try {
+        const { eventIds } = req.body;
+        const userId = req.user.userId;
+
+        const result = await db.query(
+            `DELETE FROM notifications 
+             WHERE event_id = ANY($1) 
+             AND user_id = $2
+             RETURNING *`,
+            [eventIds, userId]
+        );
+
+        res.json({ 
+            success: true,
+            deletedNotifications: result.rows 
+        });
+    } catch (err) {
+        console.error('Error deleting notifications:', err);
+        res.status(500).json({ error: 'Server error' });
+    }
+});
+
 module.exports = router;

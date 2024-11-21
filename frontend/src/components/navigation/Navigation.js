@@ -40,18 +40,20 @@ const Navigation = () => {
                     <Link to="/users" className="navigation__users-link">
                         <FaUsers/>
                     </Link>
-                    <Link to="/create-event" className="navigation__create-event">
-                        <FaPlus/>
-                    </Link>
-                    <NotificationIndicator />
                     {isAuthenticated && user ? (
-                        <Link to={`/users/${user.id}`}>
-                            <img
-                                src={user.image || defaultImageUrl}
-                                alt="User Thumbnail"
-                                className="navigation__user-thumbnail"
-                            />
-                        </Link>
+                        <div className="navigation__right">
+                            <Link to="/create-event" className="navigation__create-event">
+                                <FaPlus/>
+                            </Link>
+                            <NotificationIndicator />
+                            <Link to={`/users/${user.id}`}>
+                                <img
+                                    src={user.image || defaultImageUrl}
+                                    alt="User Thumbnail"
+                                    className="navigation__user-thumbnail"
+                                />
+                            </Link>
+                        </div>
                     ) : (
                         <Link to="/login" className="navigation__login-icon">
                             <FaSignInAlt/>

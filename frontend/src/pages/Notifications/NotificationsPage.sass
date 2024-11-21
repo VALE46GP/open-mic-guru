@@ -78,6 +78,7 @@ $spacing-unit: 16px
     display: flex
     flex-direction: column
     justify-content: center
+    gap: 1rem
     flex: 0
     height: 100%
 
@@ -90,10 +91,10 @@ $spacing-unit: 16px
     gap: 1rem
     align-items: center
 
-  &__toggle-button
-    background: $color-primary
-    color: white
-    border: none
+  &__select-button
+    background: white
+    color: $color-primary
+    border: 2px solid $color-primary
     border-radius: 50%
     width: 32px
     height: 32px
@@ -105,16 +106,46 @@ $spacing-unit: 16px
     position: relative
     flex-shrink: 0
 
+    &--selected
+      background: $color-primary
+      color: white
+
+    &:hover
+      background: rgba($color-primary, 0.1)
+      
+    &--selected
+      background: darken($color-primary, 10%)
+
+  &__toggle-button
+    display: flex
+    position: relative
+    justify-content: center
+    flex-shrink: 0
+    align-items: center
+    background: white
+    color: $color-primary
+    border: none
+    border-radius: 50%
+    padding: 0
+    width: 32px
+    height: 32px
+    cursor: pointer
+    transition: all 0.2s ease
+
     &:focus-visible,
     &:hover
-      background: darken($color-primary, 10%)
+      //background: darken($color-primary, 10%)
+      background: white
+      color: darken($color-primary, 10%)
 
     &--expanded
-      background: darken($color-primary, 10%)
+      //background: darken($color-primary, 10%)
+      background: white
+      color: darken($color-primary, 10%)
 
     svg
-      width: 16px
-      height: 16px
+      width: 32px
+      height: 32px
 
   &__status-icon
     background: none

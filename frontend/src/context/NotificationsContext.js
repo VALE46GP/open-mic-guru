@@ -110,6 +110,38 @@ export function NotificationsProvider({ children }) {
             } catch (error) {
                 console.error('Error marking notifications as read:', error);
             }
+        },
+        deleteNotifications: async (eventIds) => {
+            try {
+                const token = getToken();
+                if (!token) return;
+
+                const response = await fetch('/api/notifications', {
+                    method: 'DELETE',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ eventIds })
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                setNotifications(prev => 
+                    prev.filter(notification => !eventIds.includes(notification.event_id))
+                );
+                
+                setUnreadCount(prev => {
+                    const deletedUnreadCount = notifications
+                        .filter(n => eventIds.includes(n.event_id) && !n.is_read)
+                        .length;
+                    return Math.max(0, prev - deletedUnreadCount);
+                });
+            } catch (error) {
+                console.error('Error deleting notifications:', error);
+            }
         }
     };
 

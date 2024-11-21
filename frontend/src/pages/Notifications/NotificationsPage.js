@@ -3,12 +3,16 @@ import { useNotifications } from '../../context/NotificationsContext';
 import EventCard from '../../components/events/EventCard';
 import './NotificationsPage.sass';
 import { BsChevronDown, BsChevronRight } from 'react-icons/bs';
+import { Modal, Button } from 'react-bootstrap';
+import { FaTrash } from 'react-icons/fa';
 
 function NotificationsPage() {
-    const { notifications, markAsRead } = useNotifications();
+    const { notifications, markAsRead, deleteNotifications } = useNotifications();
     const [expandedEvents, setExpandedEvents] = useState(new Set());
+    const [selectedEvents, setSelectedEvents] = useState(new Set());
     const [groupedNotifications, setGroupedNotifications] = useState({});
     const [locallyViewedNotifications, setLocallyViewedNotifications] = useState(new Set());
+    const [showDeleteModal, setShowDeleteModal] = useState(false);
 
     useEffect(() => {
         // Group notifications by event_id
@@ -75,9 +79,75 @@ function NotificationsPage() {
         }
     };
 
+    const handleEventSelection = (eventId) => {
+        setSelectedEvents(prev => {
+            const next = new Set(prev);
+            if (next.has(eventId)) {
+                next.delete(eventId);
+            } else {
+                next.add(eventId);
+            }
+            return next;
+        });
+    };
+
+    const handleDeleteSelected = async () => {
+        if (selectedEvents.size === 0) return;
+        
+        const confirmed = window.confirm(
+            `Are you sure you want to delete all notifications for ${selectedEvents.size} selected event${selectedEvents.size > 1 ? 's' : ''}?`
+        );
+        
+        if (confirmed) {
+            await deleteNotifications(Array.from(selectedEvents));
+            setSelectedEvents(new Set());
+        }
+    };
+
+    const handleSelectAll = () => {
+        if (selectedEvents.size === Object.keys(groupedNotifications).length) {
+            // If all are selected, deselect all
+            setSelectedEvents(new Set());
+        } else {
+            // Select all
+            setSelectedEvents(new Set(Object.keys(groupedNotifications)));
+        }
+    };
+
+    const handleDeleteClick = () => {
+        if (selectedEvents.size > 0) {
+            setShowDeleteModal(true);
+        }
+    };
+
+    const handleConfirmDelete = async () => {
+        await handleDeleteSelected();
+        setShowDeleteModal(false);
+    };
+
     return (
         <div className="notifications">
             <h1 className="notifications__title">Notifications</h1>
+            <div className="notifications__header-actions">
+                <button 
+                    className={`notifications__select-button ${
+                        selectedEvents.size === Object.keys(groupedNotifications).length ? 
+                        'notifications__select-button--selected' : ''
+                    }`}
+                    onClick={handleSelectAll}
+                    title="Select All"
+                >
+                    {selectedEvents.size === Object.keys(groupedNotifications).length && "✓"}
+                </button>
+                <button
+                    className="notifications__delete-button"
+                    onClick={handleDeleteClick}
+                    disabled={selectedEvents.size === 0}
+                    title="Delete Selected"
+                >
+                    <FaTrash size={20} />
+                </button>
+            </div>
             <div className="notifications__list">
                 {Object.entries(groupedNotifications)
                     .sort(([, a], [, b]) => {
@@ -90,6 +160,16 @@ function NotificationsPage() {
                         <div key={eventId} className="notifications__event-group">
                             <div className="notifications__event-row">
                                 <div className="notifications__button-column">
+                                    <button 
+                                        className={`notifications__select-button ${
+                                            selectedEvents.has(eventId) ? 'notifications__select-button--selected' : ''
+                                        }`}
+                                        onClick={() => handleEventSelection(eventId)}
+                                    >
+                                        {selectedEvents.has(eventId) && (
+                                            <span className="notifications__checkmark">✓</span>
+                                        )}
+                                    </button>
                                     <button
                                         className={`notifications__toggle-button ${expandedEvents.has(eventId) ? 'notifications__toggle-button--expanded' : ''}`}
                                         onClick={() => handleEventClick(eventId)}
@@ -140,6 +220,22 @@ function NotificationsPage() {
                         </div>
                     ))}
             </div>
+            <Modal show={showDeleteModal} onHide={() => setShowDeleteModal(false)}>
+                <Modal.Header closeButton>
+                    <Modal.Title>Confirm Deletion</Modal.Title>
+                </Modal.Header>
+                <Modal.Body>
+                    Are you sure you want to delete notifications for {selectedEvents.size} selected event{selectedEvents.size !== 1 ? 's' : ''}?
+                </Modal.Body>
+                <Modal.Footer>
+                    <Button variant="secondary" onClick={() => setShowDeleteModal(false)}>
+                        Cancel
+                    </Button>
+                    <Button variant="danger" onClick={handleConfirmDelete}>
+                        Delete
+                    </Button>
+                </Modal.Footer>
+            </Modal>
         </div>
     );
 }
