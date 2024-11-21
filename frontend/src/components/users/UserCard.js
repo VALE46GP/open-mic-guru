@@ -7,10 +7,9 @@ import { socialMediaPlatforms } from '../utils/socialMediaPlatforms';
 function UserCard({ user }) {
     const roles = user.roles || [];
     console.log('User:', user.id);
-    console.log('User roles:', roles);
+    console.log('is host:', user.is_host);
+    console.log('is performer:', user.is_performer);
     console.log('--------------------------------');
-    const hasHostRole = roles.includes('host');
-    const hasPerformerRole = user.is_performer;
 
     const getPlatformIcon = (platformName) => {
         const platform = socialMediaPlatforms.find((p) => p.name === platformName);
@@ -20,10 +19,10 @@ function UserCard({ user }) {
     return (
         <Link to={`/users/${user.id}`} className="user-card__link">
             <div className="user-card__wrapper">
-                {(hasHostRole || hasPerformerRole) && (
+                {(user.is_host || user.is_performer) && (
                     <div className="user-card__role">
-                        {hasHostRole && <span className="user-card__role-badge host">Host</span>}
-                        {hasPerformerRole &&
+                        {user.is_host && <span className="user-card__role-badge host">Host</span>}
+                        {user.is_performer &&
                             <span className="user-card__role-badge performer">Performer</span>}
                     </div>
                 )}

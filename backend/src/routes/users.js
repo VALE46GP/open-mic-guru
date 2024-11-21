@@ -27,6 +27,14 @@ router.get('/', async (req, res) => {
                    CASE
                        WHEN EXISTS(
                                SELECT 1
+                               FROM events
+                               WHERE events.host_id = users.id
+                           ) THEN true
+                       ELSE false
+                       END AS is_host,
+                   CASE
+                       WHEN EXISTS(
+                               SELECT 1
                                FROM lineup_slots
                                WHERE lineup_slots.user_id = users.id
                            ) THEN true
