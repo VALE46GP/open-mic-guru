@@ -37,13 +37,13 @@ const Navigation = () => {
                     </Link>
                 </div>
                 <div className="navigation__right">
-                    <NotificationIndicator />
                     <Link to="/users" className="navigation__users-link">
                         <FaUsers/>
                     </Link>
                     <Link to="/create-event" className="navigation__create-event">
                         <FaPlus/>
                     </Link>
+                    <NotificationIndicator />
                     {isAuthenticated && user ? (
                         <Link to={`/users/${user.id}`}>
                             <img

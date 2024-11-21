@@ -1,9 +1,10 @@
 .notification-indicator
+    display: flex
     position: relative
-    padding: 8px
+    min-width: 26px
+    height: 26px
     color: rgba(255, 255, 255, 0.7)
     text-decoration: none
-    display: flex
     align-items: center
     transition: color 0.2s ease
 
@@ -28,3 +29,6 @@
         display: flex
         align-items: center
         justify-content: center
+
+        &--empty
+            background-color: #b4b4b4

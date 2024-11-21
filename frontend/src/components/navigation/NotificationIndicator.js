@@ -13,11 +13,9 @@ function NotificationIndicator() {
     return (
         <Link to="/notifications" className="notification-indicator">
             <i className="notification-indicator__fas notification-indicator__fa-bell" aria-label="Notifications"></i>
-            {unreadCount > 0 && (
-                <span className="notification-indicator__badge">
-                    {unreadCount > 99 ? '99+' : unreadCount}
-                </span>
-            )}
+            <span className={`notification-indicator__badge ${unreadCount === 0 ? 'notification-indicator__badge--empty' : ''}`}>
+                {unreadCount}
+            </span>
         </Link>
     );
 }
