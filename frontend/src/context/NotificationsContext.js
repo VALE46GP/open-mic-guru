@@ -81,7 +81,9 @@ export function NotificationsProvider({ children }) {
                     console.log('Deleting notifications:', data.notificationIds);
                     setNotifications(prev => Array.isArray(prev) ? prev.filter(n => !data.notificationIds.includes(n.id)) : []);
                     setUnreadCount(prev => {
-                        const deletedUnreadCount = Array.isArray(prev) ? prev.filter(n => !n.is_read && data.notificationIds.includes(n.id)).length : 0;
+                        const deletedUnreadCount = notifications
+                            .filter(n => data.notificationIds.includes(n.id) && !n.is_read)
+                            .length;
                         return Math.max(0, prev - deletedUnreadCount);
                     });
                 }

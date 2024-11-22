@@ -10,6 +10,8 @@ function NotificationIndicator() {
 
     if (!isAuthenticated) return null;
 
+    console.log('Current unread count:', unreadCount);
+
     return (
         <Link to="/notifications" className="notification-indicator">
             <i className="notification-indicator__fas notification-indicator__fa-bell" aria-label="Notifications"></i>
