@@ -250,9 +250,11 @@ function CreateEvent() {
                                 value={startTime}
                                 onChange={(e) => {
                                     setStartTime(e.target.value);
-                                    // Add one hour to the selected time
-                                    const endDateTime = e.target.value.slice(0, -5) + (parseInt(e.target.value.slice(-5, -3)) + 1).toString().padStart(2, '0') + ":00";
-                                    setEndTime(endDateTime);
+                                    if (!isEditMode) {
+                                        // Add one hour to the selected time only if not in edit mode
+                                        const endDateTime = e.target.value.slice(0, -5) + (parseInt(e.target.value.slice(-5, -3)) + 1).toString().padStart(2, '0') + ":00";
+                                        setEndTime(endDateTime);
+                                    }
                                 }}
                             />
                         </div>
