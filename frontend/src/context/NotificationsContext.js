@@ -76,6 +76,15 @@ export function NotificationsProvider({ children }) {
                 if (data.type === 'EVENT_UPDATE' && data.eventId) {
                     fetchNotifications();
                 }
+                
+                if (data.type === 'NOTIFICATION_DELETE' && data.userId === getUserId()) {
+                    console.log('Deleting notifications:', data.notificationIds);
+                    setNotifications(prev => Array.isArray(prev) ? prev.filter(n => !data.notificationIds.includes(n.id)) : []);
+                    setUnreadCount(prev => {
+                        const deletedUnreadCount = Array.isArray(prev) ? prev.filter(n => !n.is_read && data.notificationIds.includes(n.id)).length : 0;
+                        return Math.max(0, prev - deletedUnreadCount);
+                    });
+                }
             } catch (error) {
                 console.error('Error processing WebSocket message:', error);
             }

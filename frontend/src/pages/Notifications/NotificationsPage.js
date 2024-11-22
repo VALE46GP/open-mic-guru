@@ -93,15 +93,9 @@ function NotificationsPage() {
 
     const handleDeleteSelected = async () => {
         if (selectedEvents.size === 0) return;
-        
-        const confirmed = window.confirm(
-            `Are you sure you want to delete all notifications for ${selectedEvents.size} selected event${selectedEvents.size > 1 ? 's' : ''}?`
-        );
-        
-        if (confirmed) {
-            await deleteNotifications(Array.from(selectedEvents));
-            setSelectedEvents(new Set());
-        }
+
+        await deleteNotifications(Array.from(selectedEvents));
+        setSelectedEvents(new Set());
     };
 
     const handleSelectAll = () => {

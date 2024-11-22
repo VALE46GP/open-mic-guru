@@ -177,6 +177,13 @@ router.delete('/', verifyToken, async (req, res) => {
             [eventIds, userId]
         );
 
+        const deletedNotificationIds = result.rows.map(notification => notification.id);
+        req.app.locals.broadcastNotification({
+            type: 'NOTIFICATION_DELETE',
+            userId: userId,
+            notificationIds: deletedNotificationIds
+        });
+
         res.json({ 
             success: true,
             deletedNotifications: result.rows 
