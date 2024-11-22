@@ -155,29 +155,37 @@
     &__edit-controls
         display: flex
         justify-content: center
+        flex-wrap: wrap
         gap: 1rem
         margin-bottom: 1rem
 
-        button
-            padding: 0.5rem 1rem
-            border-radius: 4px
-            cursor: pointer
-            
-            &:first-child
-                background-color: #28a745
-                color: white
+    &__edit-button
+        padding: 0.5rem 1rem
+        border-radius: 4px
+        cursor: pointer
 
-                &:focus-visible,
-                &:hover
-                    background-color: #218838
-            
-            &:last-child
-                background-color: #dc3545
-                color: white
+        &--save
+            flex-basis: 40%
+            flex-grow: 1
+            background-color: #28a745
+            color: white
 
-                &:focus-visible,
-                &:hover
-                    background-color: #c82333
+            &:focus-visible,
+            &:hover
+                background-color: #218838
+
+        &--cancel
+            flex-basis: 40%
+            flex-grow: 1
+            background-color: #dc3545
+            color: white
+
+            &:focus-visible,
+            &:hover
+                background-color: #c82333
+
+        &--consolidate
+            width: 100%
             
     &__slot-drag-handle
         display: flex

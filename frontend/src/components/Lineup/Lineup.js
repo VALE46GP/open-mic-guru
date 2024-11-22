@@ -314,13 +314,35 @@ function Lineup({
         setIsEditing(false);
     };
 
+    const handleConsolidate = () => {
+        const assignedSlots = editedSlots.filter(slot => 
+            (slot.user_id || slot.non_user_identifier || slot.slot_name !== "Open")
+        );
+        const openSlots = editedSlots.filter(slot => slot.slot_name === "Open");
+
+        // Reassign slot numbers to assigned slots first, then open slots
+        const consolidatedSlots = [...assignedSlots, ...openSlots].map((slot, index) => ({
+            ...slot,
+            slot_number: index + 1
+        }));
+
+        setEditedSlots(consolidatedSlots);
+    };
+
     return (
         <BorderBox onEdit={isHost ? () => setIsEditing(true) : null}>
             <h2 className="lineup__title">Lineup</h2>
             {isEditing && (
                 <div className="lineup__edit-controls">
-                    <button onClick={handleSave}>Save</button>
-                    <button onClick={handleCancel}>Cancel</button>
+                    <button onClick={handleSave}
+                            className="lineup__edit-button lineup__edit-button--save">Save
+                    </button>
+                    <button onClick={handleCancel}
+                            className="lineup__edit-button lineup__edit-button--cancel">Cancel
+                    </button>
+                    <button onClick={handleConsolidate}
+                            className="lineup__edit-button lineup__edit-button--consolidate">Consolidate
+                    </button>
                 </div>
             )}
 
