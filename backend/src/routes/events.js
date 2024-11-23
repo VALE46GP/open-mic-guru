@@ -356,7 +356,13 @@ router.put('/:eventId', async (req, res) => {
                     await createNotification(
                         slot.user_id,
                         'slot_time_change',
-                        `Your slot time for "${originalEvent.rows[0].name}" has changed from ${oldStartTime.toLocaleTimeString()} to ${newStartTime.toLocaleTimeString()}`,
+                        `Your slot time for "${originalEvent.rows[0].name}" has changed from ${oldStartTime.toLocaleTimeString([], {
+                            hour: '2-digit',
+                            minute: '2-digit'
+                        })} to ${newStartTime.toLocaleTimeString([], {
+                            hour: '2-digit',
+                            minute: '2-digit'
+                        })}`,
                         eventId,
                         slot.id,
                         req

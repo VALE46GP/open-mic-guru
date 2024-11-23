@@ -124,10 +124,12 @@ router.post('/', async (req, res) => {
         const eventQuery = await db.query('SELECT start_time, slot_duration, setup_duration FROM events WHERE id = $1', [event_id]);
         const eventDetails = eventQuery.rows[0];
 
-        const slotStartTime = new Date(eventDetails.start_time);
-        const slotIndex = slot_number - 1;
-        const totalMinutesPerSlot = eventDetails.slot_duration.minutes + eventDetails.setup_duration.minutes;
-        slotStartTime.setMinutes(slotStartTime.getMinutes() + (slotIndex * totalMinutesPerSlot));
+        const slotStartTime = calculateSlotStartTime(
+            eventDetails.start_time,
+            slot_number,
+            eventDetails.slot_duration,
+            eventDetails.setup_duration
+        );
 
         const lineupData = {
             type: 'LINEUP_UPDATE',

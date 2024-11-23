@@ -8,6 +8,8 @@ import { FaTrash } from 'react-icons/fa';
 
 function NotificationsPage() {
     const { notifications, markAsRead, deleteNotifications } = useNotifications();
+    console.log('Notifications received in NotificationsPage:', notifications);
+    
     const [expandedEvents, setExpandedEvents] = useState(new Set());
     const [selectedEvents, setSelectedEvents] = useState(new Set());
     const [groupedNotifications, setGroupedNotifications] = useState({});
@@ -15,6 +17,7 @@ function NotificationsPage() {
     const [showDeleteModal, setShowDeleteModal] = useState(false);
 
     useEffect(() => {
+        console.log('Running grouping effect with notifications:', notifications);
         // Group notifications by event_id
         const grouped = notifications.reduce((acc, notification) => {
             if (!notification.event_id) return acc;
@@ -30,7 +33,8 @@ function NotificationsPage() {
                         host_name: notification.host_name || 'Unknown Host',
                         event_image: notification.event_image,
                         is_host: notification.is_host,
-                        is_performer: notification.is_performer
+                        is_performer: notification.is_performer,
+                        performer_slot_time: notification.performer_slot_time
                     },
                     notifications: [],
                     unreadCount: 0
@@ -191,7 +195,10 @@ function NotificationsPage() {
                                     </button>
                                 </div>
                                 <div className="notifications__event-card">
-                                    <EventCard event={data.event}/>
+                                    <EventCard 
+                                        event={data.event} 
+                                        slotTime={data.event.is_performer ? data.event.performer_slot_time : null}
+                                    />
                                 </div>
                             </div>
 

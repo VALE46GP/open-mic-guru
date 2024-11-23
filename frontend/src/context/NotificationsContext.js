@@ -13,46 +13,31 @@ export function NotificationsProvider({ children }) {
     const fetchNotifications = async () => {
         try {
             const token = getToken();
-            if (!token) {
-                console.error('No authentication token available');
-                return;
-            }
-
-            console.log('Token being used:', token);
-            const response = await fetch('/api/notifications', {
-                method: 'GET',
+            const response = await fetch(`${process.env.REACT_APP_API_URL}/notifications`, {
                 headers: {
                     'Authorization': `Bearer ${token}`,
-                    'Content-Type': 'application/json',
-                    'Accept': 'application/json'
-                },
-                credentials: 'include'
+                    'Content-Type': 'application/json'
+                }
             });
-
+            
             if (!response.ok) {
-                const errorText = await response.text();
-                console.error('Notifications fetch failed:', {
-                    status: response.status,
-                    statusText: response.statusText,
-                    error: errorText
-                });
-                return;
+                throw new Error('Failed to fetch notifications');
             }
-
+            
             const data = await response.json();
-            console.log('Received notifications:', data);
-            setNotifications(data.notifications || []);
-            setUnreadCount((data.notifications || []).filter(n => !n.is_read).length);
+            console.log('Fetched notifications:', data);
+            setNotifications(data);
+            
+            const unreadCount = data.filter(notification => !notification.is_read).length;
+            setUnreadCount(unreadCount);
         } catch (error) {
             console.error('Error fetching notifications:', error);
         }
     };
 
     useEffect(() => {
-        if (getUserId()) {
-            fetchNotifications();
-        }
-    }, [getUserId()]);
+        fetchNotifications();
+    }, []);
 
     useEffect(() => {
         if (lastMessage) {

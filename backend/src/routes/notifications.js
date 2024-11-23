@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const db = require('../db');
 const verifyToken = require('../middleware/verifyToken');
+const { calculateSlotStartTime } = require('../utils/timeCalculations');
 
 router.use((req, res, next) => {
     console.log('Notifications route hit:', {
@@ -30,32 +31,28 @@ router.get('/', verifyToken, async (req, res) => {
                 e.name as event_name,
                 e.start_time as event_start_time,
                 e.image as event_image,
+                e.slot_duration,
+                e.setup_duration,
                 v.name as venue_name,
                 u.name as host_name,
                 u.image as host_image,
                 e.host_id = n.user_id as is_host,
-                EXISTS (
-                    SELECT 1 FROM lineup_slots ls 
-                    WHERE ls.event_id = e.id 
-                    AND ls.user_id = n.user_id
-                ) as is_performer
+                ls.slot_number,
+                CASE 
+                    WHEN ls.user_id = n.user_id THEN true 
+                    ELSE false 
+                END as is_performer
             FROM notifications n
             LEFT JOIN events e ON n.event_id = e.id
             LEFT JOIN venues v ON e.venue_id = v.id
             LEFT JOIN users u ON e.host_id = u.id
+            LEFT JOIN lineup_slots ls ON e.id = ls.event_id AND ls.user_id = n.user_id
             WHERE n.user_id = $1
+            ${unreadOnly ? 'AND n.is_read = FALSE' : ''}
             ORDER BY n.created_at DESC
+            LIMIT $2 OFFSET $3
         `;
 
-        if (unreadOnly) {
-            query += ' AND n.is_read = FALSE';
-        }
-
-        query += ` LIMIT $2 OFFSET $3`;
-
-        console.log('Query:', query);
-        console.log('Parameters:', [userId, limit, offset]);
-        
         const result = await db.query(query, [userId, limit, offset]);
         console.log('Query result count:', result.rows.length);
         if (result.rows.length > 0) {
@@ -69,12 +66,24 @@ router.get('/', verifyToken, async (req, res) => {
         );
         console.log('Total count:', countResult.rows[0].count);
 
-        res.json({
-            notifications: result.rows,
-            total: parseInt(countResult.rows[0].count),
-            currentPage: page,
-            totalPages: Math.ceil(parseInt(countResult.rows[0].count) / limit)
+        const processedNotifications = result.rows.map(notification => {
+            if (notification.is_performer && notification.slot_number) {
+                const slotTime = calculateSlotStartTime(
+                    notification.event_start_time,
+                    notification.slot_number,
+                    notification.slot_duration,
+                    notification.setup_duration
+                );
+                return {
+                    ...notification,
+                    performer_slot_time: slotTime
+                };
+            }
+            return notification;
         });
+
+        res.json(processedNotifications);  // Added this line to send the response
+
     } catch (err) {
         console.error('Detailed error in GET /notifications:', err);
         res.status(500).json({ error: 'Server error' });
