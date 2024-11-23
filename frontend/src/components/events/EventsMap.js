@@ -9,7 +9,6 @@ const EventsMap = ({ events, center, onEventSelect }) => {
     const markerClusterer = useRef(null);
     const [isGoogleLoaded, setIsGoogleLoaded] = useState(false);
 
-    // Load Google Maps API
     useEffect(() => {
         const loadGoogleMaps = () => {
             if (window.google && window.google.maps) {
@@ -23,7 +22,6 @@ const EventsMap = ({ events, center, onEventSelect }) => {
             script.async = true;
             script.defer = true;
             script.onload = () => {
-                // console.log('Google Maps API loaded.');
                 setIsGoogleLoaded(true);
             };
             script.onerror = () => {
@@ -43,11 +41,9 @@ const EventsMap = ({ events, center, onEventSelect }) => {
         };
     }, []);
 
-    // Initialize Map and Clustering
     useEffect(() => {
         if (!isGoogleLoaded || !mapRef.current) return;
 
-        // Initialize the Google Map
         if (!map.current) {
             map.current = new window.google.maps.Map(mapRef.current, {
                 zoom: 10,
@@ -60,28 +56,10 @@ const EventsMap = ({ events, center, onEventSelect }) => {
                 }],
             });
         } else if (center && !map.current.isMarkerClick) {
-            if (events.length === 0) {
-                // If no events found and we have viewport information from the location filter
-                const locationViewport = window.locationViewport;
-                if (locationViewport) {
-                    map.current.fitBounds(locationViewport);
-                } else {
-                    // If no viewport info, just center on the selected point with a wider view
-                    map.current.setCenter(center);
-                    map.current.setZoom(10);
-                }
-            } else {
-                // Keep existing behavior for when events are found
-                map.current.setCenter(center);
-                if (events.length === 1) {
-                    map.current.setZoom(15);
-                } else {
-                    map.current.setZoom(10);
-                }
-            }
+            map.current.setCenter(center);
+            map.current.setZoom(events.length === 1 ? 15 : 10);
         }
 
-        // Clear existing markers
         markers.current.forEach(marker => marker.setMap(null));
         markers.current = [];
 
@@ -89,48 +67,63 @@ const EventsMap = ({ events, center, onEventSelect }) => {
             markerClusterer.current.clearMarkers();
         }
 
-        // Create markers for each event in the `events` prop
         const bounds = new window.google.maps.LatLngBounds();
-        const newMarkers = events.map(event => {
+        const venueMap = new Map();
+
+        events.forEach(event => {
             if (event.venue_latitude && event.venue_longitude) {
-                const position = {
-                    lat: Number(event.venue_latitude),
-                    lng: Number(event.venue_longitude),
-                };
-
-                const marker = new window.google.maps.Marker({
-                    position,
-                    map: map.current,
-                    title: event.event_name,
-                    icon: {
-                        path: window.google.maps.SymbolPath.CIRCLE,
-                        fillColor: event.is_host ? '#f3e5f5' : event.is_performer ? '#e3f2fd' : '#666666',
-                        fillOpacity: 1,
-                        strokeColor: event.is_host ? '#7b1fa2' : event.is_performer ? '#1976d2' : '#ffffff',
-                        strokeWeight: 2,
-                        scale: 10,
-                    },
-                });
-
-                marker.event = event;
-                marker.addListener('click', () => handleMarkerClick(event));
-
-                bounds.extend(position);
-                return marker;
+                const venueKey = `${event.venue_latitude},${event.venue_longitude}`;
+                if (!venueMap.has(venueKey)) {
+                    venueMap.set(venueKey, []);
+                }
+                venueMap.get(venueKey).push(event);
             }
-            return null;
-        }).filter(marker => marker);
+        });
+
+        const newMarkers = Array.from(venueMap.entries()).map(([key, venueEvents]) => {
+            const [lat, lng] = key.split(',').map(Number);
+            const position = { lat, lng };
+
+            // Determine the color based on priority
+            let fillColor = '#666666';
+            let strokeColor = '#ffffff';
+
+            if (venueEvents.some(event => event.is_host)) {
+                fillColor = '#f3e5f5';
+                strokeColor = '#7b1fa2';
+            } else if (venueEvents.some(event => event.is_performer)) {
+                fillColor = '#e3f2fd';
+                strokeColor = '#1976d2';
+            }
+
+            const marker = new window.google.maps.Marker({
+                position,
+                map: map.current,
+                title: venueEvents.map(e => e.event_name).join(', '),
+                icon: {
+                    path: window.google.maps.SymbolPath.CIRCLE,
+                    fillColor: fillColor,
+                    fillOpacity: 1,
+                    strokeColor: strokeColor,
+                    strokeWeight: 2,
+                    scale: 10,
+                },
+            });
+
+            marker.addListener('click', () => handleMarkerClick(venueEvents));
+
+            bounds.extend(position);
+            return marker;
+        });
 
         markers.current = newMarkers;
 
-        // Only fit bounds if there are markers and not handling a marker click
         if (newMarkers.length > 0 && !map.current.isMarkerClick) {
             markerClusterer.current = new MarkerClusterer({
                 map: map.current,
                 markers: newMarkers,
             });
 
-            // For single marker, set a specific zoom level instead of fitting bounds
             if (newMarkers.length === 1) {
                 map.current.setCenter(newMarkers[0].getPosition());
                 map.current.setZoom(15);
@@ -139,7 +132,6 @@ const EventsMap = ({ events, center, onEventSelect }) => {
             }
         }
 
-        // Reset the marker click flag after all operations are complete
         setTimeout(() => {
             if (map.current) {
                 map.current.isMarkerClick = false;
@@ -148,20 +140,11 @@ const EventsMap = ({ events, center, onEventSelect }) => {
 
     }, [isGoogleLoaded, center, events]);
 
-    const handleMarkerClick = (event) => {
+    const handleMarkerClick = (venueEvents) => {
         if (!map.current) return;
 
-        const position = {
-            lat: Number(event.venue_latitude),
-            lng: Number(event.venue_longitude)
-        };
-
-        // Set a flag to prevent the useEffect from overriding our zoom/center
         map.current.isMarkerClick = true;
-
-        map.current.setCenter(position);
-        map.current.setZoom(15);
-        onEventSelect(event);
+        onEventSelect(venueEvents);
     };
 
     return (

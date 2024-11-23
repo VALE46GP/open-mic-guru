@@ -14,7 +14,7 @@ const EventsPage = () => {
     const [searchTerm, setSearchTerm] = useState('');
     const [selectedLocation, setSelectedLocation] = useState(null);
     const [mapCenter, setMapCenter] = useState(null);
-    const [selectedEvent, setSelectedEvent] = useState(null);
+    const [selectedEvents, setSelectedEvents] = useState([]);
     const [showPastEvents, setShowPastEvents] = useState(false);
     const { getUserId } = useAuth();
     const userId = getUserId();
@@ -48,7 +48,6 @@ const EventsPage = () => {
     const filterEvents = (events, searchTerm, location) => {
         let filtered = [...events];
 
-        // Apply text-based filtering
         if (searchTerm.trim()) {
             const searchLower = searchTerm.toLowerCase();
             filtered = filtered.filter(event =>
@@ -58,15 +57,12 @@ const EventsPage = () => {
             );
         }
 
-        // Apply location-based filtering
         if (location) {
             const isSpecificLocation = location.address_components?.some(component =>
                 ['street_number', 'route', 'postal_code'].includes(component.types[0])
             );
 
             if (isSpecificLocation && location.lat && location.lng) {
-                // Filter by radius (15 miles in meters)
-                console.log('Using radius filtering for specific location.');
                 filtered = filtered.filter(event => {
                     if (!event.venue_latitude || !event.venue_longitude) return false;
 
@@ -80,11 +76,9 @@ const EventsPage = () => {
                         eventLocation
                     );
 
-                    return distance <= 16093.33; // 10 miles in meters
+                    return distance <= 16093.33;
                 });
             } else if (location.viewport && Object.keys(location.viewport).length > 0) {
-                // Filter by viewport
-                console.log('Using viewport filtering.');
                 const bounds = new window.google.maps.LatLngBounds(
                     location.viewport.getSouthWest(),
                     location.viewport.getNorthEast()
@@ -110,7 +104,7 @@ const EventsPage = () => {
 
     const handleSearch = (searchTerm) => {
         setSearchTerm(searchTerm);
-        setSelectedEvent(null);
+        setSelectedEvents([]);
         setFilteredEvents(filterEvents(events, searchTerm, selectedLocation));
     };
 
@@ -128,7 +122,6 @@ const EventsPage = () => {
             viewport: place.geometry.viewport
         };
 
-        // Store viewport in window for map component to access
         if (location.viewport) {
             window.locationViewport = new window.google.maps.LatLngBounds(
                 location.viewport.getSouthWest(),
@@ -139,14 +132,14 @@ const EventsPage = () => {
         }
 
         setSelectedLocation(location);
-        setSelectedEvent(null);
+        setSelectedEvents([]);
         setMapCenter({ lat: location.lat, lng: location.lng });
         const filtered = filterEvents(events, searchTerm, location);
         setFilteredEvents(filtered);
     };
 
     const handleEventSelect = (selectedEvents) => {
-        setSelectedEvent(selectedEvents);
+        setSelectedEvents(selectedEvents);
     };
 
     return (
@@ -188,17 +181,18 @@ const EventsPage = () => {
                             setFilteredEvents(filterEvents(events, '', selectedLocation));
                         }}
                     />
-                    {selectedEvent && (
+                    {selectedEvents.length > 0 && (
                         <div className="events-page__selected-events">
-                            <Link to={`/events/${selectedEvent.event_id}`}>
-                                <EventCard
-                                    key={`selected-${selectedEvent.event_id}`}
-                                    event={selectedEvent}
-                                    placeholder="Filter by location"
-                                    slotTime={selectedEvent.is_performer ? selectedEvent.performer_slot_time : null}
-                                    compact={true}
-                                />
-                            </Link>
+                            {selectedEvents.map(event => (
+                                <Link to={`/events/${event.event_id}`} key={`selected-${event.event_id}`}>
+                                    <EventCard
+                                        event={event}
+                                        placeholder="Filter by location"
+                                        slotTime={event.is_performer ? event.performer_slot_time : null}
+                                        compact={true}
+                                    />
+                                </Link>
+                            ))}
                         </div>
                     )}
                 </div>
@@ -223,7 +217,6 @@ const EventsPage = () => {
                     </div>
                 )}
             </div>
-
             {filteredEvents.filter(event => new Date(event.start_time) < new Date()).length > 0 && (
                 <div>
                     <h2 className="events-page__title">Past Events</h2>
