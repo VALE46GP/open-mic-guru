@@ -198,9 +198,9 @@ router.delete('/:slotId', async (req, res) => {
 
         // Get slot and event details before deletion
         const slotQuery = await db.query(`
-            SELECT ls.*, e.start_time, e.slot_duration, e.setup_duration
+            SELECT ls.*, e.start_time, e.slot_duration, e.setup_duration, e.host_id
             FROM lineup_slots ls
-                     JOIN events e ON ls.event_id = e.id
+            JOIN events e ON ls.event_id = e.id
             WHERE ls.id = $1
         `, [slotId]);
 
@@ -209,6 +209,21 @@ router.delete('/:slotId', async (req, res) => {
         }
 
         const slot = slotQuery.rows[0];
+        const hostId = slot.host_id;
+        const slotUserName = slot.slot_name || 'Anonymous';
+
+        // Create notification for the event host BEFORE deleting the slot
+        try {
+            await createNotification(
+                hostId,
+                'lineup_unsign',
+                `${slotUserName} has been removed from slot ${slot.slot_number}`,
+                slot.event_id,
+                slotId
+            );
+        } catch (err) {
+            console.error('Failed to create notification for host:', err);
+        }
 
         // Calculate slot start time
         const slotStartTime = new Date(slot.start_time);
