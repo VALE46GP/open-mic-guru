@@ -3,6 +3,8 @@ const router = express.Router();
 const db = require('../db');
 const verifyToken = require('../middleware/verifyToken');
 const AWS = require('aws-sdk');
+const { calculateSlotStartTime, hasTimeRelatedChanges } = require('../utils/timeCalculations');
+const { createNotification } = require('../utils/notifications');
 
 // Configure AWS SDK (matching users.js pattern)
 AWS.config.update({
@@ -308,7 +310,6 @@ router.put('/:eventId', async (req, res) => {
                 [eventId]
             );
 
-            const { createNotification } = require('../utils/notifications');
             for (const user of lineupUsers.rows) {
                 try {
                     await createNotification(
@@ -319,6 +320,47 @@ router.put('/:eventId', async (req, res) => {
                     );
                 } catch (err) {
                     console.error('Error creating notification for user:', user.user_id, err);
+                }
+            }
+        }
+
+        // Check for time-related changes that would affect slot times
+        if (hasTimeRelatedChanges(originalEvent.rows[0], {
+            start_time,
+            slot_duration,
+            setup_duration
+        })) {
+            // Get all lineup slots with users
+            const slots = await db.query(
+                'SELECT ls.*, u.name as user_name FROM lineup_slots ls LEFT JOIN users u ON ls.user_id = u.id WHERE ls.event_id = $1 AND ls.user_id IS NOT NULL ORDER BY slot_number',
+                [eventId]
+            );
+
+            // Calculate and notify for each affected slot
+            for (const slot of slots.rows) {
+                const oldStartTime = calculateSlotStartTime(
+                    originalEvent.rows[0].start_time,
+                    slot.slot_number,
+                    originalEvent.rows[0].slot_duration,
+                    originalEvent.rows[0].setup_duration
+                );
+
+                const newStartTime = calculateSlotStartTime(
+                    start_time || originalEvent.rows[0].start_time,
+                    slot.slot_number,
+                    slot_duration || originalEvent.rows[0].slot_duration,
+                    setup_duration || originalEvent.rows[0].setup_duration
+                );
+
+                if (oldStartTime.getTime() !== newStartTime.getTime()) {
+                    await createNotification(
+                        slot.user_id,
+                        'slot_time_change',
+                        `Your slot time for "${originalEvent.rows[0].name}" has changed from ${oldStartTime.toLocaleTimeString()} to ${newStartTime.toLocaleTimeString()}`,
+                        eventId,
+                        slot.id,
+                        req
+                    );
                 }
             }
         }
@@ -357,7 +399,8 @@ router.put('/:eventId', async (req, res) => {
                 additional_info,
                 image,
                 types
-            }
+            },
+            notification: notificationData
         };
 
         req.app.locals.broadcastLineupUpdate(updateData);
@@ -443,7 +486,6 @@ router.put('/:eventId/extend', async (req, res) => {
         );
 
         // Create notifications for all users in the lineup
-        const { createNotification } = require('../utils/notifications');
         for (const user of lineupUsers.rows) {
             try {
                 await createNotification(

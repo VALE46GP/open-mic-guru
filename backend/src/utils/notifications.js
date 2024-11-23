@@ -1,6 +1,6 @@
 const db = require('../db');
 
-async function createNotification(userId, type, message, eventId = null, lineupSlotId = null) {
+async function createNotification(userId, type, message, eventId = null, lineupSlotId = null, req = null) {
     try {
         // Check user's notification preferences
         const prefsResult = await db.query(
@@ -60,14 +60,14 @@ async function createNotification(userId, type, message, eventId = null, lineupS
         `, [result.rows[0].id]);
 
         // Broadcast the notification
-        if (global.app && global.app.locals.broadcastNotification) {
+        if (req && req.app && req.app.locals.broadcastNotification) {
             const notificationPayload = {
                 type: 'NOTIFICATION_UPDATE',
                 userId: userId,
                 notification: notificationData.rows[0]
             };
             console.log('Broadcasting notification:', notificationPayload);
-            global.app.locals.broadcastNotification(notificationPayload);
+            req.app.locals.broadcastNotification(notificationPayload);
         }
 
         return result.rows[0];

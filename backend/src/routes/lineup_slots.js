@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const db = require('../db');
 const { createNotification } = require('../utils/notifications');
+const { calculateSlotStartTime, hasTimeRelatedChanges } = require('../utils/timeCalculations');
 
 // POST a new lineup slot
 router.post('/', async (req, res) => {
@@ -261,17 +262,49 @@ router.put('/reorder', async (req, res) => {
     const { slots } = req.body;
 
     try {
-        // Get event_id for the first slot to use in broadcast
+        // Get event details
         const eventQuery = await db.query(
-            'SELECT event_id FROM lineup_slots WHERE id = $1',
+            'SELECT e.* FROM events e JOIN lineup_slots ls ON e.id = ls.event_id WHERE ls.id = $1',
             [slots[0].slot_id]
         );
-        const eventId = eventQuery.rows[0].event_id;
+        const event = eventQuery.rows[0];
 
         // Use a transaction to ensure all updates succeed or none do
         await db.query('BEGIN');
 
         for (const slot of slots) {
+            const oldSlotQuery = await db.query(
+                'SELECT slot_number, user_id FROM lineup_slots WHERE id = $1',
+                [slot.slot_id]
+            );
+            const oldSlot = oldSlotQuery.rows[0];
+
+            if (oldSlot.slot_number !== slot.slot_number && oldSlot.user_id) {
+                const oldStartTime = calculateSlotStartTime(
+                    event.start_time,
+                    oldSlot.slot_number,
+                    event.slot_duration,
+                    event.setup_duration
+                );
+
+                const newStartTime = calculateSlotStartTime(
+                    event.start_time,
+                    slot.slot_number,
+                    event.slot_duration,
+                    event.setup_duration
+                );
+
+                if (oldStartTime.getTime() !== newStartTime.getTime()) {
+                    await createNotification(
+                        oldSlot.user_id,
+                        'slot_time_change',
+                        `Your slot time for "${event.name}" has changed from ${oldStartTime.toLocaleTimeString()} to ${newStartTime.toLocaleTimeString()}`,
+                        event.id,
+                        slot.slot_id
+                    );
+                }
+            }
+
             await db.query(
                 'UPDATE lineup_slots SET slot_number = $1 WHERE id = $2',
                 [slot.slot_number, slot.slot_id]
@@ -283,13 +316,12 @@ router.put('/reorder', async (req, res) => {
         // Broadcast the update via WebSocket
         const lineupData = {
             type: 'LINEUP_UPDATE',
-            eventId: eventId,
+            eventId: event.id,
             action: 'REORDER',
             data: { slots }
         };
 
         req.app.locals.broadcastLineupUpdate(lineupData);
-
         res.json({ message: 'Slots reordered successfully' });
     } catch (err) {
         await db.query('ROLLBACK');

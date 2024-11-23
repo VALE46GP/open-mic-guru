@@ -74,7 +74,13 @@ export function NotificationsProvider({ children }) {
                 }
                 
                 if (data.type === 'EVENT_UPDATE' && data.eventId) {
+                    console.log('Received EVENT_UPDATE, refreshing notifications');
                     fetchNotifications();
+                    if (data.notification) {
+                        console.log('Adding new notification from EVENT_UPDATE:', data.notification);
+                        setNotifications(prev => [data.notification, ...prev]);
+                        setUnreadCount(prev => prev + 1);
+                    }
                 }
                 
                 if (data.type === 'NOTIFICATION_DELETE' && data.userId === getUserId()) {
