@@ -49,34 +49,25 @@ export function NotificationsProvider({ children }) {
                 if ((data.type === 'NOTIFICATION_UPDATE' || data.type === 'NEW_NOTIFICATION') 
                     && data.userId === getUserId()) {
                     console.log('Adding new notification:', data.notification);
-                    setNotifications(prev => [data.notification, ...prev]);
-                    setUnreadCount(prev => prev + 1);
-                }
-                
-                if (data.type === 'LINEUP_UPDATE') {
-                    console.log('Received lineup update, refreshing notifications');
-                    fetchNotifications();
-                }
-                
-                if (data.type === 'EVENT_UPDATE' && data.eventId) {
-                    console.log('Received EVENT_UPDATE, refreshing notifications');
-                    fetchNotifications();
-                    if (data.notification) {
-                        console.log('Adding new notification from EVENT_UPDATE:', data.notification);
-                        setNotifications(prev => [data.notification, ...prev]);
+                    setNotifications(prev => {
+                        // Check if notification already exists
+                        const exists = prev.some(n => n.id === data.notification.id);
+                        if (exists) {
+                            return prev.map(n => 
+                                n.id === data.notification.id ? data.notification : n
+                            );
+                        }
+                        return [data.notification, ...prev];
+                    });
+                    if (!data.notification.is_read) {
                         setUnreadCount(prev => prev + 1);
                     }
                 }
                 
-                if (data.type === 'NOTIFICATION_DELETE' && data.userId === getUserId()) {
-                    console.log('Deleting notifications:', data.notificationIds);
-                    setNotifications(prev => Array.isArray(prev) ? prev.filter(n => !data.notificationIds.includes(n.id)) : []);
-                    setUnreadCount(prev => {
-                        const deletedUnreadCount = notifications
-                            .filter(n => data.notificationIds.includes(n.id) && !n.is_read)
-                            .length;
-                        return Math.max(0, prev - deletedUnreadCount);
-                    });
+                if (data.type === 'LINEUP_UPDATE' || 
+                    (data.type === 'EVENT_UPDATE' && data.eventId)) {
+                    console.log('Received update, refreshing notifications');
+                    fetchNotifications();
                 }
             } catch (error) {
                 console.error('Error processing WebSocket message:', error);

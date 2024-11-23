@@ -23,18 +23,23 @@ function NotificationsPage() {
             if (!notification.event_id) return acc;
 
             if (!acc[notification.event_id]) {
+                // Get the performer notification for this event (if any)
+                const performerNotification = notifications.find(
+                    n => n.event_id === notification.event_id && n.is_performer
+                );
+
                 acc[notification.event_id] = {
                     event: {
                         event_id: notification.event_id,
                         event_name: notification.event_name,
-                        name: notification.event_name, // EventCard expects 'name'
+                        name: notification.event_name,
                         start_time: notification.event_start_time,
                         venue_name: notification.venue_name || 'Unknown Venue',
                         host_name: notification.host_name || 'Unknown Host',
                         event_image: notification.event_image,
                         is_host: notification.is_host,
-                        is_performer: notification.is_performer,
-                        performer_slot_time: notification.performer_slot_time
+                        is_performer: performerNotification ? true : false,
+                        performer_slot_time: performerNotification ? performerNotification.performer_slot_time : null
                     },
                     notifications: [],
                     unreadCount: 0
