@@ -99,48 +99,6 @@
         &:hover
             background-color: #218838
 
-    &__submit-button
-        flex: 1
-        background-color: #007bff
-        color: #fff
-        padding: 0.75rem
-        font-size: 1rem
-        border: none
-        border-radius: 4px
-        cursor: pointer
-        text-align: center
-        &:hover
-            background-color: #0056b3
-
-    &__success-message
-        color: green
-        margin-top: 1rem
-        text-align: center
-
-    &__error-message
-        color: red
-        margin-top: 1rem
-        text-align: center
-
-    &__button-group
-        display: flex
-        justify-content: center
-        gap: 1rem
-        margin: 2rem 0
-
-    &__cancel-button
-        flex: 1
-        background-color: #6c757d
-        color: #fff
-        padding: 0.75rem
-        font-size: 1rem
-        border: none
-        border-radius: 4px
-        cursor: pointer
-        text-align: center
-        &:hover
-            background-color: #5a6268
-
     &__input-group
         width: 100%
         margin-bottom: 1rem
@@ -158,3 +116,43 @@
         color: red
         margin: -0.5rem 0 1rem 0
         font-size: 0.9rem
+
+    &__button-group
+        display: flex
+        justify-content: center
+        gap: 1rem
+        margin-top: 1rem
+        width: 100%
+
+    &__submit-button,
+    &__cancel-button
+        padding: 0.5rem 1rem
+        border-radius: 4px
+        font-weight: 500
+        cursor: pointer
+        border: none
+        transition: background-color 0.2s ease
+
+    &__submit-button
+        background-color: #007bff
+        color: white
+        
+        &:hover
+            background-color: #0056b3
+
+    &__cancel-button
+        background-color: #dc3545
+        color: white
+        
+        &:hover
+            background-color: #c82333
+
+    &__success-message
+        color: green
+        margin-top: 1rem
+        text-align: center
+
+    &__error-message
+        color: red
+        margin-top: 1rem
+        text-align: center
