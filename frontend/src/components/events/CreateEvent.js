@@ -88,7 +88,7 @@ function CreateEvent() {
                         });
                     }
                     setAdditionalInfo(data.event?.additional_info || '');
-                    setEventTypes(data.event?.types || []);
+                    setEventTypes(data.event?.event_types || []);
                 } catch (error) {
                     console.error('Error fetching event details:', error);
                 }
@@ -176,7 +176,7 @@ function CreateEvent() {
             additional_info: additionalInfo,
             host_id: getUserId(),
             image: imageUrl,
-            types: eventTypes
+            event_types: eventTypes
         };
 
         try {

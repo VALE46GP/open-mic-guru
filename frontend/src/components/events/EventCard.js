@@ -52,6 +52,13 @@ function EventCard({ event, slotTime }) {
                                 })}
                                 </span>
                             )}
+                            {event.event_types && event.event_types.length > 0 && (
+                                <span className="event-card__meta-item">
+                                    {event.event_types.map(type =>
+                                        type.charAt(0).toUpperCase() + type.slice(1).replace('_', ' ')
+                                    ).join(', ')}
+                                </span>
+                            )}
                         </div>
                     </div>
                 </BorderBox>

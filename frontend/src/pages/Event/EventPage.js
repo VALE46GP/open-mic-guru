@@ -307,9 +307,9 @@ function EventPage() {
                         }
                     </span>
                 </p>
-                {eventDetails?.event?.types && eventDetails.event.types.length > 0 && (
+                {eventDetails?.event?.event_types && eventDetails.event.event_types.length > 0 && (
                     <div className="event-page__info">
-                        <p>Event Type: {eventDetails.event.types.map(type =>
+                        <p>Event Type: {eventDetails.event.event_types.map(type =>
                             type.charAt(0).toUpperCase() + type.slice(1).replace('_', ' ')
                         ).join(', ')}
                         </p>
