@@ -39,7 +39,8 @@ function NotificationsPage() {
                         event_image: notification.event_image,
                         is_host: notification.is_host,
                         is_performer: performerNotification ? true : false,
-                        performer_slot_time: performerNotification ? performerNotification.performer_slot_time : null
+                        performer_slot_time: performerNotification ? performerNotification.performer_slot_time : null,
+                        event_types: notification.event_types
                     },
                     notifications: [],
                     unreadCount: 0

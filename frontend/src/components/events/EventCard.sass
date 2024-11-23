@@ -41,6 +41,9 @@
         color: #666
         text-decoration: none
 
+        &--type
+            font-weight: 600
+
     &__venue-link
         color: #0066cc
         text-decoration: none
@@ -105,11 +108,14 @@
     &__image-container
         flex-shrink: 0
         border-radius: 8px
-        height: 110px
+        height: 130px
         width: auto
         aspect-ratio: 1
         max-height: 100%
         overflow: hidden
+
+        @media (max-width: 500px)
+            height: 110px
 
     &__image
         aspect-ratio: 1

@@ -30,6 +30,13 @@ function EventCard({ event, slotTime }) {
                             <div className="event-card__title">
                                 {event.event_name}
                             </div>
+                            {event.event_types && event.event_types.length > 0 && (
+                                <span className="event-card__meta-item event-card__meta-item--type">
+                                    {event.event_types.map(type =>
+                                        type.charAt(0).toUpperCase() + type.slice(1).replace('_', ' ')
+                                    ).join(', ')}
+                                </span>
+                            )}
                             <span className="event-card__meta-item">
                                 {event.venue_name || 'Unknown Venue'}
                             </span>
@@ -50,13 +57,6 @@ function EventCard({ event, slotTime }) {
                                     hour: '2-digit',
                                     minute: '2-digit'
                                 })}
-                                </span>
-                            )}
-                            {event.event_types && event.event_types.length > 0 && (
-                                <span className="event-card__meta-item">
-                                    {event.event_types.map(type =>
-                                        type.charAt(0).toUpperCase() + type.slice(1).replace('_', ' ')
-                                    ).join(', ')}
                                 </span>
                             )}
                         </div>

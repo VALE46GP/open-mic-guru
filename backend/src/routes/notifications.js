@@ -33,6 +33,7 @@ router.get('/', verifyToken, async (req, res) => {
                 e.image as event_image,
                 e.slot_duration,
                 e.setup_duration,
+                e.types as event_types,
                 v.name as venue_name,
                 u.name as host_name,
                 u.image as host_image,
