@@ -6,7 +6,7 @@ import VenueAutocomplete from '../../components/shared/VenueAutocomplete';
 import EventSearch from '../../components/shared/EventSearch';
 import BorderBox from '../../components/shared/BorderBox/BorderBox';
 import './EventsPage.sass';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 
 const EventsPage = () => {
     const [events, setEvents] = useState([]);
@@ -18,6 +18,7 @@ const EventsPage = () => {
     const [showPastEvents, setShowPastEvents] = useState(false);
     const { getUserId } = useAuth();
     const userId = getUserId();
+    const navigate = useNavigate();
 
     useEffect(() => {
         const fetchEvents = async () => {
@@ -184,14 +185,14 @@ const EventsPage = () => {
                     {selectedEvents.length > 0 && (
                         <div className="events-page__selected-events">
                             {selectedEvents.map(event => (
-                                <Link to={`/events/${event.event_id}`} key={`selected-${event.event_id}`}>
-                                    <EventCard
-                                        event={event}
-                                        placeholder="Filter by location"
-                                        slotTime={event.is_performer ? event.performer_slot_time : null}
-                                        compact={true}
-                                    />
-                                </Link>
+                                <EventCard
+                                    key={`selected-${event.event_id}`}
+                                    event={event}
+                                    placeholder="Filter by location"
+                                    slotTime={event.is_performer ? event.performer_slot_time : null}
+                                    compact={true}
+                                    onClick={() => navigate(`/events/${event.event_id}`)}
+                                />
                             ))}
                         </div>
                     )}
