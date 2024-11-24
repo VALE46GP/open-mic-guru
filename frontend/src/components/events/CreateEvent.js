@@ -29,6 +29,9 @@ function CreateEvent() {
     const [eventImage, setEventImage] = useState(null);
     const [imagePreview, setImagePreview] = useState(null);
     const [eventTypes, setEventTypes] = useState([]);
+    const [isEventActive, setIsEventActive] = useState(true);
+    const [showStatusModal, setShowStatusModal] = useState(false);
+    const [pendingStatusChange, setPendingStatusChange] = useState(false);
 
     const EVENT_TYPE_OPTIONS = [
         { label: 'Music', value: 'music' },
@@ -89,6 +92,7 @@ function CreateEvent() {
                     }
                     setAdditionalInfo(data.event?.additional_info || '');
                     setEventTypes(data.event?.event_types || []);
+                    setIsEventActive(data.event?.active ?? true);
                 } catch (error) {
                     console.error('Error fetching event details:', error);
                 }
@@ -146,6 +150,16 @@ function CreateEvent() {
             return;
         }
 
+        // If there's a pending status change, show the confirmation modal
+        if (pendingStatusChange) {
+            setShowStatusModal(true);
+            return;
+        }
+
+        await saveEvent();
+    };
+
+    const saveEvent = async () => {
         let venueId = await checkOrCreateVenue(selectedVenue);
         let imageUrl = eventImage;
 
@@ -160,7 +174,6 @@ function CreateEvent() {
                 });
                 const data = await response.json();
                 
-                // Handle S3 upload
                 await axios.put(data.uploadURL, eventImage, {
                     headers: { 'Content-Type': eventImage.type }
                 });
@@ -187,7 +200,8 @@ function CreateEvent() {
                     additional_info: additionalInfo,
                     host_id: getUserId(),
                     image: imageUrl,
-                    types: eventTypes
+                    types: eventTypes,
+                    active: pendingStatusChange ? !isEventActive : isEventActive
                 })
             });
 
@@ -197,6 +211,8 @@ function CreateEvent() {
             }
 
             const data = await response.json();
+            setShowStatusModal(false);
+            setPendingStatusChange(false);
             navigate(`/events/${isEditMode ? eventId : data.id}`);
         } catch (error) {
             console.error('Error saving event:', error);
@@ -232,6 +248,14 @@ function CreateEvent() {
             return null;
         }
     }
+
+    const handleEventStatusToggle = () => {
+        setPendingStatusChange(true);
+    };
+
+    const handleConfirmStatusChange = async () => {
+        await saveEvent();
+    };
 
     return (
         <div className="create-event">
@@ -381,11 +405,64 @@ function CreateEvent() {
                 </BorderBox>
             </div>
             <div className="create-event__button-container">
-                <button className="create-event__submit-button"
-                        onClick={handleSubmit}>{isEditMode ? 'Save' : 'Submit'}</button>
-                {isEditMode && <button className="create-event__cancel-button"
-                                       onClick={() => navigate(-1)}>Cancel</button>}
+                {isEditMode && (
+                    <button 
+                        className={`create-event__status-button ${
+                            isEventActive ? 'create-event__status-button--cancel' : 'create-event__status-button--reinstate'
+                        }`}
+                        onClick={handleEventStatusToggle}
+                    >
+                        {isEventActive ? 'Cancel Event' : 'Reinstate Event'}
+                    </button>
+                )}
+                <button 
+                    className="create-event__submit-button"
+                    onClick={handleSubmit}
+                >
+                    {isEditMode ? 'Save' : 'Submit'}
+                </button>
+                {isEditMode && (
+                    <button 
+                        className="create-event__cancel-button"
+                        onClick={() => navigate(-1)}
+                    >
+                        Cancel
+                    </button>
+                )}
             </div>
+            {showStatusModal && (
+                <div className="create-event__modal">
+                    <div className="create-event__modal-content">
+                        <h4>
+                            {isEventActive 
+                                ? 'Are you sure you want to cancel this event?' 
+                                : 'Are you sure you want to reinstate this event?'}
+                        </h4>
+                        <p>
+                            {isEventActive 
+                                ? 'This will notify all participants that the event has been cancelled.' 
+                                : 'This will notify all participants that the event has been reinstated.'}
+                        </p>
+                        <div className="create-event__modal-buttons">
+                            <button 
+                                className="create-event__modal-button create-event__modal-button--confirm"
+                                onClick={handleConfirmStatusChange}
+                            >
+                                Confirm
+                            </button>
+                            <button 
+                                className="create-event__modal-button create-event__modal-button--cancel"
+                                onClick={() => {
+                                    setShowStatusModal(false);
+                                    setPendingStatusChange(false);
+                                }}
+                            >
+                                Cancel
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

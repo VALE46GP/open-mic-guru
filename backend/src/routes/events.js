@@ -70,6 +70,10 @@ function getUpdateMessage(originalEvent, updatedFields) {
         }
     }
 
+    if (updatedFields.active !== undefined && updatedFields.active !== originalEvent.active) {
+        changes.push(updatedFields.active ? 'Event has been reinstated' : 'Event has been cancelled');
+    }
+
     return changes.join(', ');
 }
 
@@ -149,6 +153,7 @@ router.get('/:eventId', async (req, res) => {
                    e.additional_info,
                    e.types AS event_types,
                    e.image     AS event_image,
+                   e.active,
                    v.id        AS venue_id,
                    v.name      AS venue_name,
                    v.address   AS venue_address,
@@ -202,7 +207,8 @@ router.get('/:eventId', async (req, res) => {
                 setup_duration: eventData.setup_duration,
                 additional_info: eventData.additional_info,
                 image: eventData.event_image,
-                event_types: eventData.event_types
+                event_types: eventData.event_types,
+                active: eventData.active
             },
             venue: {
                 id: eventData.venue_id,
@@ -299,7 +305,8 @@ router.patch('/:eventId', verifyToken, async (req, res) => {
             venue_id,
             additional_info,
             image,
-            types
+            types,
+            active
         } = req.body;
 
         if (start_time && end_time && new Date(start_time) >= new Date(end_time)) {
@@ -308,7 +315,7 @@ router.patch('/:eventId', verifyToken, async (req, res) => {
 
         // Get the original event details to check what changed
         const originalEvent = await db.query(
-            'SELECT name, venue_id, start_time, end_time, slot_duration, setup_duration, types FROM events WHERE id = $1',
+            'SELECT name, venue_id, start_time, end_time, slot_duration, setup_duration, types, active FROM events WHERE id = $1',
             [eventId]
         );
 
@@ -324,7 +331,7 @@ router.patch('/:eventId', verifyToken, async (req, res) => {
         const fields = {
             name, start_time, end_time, slot_duration, 
             setup_duration, venue_id, additional_info, 
-            image, types
+            image, types, active
         };
 
         for (const [key, value] of Object.entries(fields)) {
@@ -358,7 +365,8 @@ router.patch('/:eventId', verifyToken, async (req, res) => {
             ...(venue_id !== undefined && { venue_id }),
             ...(slot_duration !== undefined && { slot_duration }),
             ...(setup_duration !== undefined && { setup_duration }),
-            ...(types !== undefined && { types })
+            ...(types !== undefined && { types }),
+            ...(active !== undefined && { active })
         });
 
         if (updateMessage) {
