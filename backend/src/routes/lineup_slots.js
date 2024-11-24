@@ -156,7 +156,8 @@ router.post('/', async (req, res) => {
                 'lineup_signup',
                 `${slotUserName} has signed up for slot ${slot_number}`,
                 event_id,
-                result.rows[0].slot_id
+                result.rows[0].slot_id,
+                req
             );
         } catch (err) {
             console.error('Failed to create notification:', err);
@@ -222,7 +223,8 @@ router.delete('/:slotId', async (req, res) => {
                 'lineup_unsign',
                 `${slotUserName} has been removed from slot ${slot.slot_number}`,
                 slot.event_id,
-                slotId
+                slotId,
+                req
             );
         } catch (err) {
             console.error('Failed to create notification for host:', err);
