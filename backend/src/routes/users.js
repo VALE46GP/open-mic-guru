@@ -20,28 +20,48 @@ const s3 = new AWS.S3();
 router.get('/', async (req, res) => {
     try {
         const result = await db.query(`
-            SELECT users.id,
-                   users.name,
-                   users.image,
-                   users.social_media_accounts,
-                   CASE
-                       WHEN EXISTS(
-                               SELECT 1
-                               FROM events
-                               WHERE events.host_id = users.id
-                           ) THEN true
-                       ELSE false
-                       END AS is_host,
-                   CASE
-                       WHEN EXISTS(
-                               SELECT 1
-                               FROM lineup_slots
-                               WHERE lineup_slots.user_id = users.id
-                           ) THEN true
-                       ELSE false
-                       END AS is_performer
+            WITH user_event_types AS (
+                SELECT DISTINCT 
+                    u.id as user_id,
+                    unnest(e.types) as event_type
+                FROM users u
+                LEFT JOIN events e ON e.host_id = u.id
+                WHERE e.types IS NOT NULL
+                
+                UNION
+                
+                SELECT DISTINCT 
+                    ls.user_id,
+                    unnest(e.types) as event_type
+                FROM lineup_slots ls
+                JOIN events e ON e.id = ls.event_id
+                WHERE e.types IS NOT NULL
+            )
+            SELECT 
+                users.id,
+                users.name,
+                users.image,
+                users.social_media_accounts,
+                CASE
+                    WHEN EXISTS(
+                        SELECT 1
+                        FROM events
+                        WHERE events.host_id = users.id
+                    ) THEN true
+                    ELSE false
+                END AS is_host,
+                CASE
+                    WHEN EXISTS(
+                        SELECT 1
+                        FROM lineup_slots
+                        WHERE lineup_slots.user_id = users.id
+                    ) THEN true
+                    ELSE false
+                END AS is_performer,
+                array_agg(DISTINCT uet.event_type) FILTER (WHERE uet.event_type IS NOT NULL) as event_types
             FROM users
-            GROUP BY users.id
+            LEFT JOIN user_event_types uet ON users.id = uet.user_id
+            GROUP BY users.id, users.name, users.image, users.social_media_accounts
         `);
         res.json(result.rows);
     } catch (err) {
@@ -162,6 +182,7 @@ router.get('/:userId', async (req, res) => {
                             e.end_time,
                             e.slot_duration,
                             e.additional_info,
+                            e.types AS event_types,
                             v.id    AS venue_id,
                             v.name  AS venue_name,
                             u.name  AS host_name,

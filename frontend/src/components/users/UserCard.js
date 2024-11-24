@@ -10,6 +10,8 @@ function UserCard({ user }) {
         return platform ? platform.icon : null;
     };
 
+    const uniqueEventTypes = user.event_types || [];
+
     return (
         <Link to={`/users/${user.id}`} className="user-card__link">
             <div className="user-card__wrapper">
@@ -36,6 +38,15 @@ function UserCard({ user }) {
                             <div className="user-card__name">
                                 {user.name}
                             </div>
+                            {uniqueEventTypes.length > 0 && (
+                                <div className="user-card__event-types">
+                                    {uniqueEventTypes.map(type => (
+                                        <span key={type} className="user-card__event-type">
+                                            {type.charAt(0).toUpperCase() + type.slice(1).replace('_', ' ')}
+                                        </span>
+                                    ))}
+                                </div>
+                            )}
                             {user.social_media_accounts && user.social_media_accounts.length > 0 && (
                                 <div className="user-card__social-media">
                                     {user.social_media_accounts.map((account, index) => {
