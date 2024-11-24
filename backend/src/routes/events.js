@@ -236,8 +236,9 @@ router.get('/:eventId', async (req, res) => {
 });
 
 // POST a new event
-router.post('/', async (req, res) => {
+router.post('/', verifyToken, async (req, res) => {
     try {
+        const userId = req.user.userId;
         const {
             venue_id,
             start_time,
@@ -246,10 +247,12 @@ router.post('/', async (req, res) => {
             setup_duration = 5,
             name,
             additional_info,
-            host_id,
             image,
             types
         } = req.body;
+
+        // Since this is a new event, the user creating it will be the host
+        const host_id = userId;
 
         if (new Date(start_time) >= new Date(end_time)) {
             return res.status(400).json({ error: 'Start time must be before end time' });
@@ -268,21 +271,37 @@ router.post('/', async (req, res) => {
 });
 
 // PATCH an existing event
-router.patch('/:eventId', async (req, res) => {
+router.patch('/:eventId', verifyToken, async (req, res) => {
     const { eventId } = req.params;
-    const {
-        name,
-        start_time,
-        end_time,
-        slot_duration,
-        setup_duration,
-        venue_id,
-        additional_info,
-        image,
-        types
-    } = req.body;
+    const userId = req.user.userId;
 
     try {
+        // Check if user is the host
+        const hostCheck = await db.query(
+            'SELECT host_id FROM events WHERE id = $1',
+            [eventId]
+        );
+
+        if (hostCheck.rows.length === 0) {
+            return res.status(404).json({ error: 'Event not found' });
+        }
+
+        if (hostCheck.rows[0].host_id !== userId) {
+            return res.status(403).json({ error: 'Only the host can modify this event' });
+        }
+
+        const {
+            name,
+            start_time,
+            end_time,
+            slot_duration,
+            setup_duration,
+            venue_id,
+            additional_info,
+            image,
+            types
+        } = req.body;
+
         if (start_time && end_time && new Date(start_time) >= new Date(end_time)) {
             return res.status(400).json({ error: 'Start time must be before end time' });
         }
@@ -415,19 +434,24 @@ router.delete('/:eventId', verifyToken, async (req, res) => {
 });
 
 // Add new endpoint for extending event duration
-router.put('/:eventId/extend', async (req, res) => {
+router.put('/:eventId/extend', verifyToken, async (req, res) => {
     const { eventId } = req.params;
+    const userId = req.user.userId;
     const { additional_slots } = req.body;
 
     try {
-        // Get current event details
+        // Check if user is the host
         const eventQuery = await db.query(
-            'SELECT end_time, slot_duration, setup_duration, name FROM events WHERE id = $1',
+            'SELECT host_id, end_time, slot_duration, setup_duration, name FROM events WHERE id = $1',
             [eventId]
         );
 
         if (eventQuery.rows.length === 0) {
             return res.status(404).json({ error: 'Event not found' });
+        }
+
+        if (eventQuery.rows[0].host_id !== userId) {
+            return res.status(403).json({ error: 'Only the host can modify this event' });
         }
 
         const event = eventQuery.rows[0];

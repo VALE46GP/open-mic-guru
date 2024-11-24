@@ -21,7 +21,7 @@ function CreateEvent() {
     const [selectedVenue, setSelectedVenue] = useState(null);
     const [additionalInfo, setAdditionalInfo] = useState('');
     const [resetTrigger, setResetTrigger] = useState(false);
-    const { getUserId } = useAuth();
+    const { getToken, getUserId } = useAuth();
     const navigate = useNavigate();
     const isEditMode = !!eventId;
     const [isGoogleMapsLoaded, setIsGoogleMapsLoaded] = useState(false);
@@ -146,6 +146,12 @@ function CreateEvent() {
             return;
         }
 
+        const token = getToken();
+        if (!token) {
+            alert("You must be logged in to create or edit an event");
+            return;
+        }
+
         let venueId = await checkOrCreateVenue(selectedVenue);
 
         let imageUrl = eventImage;
@@ -154,6 +160,10 @@ function CreateEvent() {
                 const { data } = await axios.post('/api/events/upload', {
                     fileName: eventImage.name,
                     fileType: eventImage.type
+                }, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
                 });
 
                 await axios.put(data.uploadURL, eventImage, {
@@ -187,13 +197,22 @@ function CreateEvent() {
                 method: method,
                 headers: {
                     'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
                 },
                 body: JSON.stringify(requestBody)
             });
+
+            if (!response.ok) {
+                const error = await response.json();
+                alert(error.error || 'Failed to save event');
+                return;
+            }
+
             const data = await response.json();
             navigate(`/events/${isEditMode ? eventId : data.id}`);
         } catch (error) {
             console.error('Error saving event:', error);
+            alert('Failed to save event');
         }
     };
 
