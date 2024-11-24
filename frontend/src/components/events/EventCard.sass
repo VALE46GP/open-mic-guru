@@ -4,6 +4,15 @@
     background: white
     padding: 0.75rem
     width: 100%
+    overflow: hidden
+
+    &--cancelled
+        opacity: .75
+        filter: saturate(50%)
+        background-color: rgba(#ff8787, .2)
+
+        .event-card__content
+            filter: saturate(0%)
 
     &__link
         text-decoration: none
@@ -122,3 +131,13 @@
         height: 100%
         object-fit: cover
         object-position: center
+
+    &__status-banner
+        background-color: #dc3545
+        color: white
+        text-align: center
+        padding: 0.25rem
+        font-weight: 600
+        font-size: 0.9rem
+        border-radius: 4px
+        margin-bottom: 0.25rem

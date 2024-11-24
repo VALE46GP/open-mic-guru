@@ -14,7 +14,7 @@ function EventCard({ event, slotTime }) {
                             <span className="event-card__role-badge performer">Performer</span>}
                     </div>
                 )}
-                <BorderBox className="event-card">
+                <BorderBox className={`event-card ${!event.active ? 'event-card--cancelled' : ''}`}>
                     <div className="event-card__content">
                         {event.event_image && (
                             <div className="event-card__image-container">
@@ -25,8 +25,12 @@ function EventCard({ event, slotTime }) {
                                 />
                             </div>
                         )}
-                        <div
-                            className={`event-card__details ${event.event_image ? 'event-card__details--with-image' : ''}`}>
+                        <div className={`event-card__details ${event.event_image ? 'event-card__details--with-image' : ''}`}>
+                            {!event.active && (
+                                <div className="event-card__status-banner">
+                                    Cancelled
+                                </div>
+                            )}
                             <div className="event-card__title">
                                 {event.event_name}
                             </div>
@@ -54,9 +58,9 @@ function EventCard({ event, slotTime }) {
                             {slotTime && (
                                 <span className="event-card__meta-item event-card__slot-time">
                                     Slot time: {new Date(slotTime).toLocaleTimeString([], {
-                                    hour: '2-digit',
-                                    minute: '2-digit'
-                                })}
+                                        hour: '2-digit',
+                                        minute: '2-digit'
+                                    })}
                                 </span>
                             )}
                         </div>

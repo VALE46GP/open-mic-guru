@@ -33,6 +33,7 @@ const EventsPage = () => {
                     ...event,
                     is_host: userId ? event.host_id === userId : false,
                     is_performer: userId ? event.performers?.includes(userId) : false,
+                    active: event.active === undefined ? true : event.active
                 }));
 
                 const sortedEvents = processedEvents.sort(

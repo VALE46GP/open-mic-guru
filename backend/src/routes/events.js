@@ -90,6 +90,7 @@ router.get('/', async (req, res) => {
                             e.additional_info,
                             e.types AS event_types,
                             e.image     AS event_image,
+                            e.active,
                             v.id        AS venue_id,
                             v.name      AS venue_name,
                             v.address   AS venue_address,

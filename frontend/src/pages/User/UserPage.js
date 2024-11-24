@@ -17,7 +17,17 @@ function UserPage() {
         const fetchUserData = async () => {
             const response = await fetch(`/api/users/${userId}`);
             const data = await response.json();
-            setUserData(data);
+            
+            // Process events to ensure they have the active property
+            const processedData = {
+                ...data,
+                events: data.events.map(eventData => ({
+                    ...eventData.event,
+                    ...eventData
+                }))
+            };
+            
+            setUserData(processedData);
         };
         fetchUserData();
     }, [userId]);

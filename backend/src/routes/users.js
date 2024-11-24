@@ -175,39 +175,41 @@ router.get('/:userId', async (req, res) => {
 
         // Fetch both hosted events and events where user is in lineup
         const eventsQuery = await db.query(`
-            SELECT DISTINCT e.id    AS event_id,
-                            e.name  AS event_name,
-                            e.image AS event_image,
-                            e.start_time,
-                            e.end_time,
-                            e.slot_duration,
-                            e.additional_info,
-                            e.types AS event_types,
-                            v.id    AS venue_id,
-                            v.name  AS venue_name,
-                            u.name  AS host_name,
-                            CASE
-                                WHEN e.host_id = $1 THEN true
-                                ELSE false
-                                END AS is_host,
-                            CASE
-                                WHEN ls.user_id IS NOT NULL THEN true
-                                ELSE false
-                                END AS is_performer,
-                            ls.slot_number,
-                            e.slot_duration,
-                            e.setup_duration,
-                            e.start_time +
-                            (INTERVAL '1 minute' * (ls.slot_number - 1) *
-                                (EXTRACT (EPOCH FROM e.slot_duration + e.setup_duration) / 60)
-                                )   AS performer_slot_time
+            SELECT DISTINCT 
+                e.id AS event_id,
+                e.name AS event_name,
+                e.image AS event_image,
+                e.start_time,
+                e.end_time,
+                e.slot_duration,
+                e.additional_info,
+                e.types AS event_types,
+                e.active,
+                v.id AS venue_id,
+                v.name AS venue_name,
+                u.name AS host_name,
+                CASE
+                    WHEN e.host_id = $1 THEN true
+                    ELSE false
+                END AS is_host,
+                CASE
+                    WHEN ls.user_id IS NOT NULL THEN true
+                    ELSE false
+                END AS is_performer,
+                ls.slot_number,
+                e.slot_duration,
+                e.setup_duration,
+                e.start_time +
+                (INTERVAL '1 minute' * (ls.slot_number - 1) *
+                    (EXTRACT (EPOCH FROM e.slot_duration + e.setup_duration) / 60)
+                ) AS performer_slot_time
             FROM events e
-                     JOIN venues v ON e.venue_id = v.id
-                     JOIN users u ON e.host_id = u.id
-                     LEFT JOIN lineup_slots ls ON e.id = ls.event_id
-                AND ls.user_id = $1
+                JOIN venues v ON e.venue_id = v.id
+                JOIN users u ON e.host_id = u.id
+                LEFT JOIN lineup_slots ls ON e.id = ls.event_id
+                    AND ls.user_id = $1
             WHERE e.host_id = $1
-               OR ls.user_id = $1
+                OR ls.user_id = $1
             ORDER BY e.start_time DESC
         `, [userId]);
 
