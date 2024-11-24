@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
-import { FaPlus, FaSignInAlt, FaHome, FaUsers } from 'react-icons/fa';
+import { FaPlus, FaSignInAlt, FaCalendarAlt, FaUsers } from 'react-icons/fa';
 import NotificationIndicator from './NotificationIndicator';
 import './Navigation.sass';
 
@@ -33,7 +33,7 @@ const Navigation = () => {
                 className={`navigation ${isVisible ? 'navigation--visible' : 'navigation--hidden'}`}>
                 <div className="navigation__left">
                     <Link to="/" className="navigation__logo">
-                        <FaHome/>
+                        <FaCalendarAlt/>
                     </Link>
                 </div>
                 <div className="navigation__right">

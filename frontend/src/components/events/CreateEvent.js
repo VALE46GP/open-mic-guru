@@ -176,7 +176,7 @@ function CreateEvent() {
             additional_info: additionalInfo,
             host_id: getUserId(),
             image: imageUrl,
-            event_types: eventTypes
+            types: eventTypes
         };
 
         try {
