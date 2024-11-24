@@ -24,16 +24,19 @@ const EventsPage = () => {
         const fetchEvents = async () => {
             try {
                 const response = await fetch('/api/events');
+                if (!response.ok) {
+                    throw new Error('Failed to fetch events');
+                }
                 const eventsData = await response.json();
 
                 const processedEvents = eventsData.map(event => ({
                     ...event,
-                    is_host: event.host_id === userId,
-                    is_performer: event.performers?.includes(userId)
+                    is_host: userId ? event.host_id === userId : false,
+                    is_performer: userId ? event.performers?.includes(userId) : false,
                 }));
 
-                const sortedEvents = processedEvents.sort((a, b) =>
-                    new Date(a.start_time) - new Date(b.start_time)
+                const sortedEvents = processedEvents.sort(
+                    (a, b) => new Date(a.start_time) - new Date(b.start_time)
                 );
 
                 setEvents(sortedEvents);
@@ -95,21 +98,19 @@ const EventsPage = () => {
 
                     return bounds.contains(eventLocation);
                 });
-            } else {
-                console.warn('Location has no viewport; skipping viewport filtering.');
             }
         }
 
         return filtered;
     };
 
-    const handleSearch = (searchTerm) => {
+    const handleSearch = searchTerm => {
         setSearchTerm(searchTerm);
         setSelectedEvents([]);
         setFilteredEvents(filterEvents(events, searchTerm, selectedLocation));
     };
 
-    const handleLocationSelected = (place) => {
+    const handleLocationSelected = place => {
         if (!place || !place.geometry) return;
 
         const location = {
@@ -120,28 +121,22 @@ const EventsPage = () => {
                 ? place.geometry.location.lng()
                 : place.geometry.location.lng,
             address_components: place.address_components,
-            viewport: place.geometry.viewport
+            viewport: place.geometry.viewport,
         };
 
-        if (location.viewport) {
-            window.locationViewport = new window.google.maps.LatLngBounds(
-                location.viewport.getSouthWest(),
-                location.viewport.getNorthEast()
-            );
-        } else {
-            window.locationViewport = null;
-        }
-
         setSelectedLocation(location);
-        setSelectedEvents([]);
         setMapCenter({ lat: location.lat, lng: location.lng });
-        const filtered = filterEvents(events, searchTerm, location);
-        setFilteredEvents(filtered);
+        setFilteredEvents(filterEvents(events, searchTerm, location));
     };
 
-    const handleEventSelect = (selectedEvents) => {
+    const handleEventSelect = selectedEvents => {
         setSelectedEvents(selectedEvents);
     };
+
+    const futureEvents = filteredEvents.filter(event => new Date(event.start_time) >= new Date());
+    const pastEvents = filteredEvents
+        .filter(event => new Date(event.start_time) < new Date())
+        .sort((a, b) => new Date(b.start_time) - new Date(a.start_time));
 
     return (
         <div className="events-page">
@@ -155,19 +150,8 @@ const EventsPage = () => {
                             {showPastEvents ? "Hide Past Events" : "Show Past Events"}
                         </button>
                     </div>
-                    <EventsMap
-                        events={showPastEvents ? filteredEvents : filteredEvents.filter(event => new Date(event.start_time) >= new Date())}
-                        userId={userId}
-                        center={mapCenter}
-                        onEventSelect={handleEventSelect}
-                    />
                     <VenueAutocomplete
                         onPlaceSelected={handleLocationSelected}
-                        resetTrigger={false}
-                        onResetComplete={() => {
-                        }}
-                        placeholder="Filter by location"
-                        specificCoordinates={false}
                         onClear={() => {
                             setSelectedLocation(null);
                             setMapCenter(null);
@@ -176,21 +160,25 @@ const EventsPage = () => {
                     />
                     <EventSearch
                         onSearch={handleSearch}
-                        placeholder="Filter events by name, venue, or host"
                         onClear={() => {
                             setSearchTerm('');
                             setFilteredEvents(filterEvents(events, '', selectedLocation));
                         }}
                     />
+                    <EventsMap
+                        events={showPastEvents ? filteredEvents : futureEvents}
+                        userId={userId}
+                        center={mapCenter}
+                        onEventSelect={handleEventSelect}
+                        />
                     {selectedEvents.length > 0 && (
                         <div className="events-page__selected-events">
                             {selectedEvents.map(event => (
                                 <EventCard
                                     key={`selected-${event.event_id}`}
                                     event={event}
-                                    placeholder="Filter by location"
                                     slotTime={event.is_performer ? event.performer_slot_time : null}
-                                    compact={true}
+                                    compact
                                     onClick={() => navigate(`/events/${event.event_id}`)}
                                 />
                             ))}
@@ -200,40 +188,33 @@ const EventsPage = () => {
             </BorderBox>
             <h2 className="events-page__title">Upcoming Events</h2>
             <div className="events-page__grid">
-                {filteredEvents
-                    .filter(event => new Date(event.start_time) >= new Date())
-                    .length > 0 ? (
-                    filteredEvents
-                        .filter(event => new Date(event.start_time) >= new Date())
-                        .map(event => (
+                {futureEvents.length > 0 ? (
+                    futureEvents.map(event => (
+                        <EventCard
+                            key={`event-${event.event_id}`}
+                            event={event}
+                            slotTime={event.is_performer ? event.performer_slot_time : null}
+                        />
+                    ))
+                ) : (
+                    <div className="events-page__no-events">
+                        <p>No upcoming events found</p>
+                    </div>
+                )}
+            </div>
+            {showPastEvents && (
+                <>
+                    <h2 className="events-page__title">Past Events</h2>
+                    <div className="events-page__grid">
+                        {pastEvents.map(event => (
                             <EventCard
                                 key={`event-${event.event_id}`}
                                 event={event}
                                 slotTime={event.is_performer ? event.performer_slot_time : null}
                             />
-                        ))
-                ) : (
-                    <div className="events-page__no-events">
-                        <p>No events found</p>
+                        ))}
                     </div>
-                )}
-            </div>
-            {filteredEvents.filter(event => new Date(event.start_time) < new Date()).length > 0 && (
-                <div>
-                    <h2 className="events-page__title">Past Events</h2>
-                    <div className="events-page__grid">
-                        {filteredEvents
-                            .filter(event => new Date(event.start_time) < new Date())
-                            .sort((a, b) => new Date(b.start_time) - new Date(a.start_time))
-                            .map(event => (
-                                <EventCard
-                                    key={`event-${event.event_id}`}
-                                    event={event}
-                                    slotTime={event.is_performer ? event.performer_slot_time : null}
-                                />
-                            ))}
-                    </div>
-                </div>
+                </>
             )}
         </div>
     );
