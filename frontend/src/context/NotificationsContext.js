@@ -25,7 +25,7 @@ export function NotificationsProvider({ children }) {
             }
             
             const data = await response.json();
-            console.log('Fetched notifications:', data);
+            // console.log('Fetched notifications:', data);
             setNotifications(data);
             
             const unreadCount = data.filter(notification => !notification.is_read).length;

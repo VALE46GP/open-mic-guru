@@ -5,12 +5,6 @@ import './UserCard.sass';
 import { socialMediaPlatforms } from '../utils/socialMediaPlatforms';
 
 function UserCard({ user }) {
-    const roles = user.roles || [];
-    console.log('User:', user.id);
-    console.log('is host:', user.is_host);
-    console.log('is performer:', user.is_performer);
-    console.log('--------------------------------');
-
     const getPlatformIcon = (platformName) => {
         const platform = socialMediaPlatforms.find((p) => p.name === platformName);
         return platform ? platform.icon : null;
