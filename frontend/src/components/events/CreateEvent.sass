@@ -102,6 +102,20 @@
             &:hover
                 background-color: darken(#28a745, 10%)
 
+        &--pending
+            opacity: 0.7
+            position: relative
+            
+            &::after
+                content: ''
+                position: absolute
+                top: 0
+                left: 0
+                right: 0
+                bottom: 0
+                background: rgba(0, 0, 0, 0.1)
+                border-radius: inherit
+
     &__modal
         position: fixed
         top: 0

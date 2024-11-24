@@ -250,7 +250,7 @@ function CreateEvent() {
     }
 
     const handleEventStatusToggle = () => {
-        setPendingStatusChange(true);
+        setPendingStatusChange(prev => !prev);
     };
 
     const handleConfirmStatusChange = async () => {
@@ -409,7 +409,7 @@ function CreateEvent() {
                     <button 
                         className={`create-event__status-button ${
                             isEventActive ? 'create-event__status-button--cancel' : 'create-event__status-button--reinstate'
-                        }`}
+                        } ${pendingStatusChange ? 'create-event__status-button--pending' : ''}`}
                         onClick={handleEventStatusToggle}
                     >
                         {isEventActive ? 'Cancel Event' : 'Reinstate Event'}
