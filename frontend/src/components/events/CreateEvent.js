@@ -21,7 +21,7 @@ function CreateEvent() {
     const [selectedVenue, setSelectedVenue] = useState(null);
     const [additionalInfo, setAdditionalInfo] = useState('');
     const [resetTrigger, setResetTrigger] = useState(false);
-    const { getToken, getUserId } = useAuth();
+    const { getToken, getUserId, authenticatedFetch } = useAuth();
     const navigate = useNavigate();
     const isEditMode = !!eventId;
     const [isGoogleMapsLoaded, setIsGoogleMapsLoaded] = useState(false);
@@ -146,28 +146,23 @@ function CreateEvent() {
             return;
         }
 
-        const token = getToken();
-        if (!token) {
-            alert("You must be logged in to create or edit an event");
-            return;
-        }
-
         let venueId = await checkOrCreateVenue(selectedVenue);
-
         let imageUrl = eventImage;
+
         if (eventImage && eventImage instanceof File) {
             try {
-                const { data } = await axios.post('/api/events/upload', {
-                    fileName: eventImage.name,
-                    fileType: eventImage.type
-                }, {
-                    headers: {
-                        'Authorization': `Bearer ${token}`
-                    }
+                const response = await authenticatedFetch('/api/events/upload', {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        fileName: eventImage.name,
+                        fileType: eventImage.type
+                    })
                 });
-
+                const data = await response.json();
+                
+                // Handle S3 upload
                 await axios.put(data.uploadURL, eventImage, {
-                    headers: { 'Content-Type': eventImage.type },
+                    headers: { 'Content-Type': eventImage.type }
                 });
                 imageUrl = data.uploadURL.split('?')[0];
             } catch (error) {
@@ -176,36 +171,29 @@ function CreateEvent() {
             }
         }
 
-        const requestBody = {
-            name: newEventName,
-            venue_id: venueId,
-            start_time: startTime,
-            end_time: endTime,
-            slot_duration: slotDuration * 60,
-            setup_duration: setupDuration * 60,
-            additional_info: additionalInfo,
-            host_id: getUserId(),
-            image: imageUrl,
-            types: eventTypes
-        };
+        const url = isEditMode ? `/api/events/${eventId}` : '/api/events';
+        const method = isEditMode ? 'PATCH' : 'POST';
 
         try {
-            const url = isEditMode ? `/api/events/${eventId}` : '/api/events';
-            const method = isEditMode ? 'PATCH' : 'POST';
-
-            const response = await fetch(url, {
-                method: method,
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
-                },
-                body: JSON.stringify(requestBody)
+            const response = await authenticatedFetch(url, {
+                method,
+                body: JSON.stringify({
+                    name: newEventName,
+                    venue_id: venueId,
+                    start_time: startTime,
+                    end_time: endTime,
+                    slot_duration: slotDuration * 60,
+                    setup_duration: setupDuration * 60,
+                    additional_info: additionalInfo,
+                    host_id: getUserId(),
+                    image: imageUrl,
+                    types: eventTypes
+                })
             });
 
             if (!response.ok) {
                 const error = await response.json();
-                alert(error.error || 'Failed to save event');
-                return;
+                throw new Error(error.error || 'Failed to save event');
             }
 
             const data = await response.json();

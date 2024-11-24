@@ -75,6 +75,21 @@ export const AuthProvider = ({ children }) => {
         }
     }, []);
 
+    // Add to AuthContext.js
+    const authenticatedFetch = async (url, options = {}) => {
+        const token = getToken();
+        const headers = {
+            'Content-Type': 'application/json',
+            ...(token && { 'Authorization': `Bearer ${token}` }),
+            ...options.headers
+        };
+        
+        return fetch(url, {
+            ...options,
+            headers
+        });
+    };
+
     // Provide the context values
     return (
         <AuthContext.Provider value={{
@@ -84,7 +99,8 @@ export const AuthProvider = ({ children }) => {
             getToken, // Expose the getToken method
             getUserId,
             getUserName,
-            user
+            user,
+            authenticatedFetch
         }}>
             {children}
         </AuthContext.Provider>

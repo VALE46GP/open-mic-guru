@@ -17,7 +17,7 @@ function EventPage() {
     const [eventDetails, setEventDetails] = useState(null);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState(null);
-    const [showDeleteConfirmModal, setShowDeleteConfirmModal] = useState(false);
+    // const [showDeleteConfirmModal,ShowDeleteConfirmModal set] = useState(false);
     const [qrUrl, setQrUrl] = useState('');
     const { lastMessage } = useWebSocketContext();
 
@@ -182,35 +182,6 @@ function EventPage() {
         return slots;
     };
 
-    const handleDeleteEvent = async (eventId) => {
-        const token = getToken();
-
-        try {
-            if (!token) {
-                console.error('No token found! Ensure the user is logged in and the token is saved.');
-                return;
-            }
-
-            const response = await fetch(`/api/events/${eventId}`, {
-                method: 'DELETE',
-                headers: {
-                    'Authorization': `Bearer ${token}`,
-                    'Content-Type': 'application/json',
-                },
-            });
-
-            if (!response.ok) {
-                console.error(`Failed to delete event, status: ${response.status}`);
-                throw new Error(`HTTP status ${response.status}`);
-            }
-
-            // console.log('Event deleted successfully');
-            navigate('/events'); // Redirect after deletion
-        } catch (error) {
-            console.error('Failed to delete the event', error);
-        }
-    };
-
     // Remove the local state update after successful POST
     const handleSlotClick = async (slot, slotName, isHostAssignment) => {
         // Only use the user's name if no custom name was provided
@@ -269,9 +240,9 @@ function EventPage() {
         }).replace(',', ' at');
     };
 
-    const toggleDeleteConfirmModal = () => {
-        setShowDeleteConfirmModal(!showDeleteConfirmModal);
-    };
+    // const toggleDeleteConfirmModal = () => {
+    //     setShowDeleteConfirmModal(!showDeleteConfirmModal);
+    // };
 
     if (isLoading) return <div>Loading...</div>;
     if (error) return <div>Error: {error}</div>;
@@ -281,7 +252,7 @@ function EventPage() {
         <div className="event-page">
             <BorderBox
                 onEdit={eventDetails?.host?.id === userId ? () => navigate(`/events/${eventDetails.event.id}/edit`) : null}
-                onDelete={eventDetails?.host?.id === userId ? toggleDeleteConfirmModal : null}
+                // onDelete={eventDetails?.host?.id === userId ? toggleDeleteConfirmModal : null}
             >
                 <h1 className="event-page__title">{eventDetails?.event?.name}</h1>
                 <p className="event-page__time">
@@ -389,7 +360,7 @@ function EventPage() {
                 eventId={eventId}
             />
 
-            {showDeleteConfirmModal && (
+            {/* {showDeleteConfirmModal && (
                 <div className="event-page__modal">
                     <BorderBox className="event-page__modal-content">
                         <h4>Are you sure you want to delete this event?</h4>
@@ -398,7 +369,7 @@ function EventPage() {
                         <button onClick={toggleDeleteConfirmModal}>Cancel</button>
                     </BorderBox>
                 </div>
-            )}
+            )} */}
         </div>
     );
 }

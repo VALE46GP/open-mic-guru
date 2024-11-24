@@ -362,30 +362,58 @@ router.patch('/:eventId', verifyToken, async (req, res) => {
         });
 
         if (updateMessage) {
+            // Get the updated event details
+            const updatedEvent = result.rows[0];
+
             // Create notifications for all users in the lineup
-            const lineupUsers = await db.query(
-                'SELECT DISTINCT user_id FROM lineup_slots WHERE event_id = $1 AND user_id IS NOT NULL',
+            const lineupUsers = await db.query(`
+                SELECT 
+                    ls.user_id,
+                    ls.slot_number,
+                    u.name as user_name
+                FROM lineup_slots ls
+                JOIN users u ON ls.user_id = u.id
+                WHERE ls.event_id = $1 
+                AND ls.user_id IS NOT NULL`,
                 [eventId]
             );
 
-            for (const user of lineupUsers.rows) {
+            for (const performer of lineupUsers.rows) {
                 try {
+                    // Calculate the performer's slot time
+                    const slotTime = calculateSlotStartTime(
+                        updatedEvent.start_time,
+                        performer.slot_number,
+                        updatedEvent.slot_duration,
+                        updatedEvent.setup_duration
+                    );
+
+                    const message = `The event "${updatedEvent.name}" has been updated. ${updateMessage}${
+                        performer.slot_number 
+                            ? `. Your performance time is ${new Date(slotTime).toLocaleTimeString([], { 
+                                hour: 'numeric', 
+                                minute: '2-digit'
+                              })}`
+                            : ''
+                    }`;
+
                     await createNotification(
-                        user.user_id,
+                        performer.user_id,
                         'event_update',
-                        updateMessage,
-                        eventId
+                        message,
+                        eventId,
+                        null,
+                        req
                     );
                 } catch (err) {
-                    console.error('Error creating notification for user:', user.user_id, err);
+                    console.error('Error creating notification for performer:', performer.user_id, err);
                 }
             }
 
-            // Broadcast the update via WebSocket
             const updateData = {
                 type: 'EVENT_UPDATE',
                 eventId: parseInt(eventId),
-                data: result.rows[0]
+                data: updatedEvent
             };
             req.app.locals.broadcastLineupUpdate(updateData);
         }
@@ -471,23 +499,46 @@ router.put('/:eventId/extend', verifyToken, async (req, res) => {
         );
 
         // Get all unique users in the lineup
-        const lineupUsers = await db.query(
-            'SELECT DISTINCT user_id FROM lineup_slots WHERE event_id = $1 AND user_id IS NOT NULL',
+        const lineupUsers = await db.query(`
+            SELECT 
+                ls.user_id,
+                ls.slot_number,
+                ls.slot_name,
+                u.name as user_name
+            FROM lineup_slots ls
+            JOIN users u ON ls.user_id = u.id
+            WHERE ls.event_id = $1 
+            AND ls.user_id IS NOT NULL`,
             [eventId]
         );
 
-        // Create notifications for all users in the lineup
-        for (const user of lineupUsers.rows) {
+        // Create notifications for all performers in the lineup
+        for (const performer of lineupUsers.rows) {
             try {
+                const slotTime = calculateSlotStartTime(
+                    event.start_time,
+                    performer.slot_number,
+                    event.slot_duration,
+                    event.setup_duration
+                );
+        
+                const message = `The event "${event.name}" has been extended. Your performance time is ${
+                    new Date(slotTime).toLocaleTimeString([], { 
+                        hour: 'numeric', 
+                        minute: '2-digit'
+                    })
+                }`;
+        
                 await createNotification(
-                    user.user_id,
+                    performer.user_id,
                     'event_update',
-                    `The end time for "${event.name}" has been extended`,
-                    eventId
+                    message,
+                    eventId,
+                    null,
+                    req
                 );
             } catch (err) {
-                console.error('Error creating notification for user:', user.user_id, err);
-                // Continue with other notifications even if one fails
+                console.error('Error creating notification for performer:', performer.user_id, err);
             }
         }
 
