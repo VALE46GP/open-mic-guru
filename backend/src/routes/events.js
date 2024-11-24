@@ -267,8 +267,8 @@ router.post('/', async (req, res) => {
     }
 });
 
-// PUT an existing event
-router.put('/:eventId', async (req, res) => {
+// PATCH an existing event
+router.patch('/:eventId', async (req, res) => {
     const { eventId } = req.params;
     const {
         name,
@@ -283,7 +283,7 @@ router.put('/:eventId', async (req, res) => {
     } = req.body;
 
     try {
-        if (new Date(start_time) >= new Date(end_time)) {
+        if (start_time && end_time && new Date(start_time) >= new Date(end_time)) {
             return res.status(400).json({ error: 'Start time must be before end time' });
         }
 
@@ -293,6 +293,45 @@ router.put('/:eventId', async (req, res) => {
             [eventId]
         );
 
+        if (originalEvent.rows.length === 0) {
+            return res.status(404).json({ error: 'Event not found' });
+        }
+
+        // Build the update query dynamically based on provided fields
+        const updates = [];
+        const values = [];
+        let paramCount = 1;
+
+        const fields = {
+            name, start_time, end_time, slot_duration, 
+            setup_duration, venue_id, additional_info, 
+            image, types
+        };
+
+        for (const [key, value] of Object.entries(fields)) {
+            if (value !== undefined) {
+                updates.push(`${key} = $${paramCount}`);
+                values.push(value);
+                paramCount++;
+            }
+        }
+
+        values.push(eventId);
+
+        if (updates.length === 0) {
+            return res.status(400).json({ error: 'No fields to update' });
+        }
+
+        const updateQuery = `
+            UPDATE events 
+            SET ${updates.join(', ')} 
+            WHERE id = $${paramCount} 
+            RETURNING *
+        `;
+
+        const result = await db.query(updateQuery, values);
+
+        // Generate notification message for the changes
         const updateMessage = getUpdateMessage(originalEvent.rows[0], {
             ...(name !== undefined && { name }),
             ...(start_time !== undefined && { start_time }),
@@ -322,94 +361,16 @@ router.put('/:eventId', async (req, res) => {
                     console.error('Error creating notification for user:', user.user_id, err);
                 }
             }
+
+            // Broadcast the update via WebSocket
+            const updateData = {
+                type: 'EVENT_UPDATE',
+                eventId: parseInt(eventId),
+                data: result.rows[0]
+            };
+            req.app.locals.broadcastLineupUpdate(updateData);
         }
 
-        // Check for time-related changes that would affect slot times
-        if (hasTimeRelatedChanges(originalEvent.rows[0], {
-            start_time,
-            slot_duration,
-            setup_duration
-        })) {
-            // Get all lineup slots with users
-            const slots = await db.query(
-                'SELECT ls.*, u.name as user_name FROM lineup_slots ls LEFT JOIN users u ON ls.user_id = u.id WHERE ls.event_id = $1 AND ls.user_id IS NOT NULL ORDER BY slot_number',
-                [eventId]
-            );
-
-            // Calculate and notify for each affected slot
-            for (const slot of slots.rows) {
-                const oldStartTime = calculateSlotStartTime(
-                    originalEvent.rows[0].start_time,
-                    slot.slot_number,
-                    originalEvent.rows[0].slot_duration,
-                    originalEvent.rows[0].setup_duration
-                );
-
-                const newStartTime = calculateSlotStartTime(
-                    start_time || originalEvent.rows[0].start_time,
-                    slot.slot_number,
-                    slot_duration || originalEvent.rows[0].slot_duration,
-                    setup_duration || originalEvent.rows[0].setup_duration
-                );
-
-                if (oldStartTime.getTime() !== newStartTime.getTime()) {
-                    await createNotification(
-                        slot.user_id,
-                        'slot_time_change',
-                        `Your slot time for "${originalEvent.rows[0].name}" has changed from ${oldStartTime.toLocaleTimeString([], {
-                            hour: '2-digit',
-                            minute: '2-digit'
-                        })} to ${newStartTime.toLocaleTimeString([], {
-                            hour: '2-digit',
-                            minute: '2-digit'
-                        })}`,
-                        eventId,
-                        slot.id,
-                        req
-                    );
-                }
-            }
-        }
-
-        // Update the event in the database
-        const result = await db.query(
-            'UPDATE events SET name = $1, start_time = $2, end_time = $3, slot_duration = $4, setup_duration = $5, venue_id = $6, additional_info = $7, image = $8, types = $9 WHERE id = $10 RETURNING *',
-            [name, start_time, end_time, slot_duration, setup_duration, venue_id, additional_info, image, types, eventId]
-        );
-
-        if (result.rows.length === 0) {
-            return res.status(404).json({ error: 'Event not found' });
-        }
-
-        // Get venue details if venue changed
-        let venueChange = '';
-        if (venue_id !== originalEvent.rows[0].venue_id) {
-            const venueResult = await db.query(
-                'SELECT name FROM venues WHERE id = $1',
-                [venue_id]
-            );
-            venueChange = ` Location changed to ${venueResult.rows[0].name}.`;
-        }
-
-        // Broadcast the update via WebSocket with all updated event data
-        const updateData = {
-            type: 'EVENT_UPDATE',
-            eventId: parseInt(eventId),
-            data: {
-                name,
-                start_time,
-                end_time,
-                slot_duration,
-                setup_duration,
-                venue_id,
-                additional_info,
-                image,
-                types
-            },
-            notification: notificationData
-        };
-
-        req.app.locals.broadcastLineupUpdate(updateData);
         res.json(result.rows[0]);
     } catch (err) {
         console.error(err);

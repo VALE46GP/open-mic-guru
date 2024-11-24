@@ -181,7 +181,7 @@ function CreateEvent() {
 
         try {
             const url = isEditMode ? `/api/events/${eventId}` : '/api/events';
-            const method = isEditMode ? 'PUT' : 'POST';
+            const method = isEditMode ? 'PATCH' : 'POST';
 
             const response = await fetch(url, {
                 method: method,
