@@ -34,6 +34,7 @@ router.get('/', verifyToken, async (req, res) => {
                 e.slot_duration,
                 e.setup_duration,
                 e.types as event_types,
+                e.active,
                 v.name as venue_name,
                 u.name as host_name,
                 u.image as host_image,
@@ -55,10 +56,10 @@ router.get('/', verifyToken, async (req, res) => {
         `;
 
         const result = await db.query(query, [userId, limit, offset]);
+        console.log('Query parameters:', { userId, limit, offset });
+        console.log('Raw query:', query);
         console.log('Query result count:', result.rows.length);
-        if (result.rows.length > 0) {
-            console.log('First notification:', result.rows[0]);
-        }
+        console.log('First notification if exists:', result.rows[0]);
 
         // Get total count for pagination
         const countResult = await db.query(

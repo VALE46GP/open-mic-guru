@@ -7,7 +7,7 @@ import { Modal, Button } from 'react-bootstrap';
 import { FaTrash } from 'react-icons/fa';
 
 function NotificationsPage() {
-    const { notifications, markAsRead, deleteNotifications } = useNotifications();
+    const { notifications, markAsRead, deleteNotifications, fetchNotifications } = useNotifications();
     console.log('Notifications received in NotificationsPage:', notifications);
     
     const [expandedEvents, setExpandedEvents] = useState(new Set());
@@ -15,6 +15,8 @@ function NotificationsPage() {
     const [groupedNotifications, setGroupedNotifications] = useState({});
     const [locallyViewedNotifications, setLocallyViewedNotifications] = useState(new Set());
     const [showDeleteModal, setShowDeleteModal] = useState(false);
+
+    console.log('API URL:', process.env.REACT_APP_API_URL);
 
     useEffect(() => {
         console.log('Running grouping effect with notifications:', notifications);
@@ -40,7 +42,8 @@ function NotificationsPage() {
                         is_host: notification.is_host,
                         is_performer: performerNotification ? true : false,
                         performer_slot_time: performerNotification ? performerNotification.performer_slot_time : null,
-                        event_types: notification.event_types
+                        event_types: notification.event_types,
+                        active: notification.active
                     },
                     notifications: [],
                     unreadCount: 0

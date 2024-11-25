@@ -23,11 +23,7 @@ app.use((req, res, next) => {
 });
 
 // CORS Configuration
-app.use(cors({
-    origin: process.env.CLIENT_URL || 'http://localhost:3000', // Adjust based on your frontend URL
-    methods: ['GET', 'POST', 'PUT', 'DELETE'], // Allowed HTTP methods
-    allowedHeaders: ['Content-Type', 'Authorization'], // Include Authorization header
-}));
+app.use(cors());
 
 // Middleware for parsing JSON
 app.use(express.json());
@@ -47,3 +43,5 @@ routes(app);
 server.listen(PORT, () => {
     console.log(`Server is running on port ${PORT}`);
 });
+
+console.log('API URL:', process.env.REACT_APP_API_URL);
