@@ -4,7 +4,36 @@ const jwt = require('jsonwebtoken');
 function initializeWebSocketServer(server) {
     const wss = new WebSocket.Server({
         server,
-        path: '/ws'
+        path: '/ws',
+        clientTracking: true,
+        verifyClient: ({ origin, req }, callback) => {
+            console.log('WebSocket connection attempt from:', origin);
+            
+            if (!origin) {
+                callback(true);
+                return;
+            }
+
+            try {
+                const requestOrigin = new URL(origin);
+                const allowedHosts = ['localhost', '192.168.1.104'];
+                const allowedPorts = ['3000', '3001'];
+
+                const isAllowed = allowedHosts.includes(requestOrigin.hostname) && 
+                                allowedPorts.includes(requestOrigin.port);
+
+                console.log('WebSocket verification:', {
+                    hostname: requestOrigin.hostname,
+                    port: requestOrigin.port,
+                    isAllowed
+                });
+
+                callback(isAllowed);
+            } catch (error) {
+                console.error('Error verifying WebSocket client:', error);
+                callback(false);
+            }
+        }
     });
 
     const clients = new Map();

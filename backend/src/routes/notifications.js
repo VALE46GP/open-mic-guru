@@ -39,7 +39,7 @@ router.get('/', verifyToken, async (req, res) => {
                 u.name as host_name,
                 u.image as host_image,
                 e.host_id = n.user_id as is_host,
-                ls.slot_number,
+                COALESCE(ls.slot_number, NULL) as slot_number,
                 CASE 
                     WHEN ls.user_id = n.user_id THEN true 
                     ELSE false 
@@ -48,7 +48,11 @@ router.get('/', verifyToken, async (req, res) => {
             LEFT JOIN events e ON n.event_id = e.id
             LEFT JOIN venues v ON e.venue_id = v.id
             LEFT JOIN users u ON e.host_id = u.id
-            LEFT JOIN lineup_slots ls ON e.id = ls.event_id AND ls.user_id = n.user_id
+            LEFT JOIN lineup_slots ls ON (
+                e.id = ls.event_id 
+                AND ls.user_id = n.user_id
+                AND n.lineup_slot_id = ls.id
+            )
             WHERE n.user_id = $1
             ${unreadOnly ? 'AND n.is_read = FALSE' : ''}
             ORDER BY n.created_at DESC
@@ -60,13 +64,6 @@ router.get('/', verifyToken, async (req, res) => {
         console.log('Raw query:', query);
         console.log('Query result count:', result.rows.length);
         console.log('First notification if exists:', result.rows[0]);
-
-        // Get total count for pagination
-        const countResult = await db.query(
-            'SELECT COUNT(*) FROM notifications WHERE user_id = $1',
-            [userId]
-        );
-        console.log('Total count:', countResult.rows[0].count);
 
         const processedNotifications = result.rows.map(notification => {
             if (notification.is_performer && notification.slot_number) {
@@ -84,7 +81,7 @@ router.get('/', verifyToken, async (req, res) => {
             return notification;
         });
 
-        res.json(processedNotifications);  // Added this line to send the response
+        res.json(processedNotifications);
 
     } catch (err) {
         console.error('Detailed error in GET /notifications:', err);

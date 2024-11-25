@@ -5,10 +5,8 @@ import { useWebSocketContext } from './WebSocketContext';
 const NotificationsContext = createContext();
 
 const getApiUrl = () => {
-    const isLocalhost = window.location.hostname === 'localhost';
-    return isLocalhost 
-        ? process.env.REACT_APP_API_URL 
-        : `http://${process.env.REACT_APP_DEV_IP}:3001`;
+    const hostname = window.location.hostname;
+    return `http://${hostname}:3001`;
 };
 
 export function NotificationsProvider({ children }) {
@@ -17,7 +15,15 @@ export function NotificationsProvider({ children }) {
     const { getUserId, getToken, user } = useAuth();
     const { lastMessage } = useWebSocketContext();
 
-    const fetchNotifications = async () => {
+    const defaultFetchOptions = {
+        credentials: 'include',
+        headers: {
+            'Authorization': `Bearer ${getToken()}`,
+            'Content-Type': 'application/json'
+        }
+    };
+
+    const fetchNotifications = async (retryCount = 0) => {
         try {
             const token = getToken();
             const userId = getUserId();
@@ -26,7 +32,8 @@ export function NotificationsProvider({ children }) {
             console.log('Attempting to fetch notifications:', {
                 userId,
                 hasToken: !!token,
-                apiUrl
+                apiUrl,
+                retryCount
             });
 
             if (!token) {
@@ -38,9 +45,10 @@ export function NotificationsProvider({ children }) {
             console.log('Making fetch request to:', url);
             
             const response = await fetch(url, {
+                method: 'GET',
+                ...defaultFetchOptions,
                 headers: {
-                    'Authorization': `Bearer ${token}`,
-                    'Content-Type': 'application/json',
+                    ...defaultFetchOptions.headers,
                     'Cache-Control': 'no-cache, no-store, must-revalidate',
                     'Pragma': 'no-cache',
                     'Expires': '0'
@@ -54,6 +62,14 @@ export function NotificationsProvider({ children }) {
                     statusText: response.statusText,
                     error: errorText
                 });
+                
+                // Retry logic for network errors
+                if (retryCount < 3 && (response.status >= 500 || response.status === 0)) {
+                    console.log(`Retrying fetch (attempt ${retryCount + 1})...`);
+                    setTimeout(() => fetchNotifications(retryCount + 1), 1000 * (retryCount + 1));
+                    return;
+                }
+                
                 throw new Error(`Failed to fetch notifications: ${response.status} ${errorText}`);
             }
             
@@ -65,6 +81,12 @@ export function NotificationsProvider({ children }) {
             setUnreadCount(unreadCount);
         } catch (error) {
             console.error('Detailed error fetching notifications:', error);
+            
+            // Retry on network errors
+            if (retryCount < 3 && error.name === 'TypeError') {
+                console.log(`Retrying fetch (attempt ${retryCount + 1})...`);
+                setTimeout(() => fetchNotifications(retryCount + 1), 1000 * (retryCount + 1));
+            }
         }
     };
 
@@ -77,17 +99,23 @@ export function NotificationsProvider({ children }) {
     }, [getUserId]);
 
     useEffect(() => {
-        if (lastMessage) {
-            console.log('WebSocket message received:', lastMessage);
+        let retryTimeout;
+        
+        const handleWebSocketMessage = (message) => {
+            if (!message) return;
+            
             try {
-                const data = JSON.parse(lastMessage.data);
+                const data = JSON.parse(message.data);
                 console.log('Parsed WebSocket data:', data);
+                
+                // Force a notifications refresh on any WebSocket message
+                // This ensures we're always in sync with the server
+                fetchNotifications();
                 
                 if ((data.type === 'NOTIFICATION_UPDATE' || data.type === 'NEW_NOTIFICATION') 
                     && data.userId === getUserId()) {
                     console.log('Adding new notification:', data.notification);
                     setNotifications(prev => {
-                        // Check if notification already exists
                         const exists = prev.some(n => n.id === data.notification.id);
                         if (exists) {
                             return prev.map(n => 
@@ -96,89 +124,90 @@ export function NotificationsProvider({ children }) {
                         }
                         return [data.notification, ...prev];
                     });
-                    if (!data.notification.is_read) {
-                        setUnreadCount(prev => prev + 1);
-                    }
-                }
-                
-                if (data.type === 'LINEUP_UPDATE' || 
-                    (data.type === 'EVENT_UPDATE' && data.eventId)) {
-                    console.log('Received update, refreshing notifications');
-                    fetchNotifications();
                 }
             } catch (error) {
                 console.error('Error processing WebSocket message:', error);
+                clearTimeout(retryTimeout);
+                retryTimeout = setTimeout(fetchNotifications, 1000);
             }
+        };
+
+        if (lastMessage) {
+            handleWebSocketMessage(lastMessage);
         }
-    }, [lastMessage, getUserId, getToken]);
+
+        return () => {
+            clearTimeout(retryTimeout);
+        };
+    }, [lastMessage, getUserId]);
+
+    const markAsRead = async (notificationIds) => {
+        try {
+            const token = getToken();
+            console.log('Current token:', token);
+            if (!token) return;
+
+            const response = await fetch(`${getApiUrl()}/notifications/mark-read`, {
+                ...defaultFetchOptions,
+                method: 'POST',
+                body: JSON.stringify({ notification_ids: notificationIds })
+            });
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            setNotifications(prev => 
+                prev.map(notification => 
+                    notificationIds.includes(notification.id) 
+                        ? { ...notification, is_read: true }
+                        : notification
+                )
+            );
+            setUnreadCount(prev => Math.max(0, prev - notificationIds.length));
+        } catch (error) {
+            console.error('Error marking notifications as read:', error);
+            throw error; // Propagate error to component
+        }
+    };
+
+    const deleteNotifications = async (eventIds) => {
+        try {
+            const token = getToken();
+            if (!token) return;
+
+            const response = await fetch(`${getApiUrl()}/notifications`, {
+                ...defaultFetchOptions,
+                method: 'DELETE',
+                body: JSON.stringify({ eventIds })
+            });
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            setNotifications(prev => 
+                prev.filter(notification => !eventIds.includes(notification.event_id))
+            );
+            
+            setUnreadCount(prev => {
+                const deletedUnreadCount = notifications
+                    .filter(n => eventIds.includes(n.event_id) && !n.is_read)
+                    .length;
+                return Math.max(0, prev - deletedUnreadCount);
+            });
+        } catch (error) {
+            console.error('Error deleting notifications:', error);
+            throw error; // Propagate error to component
+        }
+    };
 
     const value = {
         notifications,
         unreadCount,
         fetchNotifications,
-        markAsRead: async (notificationIds) => {
-            try {
-                const token = getToken();
-                console.log('Current token:', token);
-                if (!token) return;
-
-                const response = await fetch(`${process.env.REACT_APP_API_URL}/notifications/mark-read`, {
-                    method: 'POST',
-                    headers: {
-                        'Authorization': `Bearer ${token}`,
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({ notification_ids: notificationIds })
-                });
-
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
-
-                setNotifications(prev => 
-                    prev.map(notification => 
-                        notificationIds.includes(notification.id) 
-                            ? { ...notification, is_read: true }
-                            : notification
-                    )
-                );
-                setUnreadCount(prev => Math.max(0, prev - notificationIds.length));
-            } catch (error) {
-                console.error('Error marking notifications as read:', error);
-            }
-        },
-        deleteNotifications: async (eventIds) => {
-            try {
-                const token = getToken();
-                if (!token) return;
-
-                const response = await fetch(`${process.env.REACT_APP_API_URL}/notifications`, {
-                    method: 'DELETE',
-                    headers: {
-                        'Authorization': `Bearer ${token}`,
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({ eventIds })
-                });
-
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
-
-                setNotifications(prev => 
-                    prev.filter(notification => !eventIds.includes(notification.event_id))
-                );
-                
-                setUnreadCount(prev => {
-                    const deletedUnreadCount = notifications
-                        .filter(n => eventIds.includes(n.event_id) && !n.is_read)
-                        .length;
-                    return Math.max(0, prev - deletedUnreadCount);
-                });
-            } catch (error) {
-                console.error('Error deleting notifications:', error);
-            }
-        }
+        markAsRead,
+        deleteNotifications
     };
 
     return (

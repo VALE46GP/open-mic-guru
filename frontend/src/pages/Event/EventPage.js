@@ -218,6 +218,10 @@ function EventPage() {
         console.log('Deleting slot:', slotId);
         const response = await fetch(`/api/lineup_slots/${slotId}`, {
             method: 'DELETE',
+            headers: {
+                'Authorization': `Bearer ${localStorage.getItem('token')}`,
+                'Content-Type': 'application/json'
+            }
         });
 
         if (!response.ok) {

@@ -23,7 +23,42 @@ app.use((req, res, next) => {
 });
 
 // CORS Configuration
-app.use(cors());
+const corsOptions = {
+    origin: function (origin, callback) {
+        console.log('Request origin:', origin);
+        
+        // Allow requests with no origin (like mobile apps or curl requests)
+        if (!origin) {
+            callback(null, true);
+            return;
+        }
+
+        try {
+            const requestOrigin = new URL(origin);
+            const allowedHosts = ['localhost', '192.168.1.104'];
+            const allowedPorts = ['3000', '3001'];
+
+            if (allowedHosts.includes(requestOrigin.hostname) && 
+                allowedPorts.includes(requestOrigin.port)) {
+                callback(null, true);
+            } else {
+                console.log('Rejected Origin:', origin);
+                console.log('Hostname:', requestOrigin.hostname);
+                console.log('Port:', requestOrigin.port);
+                callback(new Error('Not allowed by CORS'));
+            }
+        } catch (error) {
+            console.error('Error parsing origin:', error);
+            callback(new Error('Invalid origin format'));
+        }
+    },
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'Cache-Control', 'Pragma', 'Expires'],
+    exposedHeaders: ['Access-Control-Allow-Origin']
+};
+
+app.use(cors(corsOptions));
 
 // Middleware for parsing JSON
 app.use(express.json());
