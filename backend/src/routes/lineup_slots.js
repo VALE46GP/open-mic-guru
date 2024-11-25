@@ -68,12 +68,6 @@ router.post('/', async (req, res) => {
         const nonUserIdForSlot = user_id ? null : (isHostAssignment ? null : nonUserId); // Set to NULL if user is logged in or if host assignment
         const ipAddressForSlot = user_id ? null : (isHostAssignment ? null : ipAddress); // Set to NULL if user is logged in or if host assignment
 
-        console.log("Proceeding with regular slot assignment:", {
-            userIdForSlot,
-            nonUserIdForSlot,
-            ipAddressForSlot
-        });
-
         if (user_id) {
             // Check if the user (logged-in non-host) has already signed up for a slot in this event
             const existingUserSlot = await db.query(
@@ -268,7 +262,6 @@ router.delete('/:slotId', async (req, res) => {
             }
         };
 
-        console.log('Broadcasting delete update:', lineupData);
         req.app.locals.broadcastLineupUpdate(lineupData);
 
         res.status(200).json({ message: 'Slot deleted successfully' });

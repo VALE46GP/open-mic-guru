@@ -62,7 +62,6 @@ function CreateUser({ initialData, onCancel }) {
 
         if (oldPassword) {
             try {
-                console.log('Validating old password...');
                 const response = await fetch('/api/users/validate-password', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -94,7 +93,6 @@ function CreateUser({ initialData, onCancel }) {
         setSuccess(false);
 
         if (initialData && newPassword) {
-            console.log('Validating password before update...');
             const isValid = await validatePasswordChange();
             if (!isValid) return;
         }
@@ -130,7 +128,6 @@ function CreateUser({ initialData, onCancel }) {
         if (newPassword) payload.password = newPassword;
 
         try {
-            console.log('Sending update request with payload:', payload);
             const response = await fetch('/api/users/register', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -138,7 +135,6 @@ function CreateUser({ initialData, onCancel }) {
             });
 
             const result = await response.json();
-            console.log('Update response:', result);
 
             if (!response.ok) {
                 throw new Error(result.error || 'Failed to update user');

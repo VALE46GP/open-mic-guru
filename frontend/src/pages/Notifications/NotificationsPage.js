@@ -8,7 +8,6 @@ import { FaTrash } from 'react-icons/fa';
 
 function NotificationsPage() {
     const { notifications, markAsRead, deleteNotifications, fetchNotifications } = useNotifications();
-    console.log('Notifications received in NotificationsPage:', notifications);
     
     const [expandedEvents, setExpandedEvents] = useState(new Set());
     const [selectedEvents, setSelectedEvents] = useState(new Set());
@@ -16,10 +15,7 @@ function NotificationsPage() {
     const [locallyViewedNotifications, setLocallyViewedNotifications] = useState(new Set());
     const [showDeleteModal, setShowDeleteModal] = useState(false);
 
-    console.log('API URL:', process.env.REACT_APP_API_URL);
-
     useEffect(() => {
-        console.log('Running grouping effect with notifications:', notifications);
         // Group notifications by event_id
         const grouped = notifications.reduce((acc, notification) => {
             if (!notification.event_id) return acc;

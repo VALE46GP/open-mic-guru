@@ -29,12 +29,12 @@ export function NotificationsProvider({ children }) {
             const userId = getUserId();
             const apiUrl = getApiUrl();
             
-            console.log('Attempting to fetch notifications:', {
-                userId,
-                hasToken: !!token,
-                apiUrl,
-                retryCount
-            });
+            // console.log('Attempting to fetch notifications:', {
+            //     userId,
+            //     hasToken: !!token,
+            //     apiUrl,
+            //     retryCount
+            // });
 
             if (!token) {
                 console.error('No token available for fetching notifications');
@@ -42,7 +42,6 @@ export function NotificationsProvider({ children }) {
             }
 
             const url = `${apiUrl}/notifications`;
-            console.log('Making fetch request to:', url);
             
             const response = await fetch(url, {
                 method: 'GET',
@@ -74,7 +73,6 @@ export function NotificationsProvider({ children }) {
             }
             
             const data = await response.json();
-            console.log('Successfully fetched notifications:', data);
             setNotifications(data);
             
             const unreadCount = data.filter(notification => !notification.is_read).length;
@@ -93,7 +91,6 @@ export function NotificationsProvider({ children }) {
     useEffect(() => {
         const userId = getUserId();
         if (userId) {
-            console.log('Fetching notifications for user:', userId);
             fetchNotifications();
         }
     }, [getUserId]);
@@ -106,7 +103,6 @@ export function NotificationsProvider({ children }) {
             
             try {
                 const data = JSON.parse(message.data);
-                console.log('Parsed WebSocket data:', data);
                 
                 // Force a notifications refresh on any WebSocket message
                 // This ensures we're always in sync with the server
@@ -114,7 +110,6 @@ export function NotificationsProvider({ children }) {
                 
                 if ((data.type === 'NOTIFICATION_UPDATE' || data.type === 'NEW_NOTIFICATION') 
                     && data.userId === getUserId()) {
-                    console.log('Adding new notification:', data.notification);
                     setNotifications(prev => {
                         const exists = prev.some(n => n.id === data.notification.id);
                         if (exists) {
@@ -144,7 +139,6 @@ export function NotificationsProvider({ children }) {
     const markAsRead = async (notificationIds) => {
         try {
             const token = getToken();
-            console.log('Current token:', token);
             if (!token) return;
 
             const response = await fetch(`${getApiUrl()}/notifications/mark-read`, {

@@ -71,10 +71,8 @@ function EventPage() {
 
         try {
             const update = JSON.parse(lastMessage.data);
-            console.log('Parsed WebSocket update data:', update);
 
             if (update.type === 'LINEUP_UPDATE' && update.eventId === parseInt(eventId)) {
-                console.log('Processing lineup update:', update);
                 setEventDetails(prevDetails => {
                     if (!prevDetails) return prevDetails;
 
@@ -84,7 +82,6 @@ function EventPage() {
                             lineup: prevDetails.lineup.filter(slot => slot.slot_id !== update.data.slotId)
                         };
                     } else if (update.action === 'CREATE') {
-                        console.log('Creating new slot:', update.data);
                         const filteredLineup = prevDetails.lineup.filter(
                             slot => slot.slot_number !== update.data.slot_number
                         );
@@ -101,7 +98,6 @@ function EventPage() {
                             ].sort((a, b) => a.slot_number - b.slot_number)
                         };
                     } else if (update.action === 'REORDER') {
-                        console.log('Reordering slots:', update.data);
                         const updatedLineup = prevDetails.lineup.map(slot => {
                             const updatedSlot = update.data.slots.find(s => s.slot_id === slot.slot_id);
                             return updatedSlot ? {
@@ -215,7 +211,6 @@ function EventPage() {
 
     // Remove the local state update after successful DELETE
     const handleSlotDelete = async (slotId) => {
-        console.log('Deleting slot:', slotId);
         const response = await fetch(`/api/lineup_slots/${slotId}`, {
             method: 'DELETE',
             headers: {
@@ -227,8 +222,6 @@ function EventPage() {
         if (!response.ok) {
             console.error('Failed to delete slot:', response);
             alert('Failed to delete slot');
-        } else {
-            console.log('Successfully deleted slot');
         }
     };
 

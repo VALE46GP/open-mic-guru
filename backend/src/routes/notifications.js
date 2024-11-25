@@ -5,21 +5,18 @@ const verifyToken = require('../middleware/verifyToken');
 const { calculateSlotStartTime } = require('../utils/timeCalculations');
 
 router.use((req, res, next) => {
-    console.log('Notifications route hit:', {
-        method: req.method,
-        path: req.path,
-        headers: req.headers
-    });
+    // console.log('Notifications route hit:', {
+    //     method: req.method,
+    //     path: req.path,
+    //     headers: req.headers
+    // });
     next();
 });
 
 // Get notifications for current user
 router.get('/', verifyToken, async (req, res) => {
-    console.log('Received GET request for notifications');
     try {
         const userId = req.user.userId;
-        console.log('User ID:', userId);
-        
         const page = parseInt(req.query.page) || 1;
         const limit = parseInt(req.query.limit) || 10;
         const offset = (page - 1) * limit;
@@ -60,11 +57,6 @@ router.get('/', verifyToken, async (req, res) => {
         `;
 
         const result = await db.query(query, [userId, limit, offset]);
-        console.log('Query parameters:', { userId, limit, offset });
-        console.log('Raw query:', query);
-        console.log('Query result count:', result.rows.length);
-        console.log('First notification if exists:', result.rows[0]);
-
         const processedNotifications = result.rows.map(notification => {
             if (notification.is_performer && notification.slot_number) {
                 const slotTime = calculateSlotStartTime(

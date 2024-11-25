@@ -7,7 +7,6 @@ function initializeWebSocketServer(server) {
         path: '/ws',
         clientTracking: true,
         verifyClient: ({ origin, req }, callback) => {
-            console.log('WebSocket connection attempt from:', origin);
             
             if (!origin) {
                 callback(true);
@@ -22,11 +21,11 @@ function initializeWebSocketServer(server) {
                 const isAllowed = allowedHosts.includes(requestOrigin.hostname) && 
                                 allowedPorts.includes(requestOrigin.port);
 
-                console.log('WebSocket verification:', {
-                    hostname: requestOrigin.hostname,
-                    port: requestOrigin.port,
-                    isAllowed
-                });
+                // console.log('WebSocket verification:', {
+                //     hostname: requestOrigin.hostname,
+                //     port: requestOrigin.port,
+                //     isAllowed
+                // });
 
                 callback(isAllowed);
             } catch (error) {

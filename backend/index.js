@@ -13,19 +13,18 @@ const server = http.createServer(app);
 
 // Global Middleware for Logging Requests
 app.use((req, res, next) => {
-    console.log('=== Incoming Request ===');
-    console.log(`${req.method} ${req.url}`);
-    console.log('Headers:', JSON.stringify(req.headers, null, 2));
-    console.log('Query:', req.query);
-    console.log('Body:', req.body);
-    console.log('=====================');
+    // console.log('=== Incoming Request ===');
+    // console.log(`${req.method} ${req.url}`);
+    // console.log('Headers:', JSON.stringify(req.headers, null, 2));
+    // console.log('Query:', req.query);
+    // console.log('Body:', req.body);
+    // console.log('=====================');
     next();
 });
 
 // CORS Configuration
 const corsOptions = {
     origin: function (origin, callback) {
-        console.log('Request origin:', origin);
         
         // Allow requests with no origin (like mobile apps or curl requests)
         if (!origin) {
@@ -78,5 +77,3 @@ routes(app);
 server.listen(PORT, () => {
     console.log(`Server is running on port ${PORT}`);
 });
-
-console.log('API URL:', process.env.REACT_APP_API_URL);

@@ -66,7 +66,6 @@ async function createNotification(userId, type, message, eventId = null, lineupS
                 userId: userId,
                 notification: notificationData.rows[0]
             };
-            console.log('Broadcasting notification:', notificationPayload);
             req.app.locals.broadcastNotification(notificationPayload);
         }
 
