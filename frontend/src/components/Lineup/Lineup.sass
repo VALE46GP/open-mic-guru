@@ -47,6 +47,18 @@
                 border-color: darken(#0066cc, 10%)
                 background-color: #f8f8f8
 
+        &--cancelled
+            opacity: 0.75
+            background-color: rgba(#dc3545, 0.1)
+            
+            &.lineup__slot--open
+                border-color: #6c757d
+                
+                &:focus-visible,
+                &:hover
+                    border-color: darken(#6c757d, 10%)
+                    background-color: rgba(#dc3545, 0.1)
+
     &__slot-number
         text-align: center
         font-weight: bold

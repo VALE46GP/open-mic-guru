@@ -13,7 +13,8 @@ function Slot({
                   slots,
                   isEditing,
                   provided,
-                  isDragging
+                  isDragging,
+                  isEventActive
               }) {
     const isOwnSlot =
         (currentUserId && slot.user_id === currentUserId) ||
@@ -32,7 +33,7 @@ function Slot({
     const canInteract = !isEditing && (
         isHost ||
         isOwnSlot ||
-        (slot.slot_name === "Open" && !hasExistingSlot())
+        (isEventActive && slot.slot_name === "Open" && !hasExistingSlot())
     );
 
     const getSlotClass = () => {
@@ -45,7 +46,7 @@ function Slot({
         if (!canInteract && !isEditing) return classes.join(' ');
 
         if (slot.slot_name === "Open") {
-            if (isHost || !hasExistingSlot()) {
+            if (isEventActive && (isHost || !hasExistingSlot())) {
                 classes.push('lineup__slot--open');
                 if (!isEditing) classes.push('clickable');
             }
@@ -145,7 +146,8 @@ function Lineup({
                     onSlotDelete,
                     currentUserId,
                     currentNonUser,
-                    userName
+                    userName,
+                    isEventActive
                 }) {
     const [showModal, setShowModal] = useState(false);
     const [currentSlot, setCurrentSlot] = useState(null);
@@ -162,6 +164,11 @@ function Lineup({
         const isOwnSlot = currentUserId
             ? slot.user_id === currentUserId
             : slot.non_user_identifier === currentNonUser?.identifier;
+
+        // Prevent interaction with cancelled events unless it's their own slot or they're the host
+        if (!isEventActive && !isOwnSlot && !isHost) {
+            return;
+        }
 
         // only allow them to click their own slot or prevent clicking open slots
         if (!isHost) {
@@ -372,6 +379,7 @@ function Lineup({
                                             isEditing={isEditing}
                                             provided={provided}
                                             isDragging={snapshot.isDragging}
+                                            isEventActive={isEventActive}
                                         />
                                     )}
                                 </Draggable>

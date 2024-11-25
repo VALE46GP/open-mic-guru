@@ -16,6 +16,16 @@ router.post('/', async (req, res) => {
     }
 
     try {
+        // First check if the event is active
+        const eventStatusResult = await db.query(
+            `SELECT active FROM events WHERE id = $1`,
+            [event_id]
+        );
+
+        if (!eventStatusResult.rows.length || !eventStatusResult.rows[0].active) {
+            return res.status(403).json({ error: 'Cannot sign up for cancelled events' });
+        }
+
         // Step 1: Check if the current user is the event host
         const hostResult = await db.query(
             `SELECT host_id
