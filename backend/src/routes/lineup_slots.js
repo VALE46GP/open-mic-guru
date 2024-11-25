@@ -215,14 +215,15 @@ router.delete('/:slotId', async (req, res) => {
         const slot = slotQuery.rows[0];
         const hostId = slot.host_id;
         const slotUserName = slot.slot_name || 'Anonymous';
+        const isDeletedByHost = req.user?.id === hostId;
 
-        // If there's a user_id and the request is from the host, create notification for the user
-        if (slot.user_id && req.user && req.user.id === hostId) {
+        // Notify the user, even if they are no longer associated with the event
+        if (slot.user_id) {
             try {
                 await createNotification(
                     slot.user_id,
                     'slot_removed',
-                    `Your slot in "${slot.event_name}" has been removed by the host`,
+                    `Your slot in "${slot.event_name}" has been removed${isDeletedByHost ? ' by the host' : ''}`,
                     slot.event_id,
                     slotId,
                     req
@@ -232,7 +233,7 @@ router.delete('/:slotId', async (req, res) => {
             }
         }
 
-        // Create notification for the event host
+        // Notify the host about the removal
         try {
             await createNotification(
                 hostId,
