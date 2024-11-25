@@ -9,6 +9,14 @@ import './EventsPage.sass';
 import { Link, useNavigate } from 'react-router-dom';
 import { useWebSocketContext } from '../../context/WebSocketContext';
 
+const EVENT_TYPE_OPTIONS = [
+    { label: 'All', value: 'all' },
+    { label: 'Music', value: 'music' },
+    { label: 'Comedy', value: 'comedy' },
+    { label: 'Spoken Word', value: 'spoken_word' },
+    { label: 'Other', value: 'other' }
+];
+
 const EventsPage = () => {
     const [events, setEvents] = useState([]);
     const [filteredEvents, setFilteredEvents] = useState([]);
@@ -21,6 +29,7 @@ const EventsPage = () => {
     const userId = getUserId();
     const navigate = useNavigate();
     const { lastMessage } = useWebSocketContext();
+    const [selectedEventTypes, setSelectedEventTypes] = useState(['all']);
 
     useEffect(() => {
         const fetchEvents = async () => {
@@ -98,9 +107,23 @@ const EventsPage = () => {
         }
     }, [lastMessage]);
 
+    useEffect(() => {
+        setFilteredEvents(filterEvents(events, searchTerm, selectedLocation));
+    }, [selectedEventTypes, events, searchTerm, selectedLocation]);
+
     const filterEvents = (events, searchTerm, location) => {
         let filtered = [...events];
 
+        // Event type filtering
+        if (!selectedEventTypes.includes('all')) {
+            filtered = filtered.filter(event => 
+                event.event_types?.some(eventType => 
+                    selectedEventTypes.some(selectedType => selectedType === eventType)
+                )
+            );
+        }
+
+        // Search filtering
         if (searchTerm.trim()) {
             const searchLower = searchTerm.toLowerCase();
             filtered = filtered.filter(event =>
@@ -110,6 +133,7 @@ const EventsPage = () => {
             );
         }
 
+        // Location filtering
         if (location) {
             const isSpecificLocation = location.address_components?.some(component =>
                 ['street_number', 'route', 'postal_code'].includes(component.types[0])
@@ -187,6 +211,26 @@ const EventsPage = () => {
         .filter(event => new Date(event.start_time) < new Date())
         .sort((a, b) => new Date(b.start_time) - new Date(a.start_time));
 
+    const handleEventTypeChange = (value) => {
+        setSelectedEventTypes(prev => {
+            let next;
+            if (value === 'all') {
+                next = ['all'];
+            } else {
+                next = prev.filter(t => t !== 'all');
+                if (prev.includes(value)) {
+                    next = next.filter(t => t !== value);
+                } else {
+                    next = [...next, value];
+                }
+                if (next.length === 0) {
+                    next = ['all'];
+                }
+            }
+            return next;
+        });
+    };
+
     return (
         <div className="events-page">
             <BorderBox className="events-page__border-box">
@@ -198,6 +242,21 @@ const EventsPage = () => {
                         >
                             {showPastEvents ? "Hide Past Events" : "Show Past Events"}
                         </button>
+                    </div>
+                    <div className="events-page__checkboxes">
+                        {EVENT_TYPE_OPTIONS.map(option => (
+                            <div key={option.value} className="events-page__checkbox-group">
+                                <label className="events-page__checkbox-label">
+                                    <input
+                                        type="checkbox"
+                                        className="events-page__checkbox"
+                                        checked={selectedEventTypes.includes(option.value)}
+                                        onChange={() => handleEventTypeChange(option.value)}
+                                    />
+                                    {option.label}
+                                </label>
+                            </div>
+                        ))}
                     </div>
                     <VenueAutocomplete
                         onPlaceSelected={handleLocationSelected}

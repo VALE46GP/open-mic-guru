@@ -16,6 +16,7 @@
 
   &__map-section
     display: flex
+    position: relative
     flex-direction: column
     align-items: center
     gap: .75rem
@@ -93,3 +94,22 @@
     &:focus-visible,
     &:hover
       background-color: #005bb5
+
+  &__checkboxes
+    display: flex
+    flex-wrap: wrap
+    gap: 1rem
+    width: 100%
+
+  &__checkbox-group
+    display: flex
+
+  &__checkbox-label
+    //display: flex
+    align-items: center
+    gap: 0.5rem
+    cursor: pointer
+
+    input[type="checkbox"]
+      width: auto
+      margin: 0
