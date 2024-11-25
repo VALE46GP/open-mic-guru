@@ -7,6 +7,7 @@ import EventSearch from '../../components/shared/EventSearch';
 import BorderBox from '../../components/shared/BorderBox/BorderBox';
 import './EventsPage.sass';
 import { Link, useNavigate } from 'react-router-dom';
+import { useWebSocketContext } from '../../context/WebSocketContext';
 
 const EventsPage = () => {
     const [events, setEvents] = useState([]);
@@ -19,6 +20,7 @@ const EventsPage = () => {
     const { getUserId } = useAuth();
     const userId = getUserId();
     const navigate = useNavigate();
+    const { lastMessage } = useWebSocketContext();
 
     useEffect(() => {
         const fetchEvents = async () => {
@@ -49,6 +51,50 @@ const EventsPage = () => {
 
         fetchEvents();
     }, [userId]);
+
+    useEffect(() => {
+        if (!lastMessage) return;
+
+        try {
+            const update = JSON.parse(lastMessage.data);
+            
+            if (update.type === 'EVENT_UPDATE') {
+                setEvents(prevEvents => {
+                    return prevEvents.map(event => {
+                        if (event.event_id === update.eventId) {
+                            return {
+                                ...event,
+                                ...update.data,
+                                // Preserve existing fields that might not be in the update
+                                event_id: event.event_id,
+                                is_host: event.is_host,
+                                is_performer: event.is_performer
+                            };
+                        }
+                        return event;
+                    });
+                });
+
+                // Also update filtered events if they exist
+                setFilteredEvents(prevFiltered => {
+                    return prevFiltered.map(event => {
+                        if (event.event_id === update.eventId) {
+                            return {
+                                ...event,
+                                ...update.data,
+                                event_id: event.event_id,
+                                is_host: event.is_host,
+                                is_performer: event.is_performer
+                            };
+                        }
+                        return event;
+                    });
+                });
+            }
+        } catch (err) {
+            console.error('Error processing WebSocket message:', err);
+        }
+    }, [lastMessage]);
 
     const filterEvents = (events, searchTerm, location) => {
         let filtered = [...events];

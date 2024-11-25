@@ -5,6 +5,7 @@ import BorderBox from '../../components/shared/BorderBox/BorderBox';
 import EventCard from '../../components/events/EventCard';
 import { socialMediaPlatforms } from '../../components/utils/socialMediaPlatforms';
 import './UserPage.sass';
+import { useWebSocketContext } from '../../context/WebSocketContext';
 
 function UserPage() {
     const { userId } = useParams();
@@ -12,6 +13,7 @@ function UserPage() {
     const { user, logout } = useAuth();
     const navigate = useNavigate();
     const defaultImageUrl = 'https://open-mic-guru.s3.us-west-1.amazonaws.com/users/user-default.jpg';
+    const { lastMessage } = useWebSocketContext();
 
     useEffect(() => {
         const fetchUserData = async () => {
@@ -31,6 +33,41 @@ function UserPage() {
         };
         fetchUserData();
     }, [userId]);
+
+    useEffect(() => {
+        if (!lastMessage) return;
+
+        try {
+            const update = JSON.parse(lastMessage.data);
+            
+            if (update.type === 'EVENT_UPDATE') {
+                setUserData(prevData => {
+                    if (!prevData) return prevData;
+
+                    const updatedEvents = prevData.events.map(event => {
+                        if (event.event_id === update.eventId) {
+                            return {
+                                ...event,
+                                ...update.data,
+                                // Preserve existing fields
+                                event_id: event.event_id,
+                                is_host: event.is_host,
+                                is_performer: event.is_performer
+                            };
+                        }
+                        return event;
+                    });
+
+                    return {
+                        ...prevData,
+                        events: updatedEvents
+                    };
+                });
+            }
+        } catch (err) {
+            console.error('Error processing WebSocket message:', err);
+        }
+    }, [lastMessage]);
 
     const handleLogout = () => {
         logout();
