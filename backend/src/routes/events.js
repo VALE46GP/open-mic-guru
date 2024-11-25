@@ -356,7 +356,35 @@ router.patch('/:eventId', verifyToken, async (req, res) => {
             RETURNING *
         `;
 
+        // After getting the original event details and before making any updates
+        const lineupUsers = await db.query(`
+            SELECT 
+                ls.user_id,
+                ls.slot_number,
+                u.name as user_name
+            FROM lineup_slots ls
+            JOIN users u ON ls.user_id = u.id
+            WHERE ls.event_id = $1 
+            AND ls.user_id IS NOT NULL`,
+            [eventId]
+        );
+
+        // Calculate original performance times for each performer
+        const originalTimes = {};
+        for (const performer of lineupUsers.rows) {
+            if (performer.slot_number) {
+                originalTimes[performer.user_id] = calculateSlotStartTime(
+                    originalEvent.rows[0].start_time,
+                    performer.slot_number,
+                    originalEvent.rows[0].slot_duration,
+                    originalEvent.rows[0].setup_duration
+                );
+            }
+        }
+
+        // Perform the update
         const result = await db.query(updateQuery, values);
+        const updatedEvent = result.rows[0];
 
         // Generate notification message for the changes
         const updateMessage = getUpdateMessage(originalEvent.rows[0], {
@@ -371,40 +399,26 @@ router.patch('/:eventId', verifyToken, async (req, res) => {
         });
 
         if (updateMessage) {
-            // Get the updated event details
-            const updatedEvent = result.rows[0];
-
-            // Create notifications for all users in the lineup
-            const lineupUsers = await db.query(`
-                SELECT 
-                    ls.user_id,
-                    ls.slot_number,
-                    u.name as user_name
-                FROM lineup_slots ls
-                JOIN users u ON ls.user_id = u.id
-                WHERE ls.event_id = $1 
-                AND ls.user_id IS NOT NULL`,
-                [eventId]
-            );
-
             for (const performer of lineupUsers.rows) {
                 try {
-                    // Calculate the performer's slot time
-                    const slotTime = calculateSlotStartTime(
-                        updatedEvent.start_time,
-                        performer.slot_number,
-                        updatedEvent.slot_duration,
-                        updatedEvent.setup_duration
-                    );
+                    let message = updateMessage;
+                    
+                    if (performer.slot_number) {
+                        const newTime = calculateSlotStartTime(
+                            updatedEvent.start_time,
+                            performer.slot_number,
+                            updatedEvent.slot_duration,
+                            updatedEvent.setup_duration
+                        );
 
-                    const message = `${updateMessage}${
-                        performer.slot_number 
-                            ? `. Your performance time is ${new Date(slotTime).toLocaleTimeString([], { 
+                        // Only add performance time if it has changed
+                        if (originalTimes[performer.user_id].getTime() !== newTime.getTime()) {
+                            message += `. Your performance time is ${new Date(newTime).toLocaleTimeString([], { 
                                 hour: 'numeric', 
                                 minute: '2-digit'
-                              })}`
-                            : ''
-                    }`;
+                            })}`;
+                        }
+                    }
 
                     await createNotification(
                         performer.user_id,
@@ -418,13 +432,6 @@ router.patch('/:eventId', verifyToken, async (req, res) => {
                     console.error('Error creating notification for performer:', performer.user_id, err);
                 }
             }
-
-            const updateData = {
-                type: 'EVENT_UPDATE',
-                eventId: parseInt(eventId),
-                data: updatedEvent
-            };
-            req.app.locals.broadcastLineupUpdate(updateData);
         }
 
         res.json(result.rows[0]);

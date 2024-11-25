@@ -17,14 +17,22 @@ function calculateSlotStartTime(eventStartTime, slotNumber, slotDuration, setupD
 }
 
 function hasTimeRelatedChanges(originalEvent, updatedFields) {
-    return (
-        (updatedFields.start_time !== undefined && 
-         new Date(updatedFields.start_time).getTime() !== new Date(originalEvent.start_time).getTime()) ||
-        (updatedFields.slot_duration !== undefined && 
-         JSON.stringify(updatedFields.slot_duration) !== JSON.stringify(originalEvent.slot_duration)) ||
-        (updatedFields.setup_duration !== undefined && 
-         JSON.stringify(updatedFields.setup_duration) !== JSON.stringify(originalEvent.setup_duration))
-    );
+    if (!updatedFields) return false;
+    
+    const startTimeChanged = updatedFields.start_time !== undefined && 
+        new Date(updatedFields.start_time).getTime() !== new Date(originalEvent.start_time).getTime();
+        
+    const slotDurationChanged = updatedFields.slot_duration !== undefined &&
+        (typeof updatedFields.slot_duration === 'object' 
+            ? updatedFields.slot_duration.minutes !== originalEvent.slot_duration.minutes
+            : Math.floor(updatedFields.slot_duration / 60) !== Math.floor(originalEvent.slot_duration / 60));
+            
+    const setupDurationChanged = updatedFields.setup_duration !== undefined &&
+        (typeof updatedFields.setup_duration === 'object'
+            ? updatedFields.setup_duration.minutes !== originalEvent.setup_duration.minutes
+            : Math.floor(updatedFields.setup_duration / 60) !== Math.floor(originalEvent.setup_duration / 60));
+    
+    return startTimeChanged || slotDurationChanged || setupDurationChanged;
 }
 
 module.exports = { calculateSlotStartTime, hasTimeRelatedChanges };
