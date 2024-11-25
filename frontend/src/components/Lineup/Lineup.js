@@ -53,8 +53,9 @@ function Slot({
         } else {
             if (isOwnSlot) {
                 classes.push('lineup__slot--user-slot');
+            } else if (isHost) {
+                classes.push('lineup__slot--assigned');
             }
-            classes.push('lineup__slot--assigned');
             if (!isEditing) classes.push('clickable');
         }
 
