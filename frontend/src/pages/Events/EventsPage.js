@@ -10,7 +10,6 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useWebSocketContext } from '../../context/WebSocketContext';
 
 const EVENT_TYPE_OPTIONS = [
-    { label: 'All', value: 'all' },
     { label: 'Music', value: 'music' },
     { label: 'Comedy', value: 'comedy' },
     { label: 'Spoken Word', value: 'spoken_word' },
@@ -29,7 +28,8 @@ const EventsPage = () => {
     const userId = getUserId();
     const navigate = useNavigate();
     const { lastMessage } = useWebSocketContext();
-    const [selectedEventTypes, setSelectedEventTypes] = useState(['all']);
+    const [selectedEventTypes, setSelectedEventTypes] = useState([]);
+    const [showTypeFilter, setShowTypeFilter] = useState(false);
 
     useEffect(() => {
         const fetchEvents = async () => {
@@ -115,10 +115,10 @@ const EventsPage = () => {
         let filtered = [...events];
 
         // Event type filtering
-        if (!selectedEventTypes.includes('all')) {
+        if (selectedEventTypes.length > 0) {
             filtered = filtered.filter(event => 
                 event.event_types?.some(eventType => 
-                    selectedEventTypes.some(selectedType => selectedType === eventType)
+                    selectedEventTypes.includes(eventType)
                 )
             );
         }
@@ -213,21 +213,11 @@ const EventsPage = () => {
 
     const handleEventTypeChange = (value) => {
         setSelectedEventTypes(prev => {
-            let next;
-            if (value === 'all') {
-                next = ['all'];
+            if (prev.includes(value)) {
+                return prev.filter(t => t !== value);
             } else {
-                next = prev.filter(t => t !== 'all');
-                if (prev.includes(value)) {
-                    next = next.filter(t => t !== value);
-                } else {
-                    next = [...next, value];
-                }
-                if (next.length === 0) {
-                    next = ['all'];
-                }
+                return [...prev, value];
             }
-            return next;
         });
     };
 
@@ -237,27 +227,42 @@ const EventsPage = () => {
                 <div className="events-page__map-section">
                     <div className="events-page__filter-buttons">
                         <button
-                            className="events-page__toggle-past-events"
+                            className="events-page__filter-button"
+                            onClick={() => {
+                                if (showTypeFilter) {
+                                    setSelectedEventTypes([]);
+                                    setShowTypeFilter(false);
+                                } else {
+                                    setShowTypeFilter(true);
+                                }
+                            }}
+                        >
+                            {showTypeFilter ? "All Types" : "Filter by Type"}
+                        </button>
+                        <button
+                            className="events-page__filter-button"
                             onClick={() => setShowPastEvents(!showPastEvents)}
                         >
                             {showPastEvents ? "Hide Past Events" : "Show Past Events"}
                         </button>
                     </div>
-                    <div className="events-page__checkboxes">
-                        {EVENT_TYPE_OPTIONS.map(option => (
-                            <div key={option.value} className="events-page__checkbox-group">
-                                <label className="events-page__checkbox-label">
-                                    <input
-                                        type="checkbox"
-                                        className="events-page__checkbox"
-                                        checked={selectedEventTypes.includes(option.value)}
-                                        onChange={() => handleEventTypeChange(option.value)}
-                                    />
-                                    {option.label}
-                                </label>
-                            </div>
-                        ))}
-                    </div>
+                    {showTypeFilter && (
+                        <div className="events-page__checkboxes">
+                            {EVENT_TYPE_OPTIONS.map(option => (
+                                <div key={option.value} className="events-page__checkbox-group">
+                                    <label className="events-page__checkbox-label">
+                                        <input
+                                            type="checkbox"
+                                            className="events-page__checkbox"
+                                            checked={selectedEventTypes.includes(option.value)}
+                                            onChange={() => handleEventTypeChange(option.value)}
+                                        />
+                                        {option.label}
+                                    </label>
+                                </div>
+                            ))}
+                        </div>
+                    )}
                     <VenueAutocomplete
                         onPlaceSelected={handleLocationSelected}
                         onClear={() => {
