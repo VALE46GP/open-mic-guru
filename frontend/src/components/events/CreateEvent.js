@@ -25,7 +25,6 @@ function CreateEvent() {
     const navigate = useNavigate();
     const isEditMode = !!eventId;
     const [isGoogleMapsLoaded, setIsGoogleMapsLoaded] = useState(false);
-    const [isEditingLocation, setIsEditingLocation] = useState(false);
     const [eventImage, setEventImage] = useState(null);
     const [imagePreview, setImagePreview] = useState(null);
     const [eventTypes, setEventTypes] = useState([]);
@@ -49,13 +48,11 @@ function CreateEvent() {
                     setEventData(data);
                     setNewEventName(data.event?.name || '');
 
-                    // Set both image states if event has an image
                     if (data.event?.image) {
                         setImagePreview(data.event.image);
                         setEventImage(data.event.image);
                     }
 
-                    // Convert UTC dates to local timezone for form input
                     if (data.event?.start_time) {
                         const startDate = new Date(data.event.start_time);
                         setStartTime(startDate.toLocaleString('sv-SE', {
@@ -82,14 +79,23 @@ function CreateEvent() {
 
                     setSlotDuration(data.event?.slot_duration?.minutes ? data.event.slot_duration.minutes.toString() : '10');
                     setSetupDuration(data.event?.setup_duration?.minutes ? data.event.setup_duration.minutes.toString() : '5');
-                    if (data.venue && isGoogleMapsLoaded) {
-                        setSelectedVenue({
-                            name: data.venue?.name || '',
-                            address: data.venue?.address || '',
-                            latitude: data.venue?.latitude || 0,
-                            longitude: data.venue?.longitude || 0
-                        });
+                    
+                    if (data.venue) {
+                        const venueData = {
+                            name: data.venue.name,
+                            address: data.venue.address,
+                            latitude: data.venue.latitude,
+                            longitude: data.venue.longitude,
+                            geometry: {
+                                location: {
+                                    lat: () => data.venue.latitude,
+                                    lng: () => data.venue.longitude
+                                }
+                            }
+                        };
+                        setSelectedVenue(venueData);
                     }
+                    
                     setAdditionalInfo(data.event?.additional_info || '');
                     setEventTypes(data.event?.event_types || []);
                     setIsEventActive(data.event?.active ?? true);
@@ -100,7 +106,7 @@ function CreateEvent() {
 
             fetchEventDetails();
         }
-    }, [eventId, isGoogleMapsLoaded]);
+    }, [eventId]);
 
     useEffect(() => {
         // Avoid using `setInterval` in the test environment.
@@ -347,7 +353,7 @@ function CreateEvent() {
                             )}
                         </div>
                         <div className="create-event__input-field">
-                            <label>Event Type</label>
+                            <label>Event Type(s)</label>
                             <div className="create-event__checkboxes">
                                 {EVENT_TYPE_OPTIONS.map(option => (
                                     <div key={option.value} className="create-event__checkbox-group">
@@ -374,26 +380,20 @@ function CreateEvent() {
                 </BorderBox>
             </div>
             <div className="create-event__container">
-                <BorderBox onEdit={isEditMode ? () => setIsEditingLocation(true) : null}>
+                <BorderBox>
                     <h2 className="create-event__title">Location</h2>
                     <div className="create-event__form-content">
-                        {(!isEditMode || isEditingLocation) ? (
-                            <VenueAutocomplete
-                                onPlaceSelected={(place) => {
-                                    setSelectedVenue(place);
-                                    setIsEditingLocation(false);
-                                }}
-                                resetTrigger={resetTrigger}
-                                onResetComplete={handleResetComplete}
-                                initialValue={selectedVenue ? `${selectedVenue.name}, ${selectedVenue.address}` : ''}
-                                specificCoordinates={true}
-                                placeholder="Choose a location"
-                            />
-                        ) : (
-                            <p className="create-event__text">
-                                {selectedVenue?.name}, {selectedVenue?.address}
-                            </p>
-                        )}
+                        <VenueAutocomplete
+                            onPlaceSelected={(place) => {
+                                setSelectedVenue(place);
+                            }}
+                            resetTrigger={resetTrigger}
+                            onResetComplete={handleResetComplete}
+                            initialValue={selectedVenue ? `${selectedVenue.name}, ${selectedVenue.address}` : ''}
+                            specificCoordinates={true}
+                            placeholder="Choose a location"
+                            key={selectedVenue ? `${selectedVenue.name}-${selectedVenue.address}` : 'empty'}
+                        />
                         <div className="create-event__map-container">
                             <LocationMap
                                 latitude={selectedVenue?.latitude}

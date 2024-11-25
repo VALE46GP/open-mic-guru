@@ -82,6 +82,12 @@ const VenueAutocomplete = ({
         }
     }, [resetTrigger, onResetComplete]);
 
+    useEffect(() => {
+        if (initialValue) {
+            setInputValue(initialValue);
+        }
+    }, [initialValue]);
+
     return (
         <div className="venue-autocomplete">
             <div className="venue-autocomplete__input-wrapper">
