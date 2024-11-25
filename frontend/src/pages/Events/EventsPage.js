@@ -68,14 +68,15 @@ const EventsPage = () => {
                                 // Preserve existing fields that might not be in the update
                                 event_id: event.event_id,
                                 is_host: event.is_host,
-                                is_performer: event.is_performer
+                                is_performer: event.is_performer,
+                                active: update.data.active !== undefined ? update.data.active : event.active
                             };
                         }
                         return event;
                     });
                 });
 
-                // Also update filtered events if they exist
+                // Also update filtered events
                 setFilteredEvents(prevFiltered => {
                     return prevFiltered.map(event => {
                         if (event.event_id === update.eventId) {
@@ -84,7 +85,8 @@ const EventsPage = () => {
                                 ...update.data,
                                 event_id: event.event_id,
                                 is_host: event.is_host,
-                                is_performer: event.is_performer
+                                is_performer: event.is_performer,
+                                active: update.data.active !== undefined ? update.data.active : event.active
                             };
                         }
                         return event;

@@ -434,6 +434,17 @@ router.patch('/:eventId', verifyToken, async (req, res) => {
             }
         }
 
+        // Broadcast the update via WebSocket
+        const updateData = {
+            type: 'EVENT_UPDATE',
+            eventId: parseInt(eventId),
+            data: {
+                ...result.rows[0],
+                active: result.rows[0].active
+            }
+        };
+
+        req.app.locals.broadcastLineupUpdate(updateData);
         res.json(result.rows[0]);
     } catch (err) {
         console.error(err);
