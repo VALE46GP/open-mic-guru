@@ -211,4 +211,3 @@ The frontend application will run on `http://localhost:3000`
 
 ## Contact
 - Eric Callari - [ericdoescode@gmail.com](mailto:ericdoescode@gmail.com)
-- Project Link: [https://github.com/VALE46GP/open-mic-guru](https://github.com/VALE46GP/open-mic-guru)
