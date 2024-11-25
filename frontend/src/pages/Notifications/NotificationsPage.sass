@@ -144,16 +144,14 @@ $spacing-unit: 16px
     position: relative
     flex-shrink: 0
 
-    &--selected
-      background: $color-primary
-      color: white
 
     &:focus-visible,
     &:hover
       background: rgba($color-primary, 0.1)
-      
+
     &--selected
-      background: darken($color-primary, 10%)
+      color: white
+      background: darken($color-primary, 10%) !important
 
   &__toggle-button
     display: flex

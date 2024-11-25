@@ -397,7 +397,7 @@ router.patch('/:eventId', verifyToken, async (req, res) => {
                         updatedEvent.setup_duration
                     );
 
-                    const message = `The event "${updatedEvent.name}" has been updated. ${updateMessage}${
+                    const message = `${updateMessage}${
                         performer.slot_number 
                             ? `. Your performance time is ${new Date(slotTime).toLocaleTimeString([], { 
                                 hour: 'numeric', 
