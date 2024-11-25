@@ -31,11 +31,6 @@
         text-align: center
         width: 100%
 
-    &__button-container
-        display: flex
-        justify-content: center
-        width: 100%
-
     label
         display: block
         text-align: left
@@ -80,13 +75,29 @@
             width: auto
             margin: 0
 
+    &__button-row
+        display: flex
+        justify-content: center
+        flex-wrap: wrap
+        gap: .5rem
+        width: 100%
+
+    &__button
+        flex-grow: 1
+        flex-basis: 40%
+
+    &__button,
     &__status-button
         padding: 0.5rem 1rem
+        margin: 0
         border-radius: 4px
         font-weight: 600
         cursor: pointer
-        margin-right: 1rem
         border: none
+
+    &__status-button
+        flex-basis: 100%
+        margin-bottom: .5rem
 
         &--cancel
             background-color: #dc3545

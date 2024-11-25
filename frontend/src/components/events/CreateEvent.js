@@ -404,7 +404,7 @@ function CreateEvent() {
                     </div>
                 </BorderBox>
             </div>
-            <div className="create-event__button-container">
+            <div className="create-event__button-row">
                 {isEditMode && (
                     <button 
                         className={`create-event__status-button ${
@@ -416,14 +416,14 @@ function CreateEvent() {
                     </button>
                 )}
                 <button 
-                    className="create-event__submit-button"
+                    className="create-event__button"
                     onClick={handleSubmit}
                 >
                     {isEditMode ? 'Save' : 'Submit'}
                 </button>
                 {isEditMode && (
                     <button 
-                        className="create-event__cancel-button"
+                        className="create-event__button"
                         onClick={() => navigate(-1)}
                     >
                         Cancel

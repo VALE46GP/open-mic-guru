@@ -225,9 +225,9 @@ const EventsPage = () => {
         <div className="events-page">
             <BorderBox className="events-page__border-box">
                 <div className="events-page__map-section">
-                    <div className="events-page__filter-buttons">
+                    <div className="events-page__button-row">
                         <button
-                            className="events-page__filter-button"
+                            className="events-page__button"
                             onClick={() => {
                                 if (showTypeFilter) {
                                     setSelectedEventTypes([]);
@@ -240,7 +240,7 @@ const EventsPage = () => {
                             {showTypeFilter ? "All Types" : "Filter by Type"}
                         </button>
                         <button
-                            className="events-page__filter-button"
+                            className="events-page__button"
                             onClick={() => setShowPastEvents(!showPastEvents)}
                         >
                             {showPastEvents ? "Hide Past Events" : "Show Past Events"}
