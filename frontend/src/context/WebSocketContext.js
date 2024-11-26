@@ -6,6 +6,7 @@ const WebSocketContext = createContext(null);
 
 export const WebSocketProvider = ({ children }) => {
     const [socketUrl, setSocketUrl] = useState(null);
+    const [lastMessage, setLastMessage] = useState(null); // Reactive state for WebSocket messages
     const { getToken } = useAuth();
 
     useEffect(() => {
@@ -15,7 +16,7 @@ export const WebSocketProvider = ({ children }) => {
         }
     }, [getToken]);
 
-    const { sendMessage, lastMessage, readyState } = useWebSocket(socketUrl, {
+    const { sendMessage, readyState } = useWebSocket(socketUrl, {
         shouldReconnect: (closeEvent) => true,
         reconnectAttempts: 10,
         reconnectInterval: 3000,
@@ -24,17 +25,18 @@ export const WebSocketProvider = ({ children }) => {
         },
         onMessage: (event) => {
             console.log('WebSocket message received:', event);
+            setLastMessage(event); // Update the reactive state for testing and live updates
         },
         onError: (event) => {
             console.error('WebSocket error:', event);
         },
         onClose: (event) => {
             console.log('WebSocket closed:', event);
-        }
+        },
     });
 
     return (
-        <WebSocketContext.Provider value={{ sendMessage, lastMessage, readyState }}>
+        <WebSocketContext.Provider value={{ sendMessage, lastMessage, setLastMessage, readyState }}>
             {children}
         </WebSocketContext.Provider>
     );

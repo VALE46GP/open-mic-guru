@@ -66,6 +66,7 @@ const EventsPage = () => {
 
         try {
             const update = JSON.parse(lastMessage.data);
+            console.log('Received WebSocket update:', update);
             
             if (update.type === 'EVENT_UPDATE') {
                 setEvents(prevEvents => {
@@ -105,6 +106,7 @@ const EventsPage = () => {
         } catch (err) {
             console.error('Error processing WebSocket message:', err);
         }
+        console.log('Last WebSocket message:', lastMessage);
     }, [lastMessage]);
 
     useEffect(() => {
@@ -127,9 +129,9 @@ const EventsPage = () => {
         if (searchTerm.trim()) {
             const searchLower = searchTerm.toLowerCase();
             filtered = filtered.filter(event =>
-                event.event_name.toLowerCase().includes(searchLower) ||
-                event.venue_name.toLowerCase().includes(searchLower) ||
-                event.host_name.toLowerCase().includes(searchLower)
+                (event.event_name?.toLowerCase().includes(searchLower) || '') ||
+                (event.venue_name?.toLowerCase().includes(searchLower) || '') ||
+                (event.host_name?.toLowerCase().includes(searchLower) || '')
             );
         }
 
