@@ -9,12 +9,12 @@ module.exports = function (app) {
             target,
             changeOrigin: true,
             pathRewrite: { '^/api': '' },
-            onProxyReq: (proxyReq, req) => {
-                console.log('Proxying request:', {
-                    path: req.path,
-                    target: target
-                });
-            }
+            // onProxyReq: (proxyReq, req) => {
+            //     console.log('Proxying request:', {
+            //         path: req.path,
+            //         target: target
+            //     });
+            // }
         })
     );
 
