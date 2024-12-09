@@ -40,7 +40,11 @@ describe('EventsPage', () => {
         global.fetch = jest.fn(() =>
             Promise.resolve({
                 ok: true,
-                json: () => Promise.resolve(mockEvents)
+                json: () => Promise.resolve({
+                    data: {
+                        events: mockEvents
+                    }
+                })
             })
         );
     });

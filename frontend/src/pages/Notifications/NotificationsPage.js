@@ -136,6 +136,7 @@ function NotificationsPage() {
                     <div className="notifications__top-button-row">
                         <div className="notifications__top-button-container">
                             <button
+                                aria-label="Select all event notifications"
                                 className={`notifications__select-button ${
                                     selectedEvents.size === Object.keys(groupedNotifications).length
                                         ? 'notifications__select-button--selected'
@@ -149,6 +150,7 @@ function NotificationsPage() {
                         </div>
                         <div className="notifications__top-button-container">
                             <button
+                                aria-label="Delete Selected"
                                 className={`notifications__delete-button ${
                                     selectedEvents.size ?
                                         'notifications__delete-button--active' : ''
@@ -173,7 +175,8 @@ function NotificationsPage() {
                                 <div key={eventId} className="notifications__event-group">
                                     <div className="notifications__event-row">
                                         <div className="notifications__button-column">
-                                            <button 
+                                            <button
+                                                aria-label="Select event notifications"
                                                 className={`notifications__select-button ${
                                                     selectedEvents.has(eventId) ? 'notifications__select-button--selected' : ''
                                                 }`}
@@ -184,6 +187,7 @@ function NotificationsPage() {
                                                 )}
                                             </button>
                                             <button
+                                                aria-label="Show notifications"
                                                 className={`notifications__toggle-button ${
                                                     expandedEvents.has(eventId) ? 'notifications__toggle-button--expanded' : ''
                                                 } ${data.unreadCount > 0 && !expandedEvents.has(eventId) ? 'notifications__toggle-button--has-unread' : ''}`}

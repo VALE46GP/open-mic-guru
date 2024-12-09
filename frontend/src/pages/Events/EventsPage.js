@@ -8,6 +8,7 @@ import BorderBox from '../../components/shared/BorderBox/BorderBox';
 import './EventsPage.sass';
 import { Link, useNavigate } from 'react-router-dom';
 import { useWebSocketContext } from '../../context/WebSocketContext';
+import { sortEventsByDate } from '../../utils/eventUtils';
 
 const EVENT_TYPE_OPTIONS = [
     { label: 'Music', value: 'music' },
@@ -38,7 +39,8 @@ const EventsPage = () => {
                 if (!response.ok) {
                     throw new Error('Failed to fetch events');
                 }
-                const eventsData = await response.json();
+                const { data } = await response.json();
+                const eventsData = data.events;
 
                 const processedEvents = eventsData.map(event => ({
                     ...event,
@@ -47,10 +49,7 @@ const EventsPage = () => {
                     active: event.active === undefined ? true : event.active
                 }));
 
-                const sortedEvents = processedEvents.sort(
-                    (a, b) => new Date(a.start_time) - new Date(b.start_time)
-                );
-
+                const sortedEvents = sortEventsByDate(processedEvents);
                 setEvents(sortedEvents);
                 setFilteredEvents(sortedEvents);
             } catch (error) {

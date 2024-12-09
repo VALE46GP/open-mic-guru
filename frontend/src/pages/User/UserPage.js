@@ -17,19 +17,13 @@ function UserPage() {
 
     useEffect(() => {
         const fetchUserData = async () => {
-            const response = await fetch(`/api/users/${userId}`);
-            const data = await response.json();
-            
-            // Process events to ensure they have the active property
-            const processedData = {
-                ...data,
-                events: data.events.map(eventData => ({
-                    ...eventData.event,
-                    ...eventData
-                }))
-            };
-            
-            setUserData(processedData);
+            try {
+                const response = await fetch(`/api/users/${userId}`);
+                const data = await response.json();
+                setUserData(data);
+            } catch (error) {
+                console.error('Error fetching user data:', error);
+            }
         };
         fetchUserData();
     }, [userId]);
@@ -49,7 +43,6 @@ function UserPage() {
                             return {
                                 ...event,
                                 ...update.data,
-                                // Preserve existing fields
                                 event_id: event.event_id,
                                 is_host: event.is_host,
                                 is_performer: event.is_performer
@@ -83,10 +76,10 @@ function UserPage() {
 
     const isOwnProfile = user && String(user.id) === String(userId);
 
-    const currentEvents = userData?.events.filter(event => new Date(event.start_time) >= new Date()) || [];
-    const pastEvents = (userData?.events
+    const currentEvents = userData.events.filter(event => new Date(event.start_time) >= new Date()) || [];
+    const pastEvents = userData.events
         .filter(event => new Date(event.start_time) < new Date())
-        .sort((a, b) => new Date(b.start_time) - new Date(a.start_time))) || [];
+        .sort((a, b) => new Date(b.start_time) - new Date(a.start_time)) || [];
 
     return (
         <div className="user-page">
@@ -121,7 +114,7 @@ function UserPage() {
                 )}
             </div>
 
-            {userData.user.social_media_accounts.length > 0 && (
+            {userData.user.social_media_accounts?.length > 0 && (
                 <>
                     <h2>Social Media</h2>
                     <BorderBox className="user-page__social-media-box">
@@ -130,10 +123,8 @@ function UserPage() {
                                 const IconComponent = getPlatformIcon(account.platform);
                                 return (
                                     <div key={index} className="user-page__social-media-item">
-                                        <a href={account.url} target="_blank"
-                                           rel="noopener noreferrer">
-                                            {IconComponent && <IconComponent
-                                                className="user-page__social-media-icon"/>}
+                                        <a href={account.url} target="_blank" rel="noopener noreferrer">
+                                            {IconComponent && <IconComponent className="user-page__social-media-icon"/>}
                                             <span>{account.platform}</span>
                                         </a>
                                     </div>

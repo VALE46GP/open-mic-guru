@@ -5,6 +5,7 @@ const verifyToken = require('../middleware/verifyToken');
 const AWS = require('aws-sdk');
 const { calculateSlotStartTime, hasTimeRelatedChanges } = require('../utils/timeCalculations');
 const { createNotification } = require('../utils/notifications');
+const { createApiResponse, createErrorResponse } = require('../utils/apiResponse');
 
 // Configure AWS SDK (matching users.js pattern)
 AWS.config.update({
@@ -130,10 +131,12 @@ router.get('/', async (req, res) => {
             }
         });
 
-        res.json(Array.from(eventsMap.values()));
+        res.json(createApiResponse({
+            events: Array.from(eventsMap.values())
+        }));
     } catch (err) {
         console.error(err);
-        res.status(500).send('Server error');
+        res.status(500).json(createErrorResponse('Server error'));
     }
 });
 
@@ -226,7 +229,7 @@ router.get('/:eventId', async (req, res) => {
             lineup: lineup
         };
 
-        res.json({
+        res.json(createApiResponse({
             event: eventDetails.event,
             venue: eventDetails.venue,
             host: eventDetails.host,
@@ -235,10 +238,10 @@ router.get('/:eventId', async (req, res) => {
                 identifier: nonUserId,
                 ipAddress: ipAddress
             }
-        });
+        }));
     } catch (err) {
         console.error(err);
-        res.status(500).json({ error: 'Server error', details: err.message });
+        res.status(500).json(createErrorResponse('Server error', 500));
     }
 });
 
@@ -273,7 +276,7 @@ router.post('/', verifyToken, async (req, res) => {
         res.status(201).json(result.rows[0]);
     } catch (err) {
         console.error(err);
-        res.status(500).json({ error: 'Server error', details: err.message });
+        res.status(500).json(createErrorResponse('Server error', 500));
     }
 });
 
@@ -448,7 +451,7 @@ router.patch('/:eventId', verifyToken, async (req, res) => {
         res.json(result.rows[0]);
     } catch (err) {
         console.error(err);
-        res.status(500).json({ error: 'Server error', details: err.message });
+        res.status(500).json(createErrorResponse('Server error', 500));
     }
 });
 
@@ -484,7 +487,7 @@ router.delete('/:eventId', verifyToken, async (req, res) => {
         res.status(204).send();
     } catch (err) {
         console.error('Error while deleting event:', err);
-        res.status(500).json({ error: 'Server error', details: err.message });
+        res.status(500).json(createErrorResponse('Server error', 500));
     }
 });
 
@@ -582,7 +585,7 @@ router.put('/:eventId/extend', verifyToken, async (req, res) => {
         res.json(result.rows[0]);
     } catch (err) {
         console.error(err);
-        res.status(500).json({ error: 'Server error' });
+        res.status(500).json(createErrorResponse('Server error', 500));
     }
 });
 
@@ -601,7 +604,7 @@ router.post('/upload', async (req, res) => {
         res.json({ uploadURL });
     } catch (err) {
         console.error(err);
-        res.status(500).json({ error: 'Error generating upload URL' });
+        res.status(500).json(createErrorResponse('Error generating upload URL', 500));
     }
 });
 
