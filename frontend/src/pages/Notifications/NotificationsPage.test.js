@@ -14,9 +14,9 @@ jest.mock('../../components/events/EventCard', () => ({
     __esModule: true,
     default: function MockEventCard({ event }) {
         return (
-            <div data-testid={`event-card-${event.event_id || 'unknown'}`}>
-                <h3>{event.event_name || 'Unknown Event'}</h3>
-                <p>{event.venue_name || 'Unknown Venue'}</p>
+            <div data-testid={`event-card-${event.event_id}`}>
+                <h3>{event.event_name}</h3>
+                <p>{event.venue_name}</p>
             </div>
         );
     }
@@ -63,6 +63,7 @@ describe('NotificationsPage', () => {
 
         await waitFor(() => {
             expect(screen.getByText('New signup for slot 1')).toBeInTheDocument();
+            expect(populatedMockHook.markAsRead).toHaveBeenCalledWith([1]);
         });
     });
 
@@ -85,6 +86,6 @@ describe('NotificationsPage', () => {
             fireEvent.click(confirmButton);
         });
 
-        expect(populatedMockHook.deleteNotifications).toHaveBeenCalled();
+        expect(populatedMockHook.deleteNotifications).toHaveBeenCalledWith(['123']);
     });
 });

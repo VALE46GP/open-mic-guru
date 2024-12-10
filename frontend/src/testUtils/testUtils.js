@@ -18,36 +18,57 @@ const mockWebSocketContext = {
     lastMessage: null,
     sendMessage: jest.fn(),
     setLastMessage: jest.fn(),
-    subscribe: jest.fn(),
-    connected: true,
-    webSocket: new MockWebSocket('ws://localhost:8080'),
+    readyState: 1,
+    connected: true
 };
 
-const mockNotificationsContext = {
+export const mockNotification = {
+    id: 1,
+    event_id: 123,
+    message: 'New signup for slot 1',
+    created_at: '2024-01-01T00:00:00Z',
+    is_read: false,
+    event_name: 'Test Event 1',
+    venue_name: 'Test Venue',
+    host_name: 'Test Host',
+    event_start_time: '2024-02-01T00:00:00Z'
+};
+
+export const emptyMockHook = {
     notifications: [],
-    addNotification: jest.fn(),
-    removeNotification: jest.fn(),
     markAsRead: jest.fn(),
+    deleteNotifications: jest.fn(),
+    fetchNotifications: jest.fn()
 };
 
-export const renderWithProviders = (component, { initialRoute = '/' } = {}) => {
-    function Wrapper({ children }) {
-        return (
+export const populatedMockHook = {
+    notifications: [mockNotification],
+    markAsRead: jest.fn(),
+    deleteNotifications: jest.fn().mockResolvedValue(true),
+    fetchNotifications: jest.fn()
+};
+
+export const renderWithProviders = (
+    component,
+    {
+        initialRoute = '/',
+        webSocketValue = mockWebSocketContext,
+        ...renderOptions
+    } = {}
+) => {
+    return {
+        ...render(
             <MemoryRouter initialEntries={[initialRoute]}>
                 <AuthProvider>
-                    <WebSocketProvider>
+                    <WebSocketProvider value={webSocketValue}>
                         <NotificationsProvider>
-                            {children}
+                            {component}
                         </NotificationsProvider>
                     </WebSocketProvider>
                 </AuthProvider>
-            </MemoryRouter>
-        );
-    }
-
-    return {
-        ...render(component, { wrapper: Wrapper }),
-        mockWebSocketContext,
-        mockNotificationsContext
+            </MemoryRouter>,
+            renderOptions
+        ),
+        mockWebSocketContext: webSocketValue
     };
 };
