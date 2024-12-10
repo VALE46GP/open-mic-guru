@@ -20,6 +20,9 @@ jobs:
         with:
           node-version: 16
 
+      - name: Clear old coverage
+        run: rm -rf frontend/coverage
+
       - name: Install dependencies
         working-directory: ./frontend
         run: npm install
@@ -46,6 +49,9 @@ jobs:
         uses: actions/setup-node@v3
         with:
           node-version: 16
+
+      - name: Clear old coverage
+        run: rm -rf backend/coverage
 
       - name: Install dependencies
         working-directory: ./backend
@@ -82,8 +88,13 @@ jobs:
           name: backend-coverage
           path: coverage/backend
 
+      - name: Merge coverage reports
+        run: |
+          npx nyc merge coverage/frontend coverage/backend > coverage/merged-coverage.json
+          npx nyc report --reporter=html --report-dir=coverage/combined
+
       - name: Upload combined coverage
         uses: actions/upload-artifact@v3
         with:
           name: combined-coverage
-          path: coverage
+          path: coverage/combined
