@@ -401,9 +401,9 @@ function Lineup({
             )}
 
             {showModal && (
-                <div className="lineup__modal" onClick={handleOverlayClick}>
+                <div className="lineup__modal" data-testid="slot-modal" onClick={handleOverlayClick}>
                     <div className="lineup__modal-content" onClick={e => e.stopPropagation()}>
-                        <p>Slot #{currentSlot.slot_number}</p>
+                        <p data-testid="slot-number">Slot #{currentSlot.slot_number}</p>
                         <p>Estimated start
                             time: {new Date(currentSlot.slot_start_time).toLocaleTimeString([], {
                                 hour: '2-digit',
@@ -412,11 +412,12 @@ function Lineup({
 
                         {(isHost || currentSlot.user_id === currentUserId) && currentSlot.slot_name !== "Open" ? (
                             <>
-                                <p>Current performer: {currentSlot.slot_name}</p>
+                                <p data-testid="current-performer">Current performer: {currentSlot.slot_name}</p>
                                 <button
                                     onClick={handleDelete}
                                     className="lineup__modal-button--delete"
-                                    aria-label={`Delete slot ${currentSlot.slot_number}`}
+                                    aria-label="Delete slot"
+                                    data-testid="delete-button"
                                 >
                                     Delete
                                 </button>
