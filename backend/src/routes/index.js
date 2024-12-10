@@ -1,6 +1,5 @@
 const userRoutes = require('./users');
 const eventRoutes = require('./events');
-const testdbRoutes = require('./testdb');
 const venueRoutes = require('./venues');
 const authRoutes = require('./auth');
 const lineupSlotsRoutes = require('./lineup_slots');
@@ -14,7 +13,6 @@ module.exports = (app) => {
     app.use('/events', eventRoutes);
     app.use('/venues', venueRoutes);
     app.use('/auth', authRoutes);
-    app.use(testdbRoutes);
     app.use('/lineup_slots', lineupSlotsRoutes);
     app.use('/notifications', notificationRoutes);
 
