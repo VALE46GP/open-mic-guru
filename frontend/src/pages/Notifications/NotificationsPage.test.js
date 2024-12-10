@@ -23,6 +23,7 @@ jest.mock('../../components/events/EventCard', () => ({
 }));
 
 jest.mock('../../context/NotificationsContext', () => ({
+    ...jest.requireActual('../../context/NotificationsContext'),
     useNotifications: () => mockHookImplementation()
 }));
 

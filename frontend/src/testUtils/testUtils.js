@@ -30,25 +30,24 @@ const mockNotificationsContext = {
     markAsRead: jest.fn(),
 };
 
-export const renderWithProviders = (
-    component,
-    { initialRoute = '/', ...renderOptions } = {}
-) => {
-    const Wrapper = ({ children }) => (
-        <MemoryRouter initialEntries={[initialRoute]}>
-            <AuthProvider>
-                <WebSocketProvider value={mockWebSocketContext}>
-                    <NotificationsProvider value={mockNotificationsContext}>
-                        {children}
-                    </NotificationsProvider>
-                </WebSocketProvider>
-            </AuthProvider>
-        </MemoryRouter>
-    );
+export const renderWithProviders = (component, { initialRoute = '/' } = {}) => {
+    function Wrapper({ children }) {
+        return (
+            <MemoryRouter initialEntries={[initialRoute]}>
+                <AuthProvider>
+                    <WebSocketProvider>
+                        <NotificationsProvider>
+                            {children}
+                        </NotificationsProvider>
+                    </WebSocketProvider>
+                </AuthProvider>
+            </MemoryRouter>
+        );
+    }
 
     return {
-        ...render(component, { wrapper: Wrapper, ...renderOptions }),
+        ...render(component, { wrapper: Wrapper }),
         mockWebSocketContext,
-        mockNotificationsContext,
+        mockNotificationsContext
     };
 };
