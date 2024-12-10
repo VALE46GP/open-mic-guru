@@ -37,7 +37,10 @@ const Navigation = () => {
                     </Link>
                 </div>
                 <div className="navigation__right">
-                    <Link to="/users" className="navigation__users-link">
+                    <Link
+                        aria-label="Users"
+                        to="/users"
+                        className="navigation__users-link">
                         <FaUsers/>
                     </Link>
                     {isAuthenticated && user ? (
@@ -46,7 +49,9 @@ const Navigation = () => {
                                 <FaPlus/>
                             </Link>
                             <NotificationIndicator />
-                            <Link to={`/users/${user.id}`}>
+                            <Link
+                                aria="Account"
+                                to={`/users/${user.id}`}>
                                 <img
                                     src={user.image || defaultImageUrl}
                                     alt="User Thumbnail"
@@ -55,7 +60,10 @@ const Navigation = () => {
                             </Link>
                         </div>
                     ) : (
-                        <Link to="/login" className="navigation__login-icon">
+                        <Link
+                            aria-label="Login"
+                            to="/login"
+                            className="navigation__login-icon">
                             <FaSignInAlt/>
                         </Link>
                     )}

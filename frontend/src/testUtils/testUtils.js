@@ -3,6 +3,7 @@ import { render } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { AuthProvider } from '../context/AuthContext';
 import { WebSocketProvider } from '../context/WebSocketContext';
+import { NotificationsProvider } from '../context/NotificationsContext';
 
 class MockWebSocket {
     constructor(url) {
@@ -19,7 +20,14 @@ const mockWebSocketContext = {
     setLastMessage: jest.fn(),
     subscribe: jest.fn(),
     connected: true,
-    webSocket: new MockWebSocket('ws://localhost:8080')
+    webSocket: new MockWebSocket('ws://localhost:8080'),
+};
+
+const mockNotificationsContext = {
+    notifications: [],
+    addNotification: jest.fn(),
+    removeNotification: jest.fn(),
+    markAsRead: jest.fn(),
 };
 
 export const renderWithProviders = (
@@ -30,7 +38,9 @@ export const renderWithProviders = (
         <MemoryRouter initialEntries={[initialRoute]}>
             <AuthProvider>
                 <WebSocketProvider value={mockWebSocketContext}>
-                    {children}
+                    <NotificationsProvider value={mockNotificationsContext}>
+                        {children}
+                    </NotificationsProvider>
                 </WebSocketProvider>
             </AuthProvider>
         </MemoryRouter>
@@ -38,6 +48,7 @@ export const renderWithProviders = (
 
     return {
         ...render(component, { wrapper: Wrapper, ...renderOptions }),
-        mockWebSocketContext
+        mockWebSocketContext,
+        mockNotificationsContext,
     };
 };

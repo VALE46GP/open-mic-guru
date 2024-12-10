@@ -4,6 +4,7 @@ import { act } from 'react-dom/test-utils';
 import NotificationsPage from './NotificationsPage';
 import { renderWithProviders } from '../../testUtils/testUtils';
 import '@testing-library/jest-dom';
+import { mockNotification, emptyMockHook, populatedMockHook } from '../../testData/mockNotifications';
 
 // Create mock hook implementation function
 const mockHookImplementation = jest.fn();
@@ -20,42 +21,6 @@ jest.mock('../../components/events/EventCard', () => ({
         );
     }
 }));
-
-// Sample mock notifications data
-const mockNotification = {
-    id: 1,
-    event_id: '123',
-    event_name: 'Test Event 1', // Add this to match grouping logic
-    venue_name: 'Test Venue',
-    start_time: '2024-02-01T08:00:00Z',
-    is_performer: true,
-    performer_slot_time: '2024-02-01T09:00:00Z',
-    message: 'New signup for slot 1',
-    is_read: false,
-    created_at: '2024-02-01T08:00:00Z'
-};
-
-// Create separate mock hooks for different test cases
-const emptyMockHook = {
-    notifications: [],
-    markAsRead: jest.fn().mockResolvedValue({}),
-    deleteNotifications: jest.fn().mockResolvedValue({}),
-    fetchNotifications: jest.fn(),
-    groupedNotifications: {}
-};
-
-const populatedMockHook = {
-    notifications: [mockNotification],
-    markAsRead: jest.fn().mockResolvedValue({}),
-    deleteNotifications: jest.fn().mockResolvedValue({}),
-    fetchNotifications: jest.fn(),
-    groupedNotifications: {
-        '123': {
-            event: mockNotification.event,
-            notifications: [mockNotification]
-        }
-    }
-};
 
 jest.mock('../../context/NotificationsContext', () => ({
     useNotifications: () => mockHookImplementation()
@@ -114,8 +79,10 @@ describe('NotificationsPage', () => {
         const deleteButton = screen.getByRole('button', { name: /delete selected/i });
         fireEvent.click(deleteButton);
 
-        const confirmButton = screen.getByText('Delete');
-        fireEvent.click(confirmButton);
+        await act(async () => {
+            const confirmButton = screen.getByText('Delete');
+            fireEvent.click(confirmButton);
+        });
 
         expect(populatedMockHook.deleteNotifications).toHaveBeenCalled();
     });
