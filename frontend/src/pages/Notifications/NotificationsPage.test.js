@@ -6,10 +6,7 @@ import { renderWithProviders } from '../../testUtils/testUtils';
 import '@testing-library/jest-dom';
 import { mockNotification, emptyMockHook, populatedMockHook } from '../../testData/mockNotifications';
 
-// Create mock hook implementation function
-const mockHookImplementation = jest.fn();
-
-// Mock EventCard component with proper prop handling
+// Mock EventCard component
 jest.mock('../../components/events/EventCard', () => ({
     __esModule: true,
     default: function MockEventCard({ event }) {
@@ -22,6 +19,9 @@ jest.mock('../../components/events/EventCard', () => ({
     }
 }));
 
+let mockHookImplementation = () => populatedMockHook;
+
+// Mock the notifications context
 jest.mock('../../context/NotificationsContext', () => ({
     ...jest.requireActual('../../context/NotificationsContext'),
     useNotifications: () => mockHookImplementation()
@@ -30,16 +30,16 @@ jest.mock('../../context/NotificationsContext', () => ({
 describe('NotificationsPage', () => {
     beforeEach(() => {
         jest.clearAllMocks();
+        mockHookImplementation = () => populatedMockHook;
     });
 
     it('renders empty state when there are no notifications', async () => {
-        mockHookImplementation.mockReturnValue(emptyMockHook);
+        mockHookImplementation = () => emptyMockHook;
         renderWithProviders(<NotificationsPage />);
         expect(screen.getByText('No notifications')).toBeInTheDocument();
     });
 
     it('renders notifications list', async () => {
-        mockHookImplementation.mockReturnValue(populatedMockHook);
         renderWithProviders(<NotificationsPage />);
 
         await waitFor(() => {
@@ -51,7 +51,6 @@ describe('NotificationsPage', () => {
     });
 
     it('handles notification expansion', async () => {
-        mockHookImplementation.mockReturnValue(populatedMockHook);
         renderWithProviders(<NotificationsPage />);
 
         await waitFor(() => {
@@ -68,7 +67,6 @@ describe('NotificationsPage', () => {
     });
 
     it('handles notification deletion', async () => {
-        mockHookImplementation.mockReturnValue(populatedMockHook);
         renderWithProviders(<NotificationsPage />);
 
         await waitFor(() => {
