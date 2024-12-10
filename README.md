@@ -209,5 +209,25 @@ The frontend application will run on `http://localhost:3000`
 - WebSocket communication tests
 - Authentication flow testing
 
+## Testing Setup
+
+The project uses a comprehensive testing setup to ensure code quality and reliability. The testing setup includes:
+
+- **Frontend Testing**: Utilizes Jest and React Testing Library for unit and integration tests. Coverage reports are generated and stored in the `frontend/coverage` directory.
+- **Backend Testing**: Uses Jest for testing API endpoints and database interactions. Coverage reports are generated and stored in the `backend/coverage` directory.
+
+### Continuous Integration
+
+The project is integrated with GitHub Actions for continuous integration. The CI pipeline is configured to:
+
+- Run frontend and backend tests in parallel to speed up the testing process.
+- Collect coverage reports from both frontend and backend tests.
+- Store combined coverage reports in a top-level `coverage` directory.
+
+To run tests locally, use the following commands:
+
+- **Frontend**: Navigate to the `frontend` directory and run `npm test`.
+- **Backend**: Navigate to the `backend` directory and run `npm test`.
+
 ## Contact
 - Eric Callari - [ericdoescode@gmail.com](mailto:ericdoescode@gmail.com)
