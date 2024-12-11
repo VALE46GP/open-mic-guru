@@ -1,27 +1,22 @@
-name: Run Tests for Frontend and Backend
+name: Tests
 
 on:
   push:
-    branches:
-      - main
+    branches: [ main ]
   pull_request:
+    branches: [ main ]
 
 jobs:
-  test-frontend:
-    name: Frontend Tests
+  test:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
+      - uses: actions/checkout@v2
 
-      - name: Set up Node.js
-        uses: actions/setup-node@v3
+      - name: Use Node.js
+        uses: actions/setup-node@v2
         with:
-          node-version: 16
-
-      - name: Clear old coverage
-        run: rm -rf frontend/coverage
+          node-version: '16.x'
 
       - name: Install dependencies
         working-directory: ./frontend
@@ -29,7 +24,9 @@ jobs:
 
       - name: Run tests
         working-directory: ./frontend
-        run: npm test -- --coverage
+        run: npm test -- --watchAll=false
+        env:
+          CI: true
 
       - name: Upload coverage report (frontend)
         uses: actions/upload-artifact@v3
