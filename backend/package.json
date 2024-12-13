@@ -27,5 +27,13 @@
   "devDependencies": {
     "jest": "^29.7.0"
   },
-  "description": "backend for open-mic-guru"
+  "description": "backend for open-mic-guru",
+  "jest": {
+    "testEnvironment": "node",
+    "coverageDirectory": "coverage",
+    "collectCoverageFrom": [
+      "src/**/*.js",
+      "!src/**/*.test.js"
+    ]
+  }
 }
