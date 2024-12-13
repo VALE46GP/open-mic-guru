@@ -9,5 +9,6 @@ module.exports = {
     testMatch: [
         '**/tests/**/*.js',
         '**/?(*.)+(spec|test).js'
-    ]
+    ],
+    setupFiles: ['<rootDir>/tests/setup.js']
 };
