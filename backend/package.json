@@ -4,7 +4,7 @@
   "main": "index.js",
   "scripts": {
     "start": "node index.js",
-    "test": "jest --coverage"
+    "test": "jest --coverage --config jest.config.js"
   },
   "keywords": [],
   "author": "",
@@ -27,13 +27,5 @@
   "devDependencies": {
     "jest": "^29.7.0"
   },
-  "description": "backend for open-mic-guru",
-  "jest": {
-    "testEnvironment": "node",
-    "coverageDirectory": "coverage",
-    "collectCoverageFrom": [
-      "src/**/*.js",
-      "!src/**/*.test.js"
-    ]
-  }
+  "description": "backend for open-mic-guru"
 }
