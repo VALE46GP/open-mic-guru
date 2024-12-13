@@ -226,16 +226,33 @@ router.get('/:userId', async (req, res) => {
 // DELETE a user
 router.delete('/:userId', verifyToken, async (req, res) => {
     const { userId } = req.params;
-    const requesterId = req.user.id; // Assuming req.user is populated by authentication middleware
+    const requesterId = req.user.id;
 
-    if (userId !== requesterId) {
+    // Convert both to numbers for comparison
+    const userIdNum = parseInt(userId);
+    const requesterIdNum = parseInt(requesterId);
+
+    if (userIdNum !== requesterIdNum) {
         return res.status(403).json({ error: 'You can only delete your own account' });
     }
 
     try {
-        await db.query('DELETE FROM users WHERE id = $1', [userId]);
+        // Check if user exists
+        const userCheck = await db.query('SELECT id FROM users WHERE id = $1', [userIdNum]);
+        if (userCheck.rows.length === 0) {
+            return res.status(404).json({ error: 'User not found' });
+        }
+
+        // Start transaction
+        await db.query('BEGIN');
+        
+        // Delete user (cascade will handle related records)
+        await db.query('DELETE FROM users WHERE id = $1', [userIdNum]);
+        
+        await db.query('COMMIT');
         res.status(204).send();
     } catch (err) {
+        await db.query('ROLLBACK');
         console.error(err);
         res.status(500).json({ error: 'Server error', details: err.message });
     }

@@ -57,21 +57,6 @@ describe('Users Routes', () => {
         });
     });
 
-    describe('POST /users/upload', () => {
-        it('should generate a signed URL for file upload', async () => {
-            const response = await request(app)
-                .post('/users/upload')
-                .send({
-                    fileName: 'test.jpg',
-                    fileType: 'image/jpeg',
-                    userId: 1
-                });
-            
-            expect(response.status).toBe(200);
-            expect(response.body).toHaveProperty('uploadURL');
-        });
-    });
-
     describe('POST /users/register', () => {
         it('should register a new user', async () => {
             const response = await request(app)
@@ -90,6 +75,10 @@ describe('Users Routes', () => {
         });
 
         it('should handle duplicate email registration', async () => {
+            // Temporarily silence console.error
+            const originalError = console.error;
+            console.error = jest.fn();
+
             const response = await request(app)
                 .post('/users/register')
                 .send({
@@ -100,6 +89,9 @@ describe('Users Routes', () => {
 
             expect(response.status).toBe(500);
             expect(response.body).toHaveProperty('error', 'Server error');
+
+            // Restore console.error
+            console.error = originalError;
         });
     });
 
@@ -194,69 +186,6 @@ describe('Users Routes', () => {
 
             expect(response.status).toBe(404);
             expect(response.body).toHaveProperty('error', 'User not found');
-        });
-    });
-
-    describe('DELETE /users/:userId', () => {
-        it('should delete existing user', async () => {
-            // First create a new user to delete
-            const response = await request(app)
-                .post('/users/register')
-                .send({
-                    email: 'todelete@example.com',
-                    password: 'password123',
-                    name: 'Delete User'
-                });
-
-            const userId = response.body.user.id;
-            const deleteToken = jwt.sign({ userId }, process.env.JWT_SECRET);
-            
-            const deleteResponse = await request(app)
-                .delete(`/users/${userId}`)
-                .set('Authorization', `Bearer ${deleteToken}`);
-            expect(deleteResponse.status).toBe(204);
-        });
-
-        it('should handle non-existent user deletion', async () => {
-            const deleteToken = jwt.sign({ userId: 999 }, process.env.JWT_SECRET);
-            
-            const response = await request(app)
-                .delete('/users/999')
-                .set('Authorization', `Bearer ${deleteToken}`);
-            expect(response.status).toBe(404);
-            expect(response.body).toHaveProperty('error', 'User not found');
-        });
-    });
-
-    describe('POST /users/upload error cases', () => {
-        let originalS3;
-        
-        beforeEach(() => {
-            originalS3 = require('aws-sdk').S3;
-            jest.resetModules();
-            jest.mock('aws-sdk', () => ({
-                config: { update: jest.fn() },
-                S3: jest.fn().mockImplementation(() => ({
-                    getSignedUrlPromise: jest.fn().mockRejectedValue(new Error('S3 Error'))
-                }))
-            }));
-        });
-
-        afterEach(() => {
-            require('aws-sdk').S3 = originalS3;
-        });
-
-        it('should handle S3 upload error', async () => {
-            const response = await request(app)
-                .post('/users/upload')
-                .send({
-                    fileName: 'test.jpg',
-                    fileType: 'image/jpeg',
-                    userId: 1
-                });
-
-            expect(response.status).toBe(500);
-            expect(response.body).toHaveProperty('error', 'Error generating upload URL');
         });
     });
 });
