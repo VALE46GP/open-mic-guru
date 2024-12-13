@@ -4,7 +4,9 @@
   "main": "index.js",
   "scripts": {
     "start": "node index.js",
-    "test": "jest --coverage --config jest.config.js"
+    "test": "jest --coverage --config jest.config.js",
+    "init-db": "node src/db/init.js",
+    "init-test-db": "NODE_ENV=test node src/db/init.js"
   },
   "keywords": [],
   "author": "",
@@ -26,7 +28,8 @@
   },
   "devDependencies": {
     "jest": "^29.7.0",
-    "supertest": "^6.3.3"
+    "supertest": "^6.3.3",
+    "express-session": "^1.17.3"
   },
   "description": "backend for open-mic-guru"
 }

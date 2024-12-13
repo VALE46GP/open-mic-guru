@@ -209,6 +209,14 @@ The frontend application will run on `http://localhost:3000`
 - WebSocket communication tests
 - Authentication flow testing
 
+### Configuration
+1. Navigate to the backend/tests directory
+2. Copy setup.js.example to setup.js:   ```bash
+   cp setup.js.example setup.js   ```
+3. Update setup.js with your test credentials
+
+Note: The setup.js file contains test environment variables and should not be committed to version control.
+
 ## Testing Setup
 
 The project uses a comprehensive testing setup to ensure code quality and reliability. The testing setup includes:

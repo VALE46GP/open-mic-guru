@@ -4,7 +4,4 @@ const mockPool = {
     end: jest.fn(),
 };
 
-module.exports = {
-    Pool: jest.fn(() => mockPool),
-    mockPool
-};
+module.exports = mockPool;
