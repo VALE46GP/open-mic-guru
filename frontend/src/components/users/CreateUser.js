@@ -124,8 +124,8 @@ function CreateUser({ initialData, onCancel }) {
             socialMediaAccounts: socialMediaAccounts,
             isUpdate: !!initialData,
             userId: initialData?.id,
+            password: initialData ? newPassword : registerPassword
         };
-        if (newPassword) payload.password = newPassword;
 
         try {
             const response = await fetch('/api/users/register', {
