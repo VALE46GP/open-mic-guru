@@ -5,6 +5,7 @@ import BorderBox from '../shared/BorderBox/BorderBox';
 import { ReactComponent as DeleteIcon } from "../../assets/icons/delete.svg";
 import { socialMediaPlatforms } from '../utils/socialMediaPlatforms';
 import './CreateUser.sass';
+import { useAuth } from '../../hooks/useAuth';
 
 function CreateUser({ initialData, onCancel }) {
     const [registerEmail, setRegisterEmail] = useState('');
@@ -19,6 +20,7 @@ function CreateUser({ initialData, onCancel }) {
     const [oldPassword, setOldPassword] = useState('');
     const [newPassword, setNewPassword] = useState('');
     const [passwordError, setPasswordError] = useState(null);
+    const { login } = useAuth();
 
     const defaultImageUrl = 'https://open-mic-guru.s3.us-west-1.amazonaws.com/users/user-default.jpg';
 
@@ -138,6 +140,10 @@ function CreateUser({ initialData, onCancel }) {
 
             if (!response.ok) {
                 throw new Error(result.error || 'Failed to update user');
+            }
+
+            if (!initialData && result.token) {
+                login(result.token);
             }
 
             setSuccess(true);

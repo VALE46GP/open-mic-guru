@@ -122,7 +122,14 @@ router.post('/register', async (req, res) => {
                  VALUES ($1, $2, $3, $4, $5) RETURNING *`,
                 [email, hashedPassword, name, photoUrl, socialMediaJson]
             );
-            return res.status(201).json({ user: result.rows[0] });
+
+            // Generate JWT token for the new user
+            const token = jwt.sign({ userId: result.rows[0].id }, process.env.JWT_SECRET, { expiresIn: '24h' });
+
+            return res.status(201).json({ 
+                user: result.rows[0],
+                token 
+            });
         }
     } catch (err) {
         console.error('Database Error:', err);
