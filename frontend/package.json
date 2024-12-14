@@ -5,6 +5,7 @@
   "dependencies": {
     "@googlemaps/markerclusterer": "^2.5.3",
     "@hello-pangea/dnd": "^17.0.0",
+    "@react-aria/ssr": "^3.9.7",
     "@react-google-maps/api": "^2.19.3",
     "@testing-library/jest-dom": "^5.17.0",
     "@testing-library/react": "^13.4.0",

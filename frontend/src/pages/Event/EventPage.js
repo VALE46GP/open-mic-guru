@@ -34,28 +34,22 @@ function EventPage() {
 
     useEffect(() => {
         const fetchEventDetails = async () => {
-            if (!eventId) {
-                setError('No event ID provided');
-                setIsLoading(false);
-                return;
-            }
-
             try {
                 const response = await fetch(`/api/events/${eventId}`);
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
-                const data = await response.json();
+                const { data } = await response.json();
+                console.log('Fetched event details:', data);
                 setEventDetails(data);
                 setIsLoading(false);
-            } catch (err) {
-                console.error('Error fetching event details:', err);
-                setError(err.message);
+            } catch (error) {
+                console.error('Error fetching event details:', error);
+                setError(error.message);
                 setIsLoading(false);
             }
         };
 
-        fetchEventDetails();
+        if (eventId) {
+            fetchEventDetails();
+        }
     }, [eventId]);
 
     useEffect(() => {
@@ -129,6 +123,10 @@ function EventPage() {
             console.error('Error processing WebSocket message:', error);
         }
     }, [lastMessage, eventId]);
+
+    useEffect(() => {
+        console.log('Updated event details:', eventDetails);
+    }, [eventDetails]);
 
     if (isLoading) return <div>Loading...</div>;
     if (error) return <div>Error: {error}</div>;
