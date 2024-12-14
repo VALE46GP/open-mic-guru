@@ -40,12 +40,9 @@ const EventsPage = () => {
                     throw new Error('Failed to fetch events');
                 }
                 const { data } = await response.json();
-                console.log('Fetched events data:', data);
                 const eventsData = data.events;
-                console.log('Events array:', eventsData);
 
                 const processedEvents = eventsData.map(event => {
-                    console.log('Processing event:', event);
                     return {
                         ...event,
                         is_host: userId ? event.host_id === userId : false,
@@ -53,7 +50,6 @@ const EventsPage = () => {
                         active: event.active === undefined ? true : event.active
                     };
                 });
-                console.log('Processed events:', processedEvents);
 
                 const sortedEvents = sortEventsByDate(processedEvents);
                 setEvents(sortedEvents);

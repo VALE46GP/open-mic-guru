@@ -37,7 +37,6 @@ function EventPage() {
             try {
                 const response = await fetch(`/api/events/${eventId}`);
                 const { data } = await response.json();
-                console.log('Fetched event details:', data);
                 setEventDetails(data);
                 setIsLoading(false);
             } catch (error) {
@@ -123,10 +122,6 @@ function EventPage() {
             console.error('Error processing WebSocket message:', error);
         }
     }, [lastMessage, eventId]);
-
-    useEffect(() => {
-        console.log('Updated event details:', eventDetails);
-    }, [eventDetails]);
 
     if (isLoading) return <div>Loading...</div>;
     if (error) return <div>Error: {error}</div>;

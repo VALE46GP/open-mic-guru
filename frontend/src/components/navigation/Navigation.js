@@ -50,7 +50,7 @@ const Navigation = () => {
                             </Link>
                             <NotificationIndicator />
                             <Link
-                                aria="Account"
+                                aria-label="Account"
                                 to={`/users/${user.id}`}>
                                 <img
                                     src={user.image || defaultImageUrl}
