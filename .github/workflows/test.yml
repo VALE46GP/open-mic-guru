@@ -41,6 +41,21 @@ jobs:
     name: Backend Tests
     runs-on: ubuntu-latest
 
+    services:
+      postgres:
+        image: postgres:latest
+        env:
+          POSTGRES_USER: ${{ secrets.TEST_PGUSER }}
+          POSTGRES_PASSWORD: ${{ secrets.TEST_PGPASSWORD }}
+          POSTGRES_DB: ${{ secrets.TEST_PGDATABASE }}
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
     steps:
       - uses: actions/checkout@v3
 
@@ -50,6 +65,51 @@ jobs:
           node-version: '16'
           cache: 'npm'
           cache-dependency-path: backend/package-lock.json
+
+      - name: Create test env file
+        run: |
+          cd backend
+          cat > .env << EOL
+          PGUSER=${{ secrets.TEST_PGUSER }}
+          PGHOST=${{ secrets.TEST_PGHOST }}
+          PGDATABASE=${{ secrets.TEST_PGDATABASE }}
+          PGPASSWORD=${{ secrets.TEST_PGPASSWORD }}
+          PGPORT=${{ secrets.TEST_PGPORT }}
+          JWT_SECRET=${{ secrets.TEST_JWT_SECRET }}
+          NODE_ENV=test
+          PORT=3001
+          GOOGLE_CLIENT_ID=${{ secrets.TEST_GOOGLE_CLIENT_ID }}
+          GOOGLE_CLIENT_SECRET=${{ secrets.TEST_GOOGLE_CLIENT_SECRET }}
+          CALLBACK_URL=${{ secrets.TEST_CALLBACK_URL }}
+          AWS_ACCESS_KEY_ID=${{ secrets.TEST_AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY=${{ secrets.TEST_AWS_SECRET_ACCESS_KEY }}
+          AWS_REGION=${{ secrets.TEST_AWS_REGION }}
+          S3_BUCKET_NAME=${{ secrets.TEST_S3_BUCKET_NAME }}
+          EOL
+
+      - name: Create test setup file
+        run: |
+          cd backend/tests
+          cat > setup.js << EOL
+          process.env.NODE_ENV = 'test';
+          process.env.PORT = '3001';
+
+          process.env.PGUSER = '${{ secrets.TEST_PGUSER }}';
+          process.env.PGHOST = '${{ secrets.TEST_PGHOST }}';
+          process.env.PGDATABASE = '${{ secrets.TEST_PGDATABASE }}';
+          process.env.PGPASSWORD = '${{ secrets.TEST_PGPASSWORD }}';
+          process.env.PGPORT = '${{ secrets.TEST_PGPORT }}';
+
+          process.env.JWT_SECRET = '${{ secrets.TEST_JWT_SECRET }}';
+          process.env.GOOGLE_CLIENT_ID = '${{ secrets.TEST_GOOGLE_CLIENT_ID }}';
+          process.env.GOOGLE_CLIENT_SECRET = '${{ secrets.TEST_GOOGLE_CLIENT_SECRET }}';
+          process.env.CALLBACK_URL = '${{ secrets.TEST_CALLBACK_URL }}';
+
+          process.env.AWS_ACCESS_KEY_ID = '${{ secrets.TEST_AWS_ACCESS_KEY_ID }}';
+          process.env.AWS_SECRET_ACCESS_KEY = '${{ secrets.TEST_AWS_SECRET_ACCESS_KEY }}';
+          process.env.AWS_REGION = '${{ secrets.TEST_AWS_REGION }}';
+          process.env.S3_BUCKET_NAME = '${{ secrets.TEST_S3_BUCKET_NAME }}';
+          EOL
 
       - name: Install dependencies
         working-directory: ./backend
@@ -61,12 +121,6 @@ jobs:
         env:
           CI: true
           NODE_ENV: test
-          PORT: 3001
-          JWT_SECRET: ${{ secrets.TEST_JWT_SECRET }}
-          DATABASE_URL: ${{ secrets.TEST_DATABASE_URL }}
-          GOOGLE_CLIENT_ID: ${{ secrets.TEST_GOOGLE_CLIENT_ID }}
-          GOOGLE_CLIENT_SECRET: ${{ secrets.TEST_GOOGLE_CLIENT_SECRET }}
-          CALLBACK_URL: ${{ secrets.TEST_CALLBACK_URL }}
 
       - name: Upload coverage report
         uses: actions/upload-artifact@v3
@@ -81,7 +135,7 @@ jobs:
     
     steps:
       - uses: actions/checkout@v3
-      
+
       - name: Download frontend coverage
         uses: actions/download-artifact@v3
         with:

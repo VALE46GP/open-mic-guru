@@ -1,7 +1,9 @@
 # Open Mic Guru
 
 ## Overview
-Open Mic Guru is a real-time management platform for open mic events, connecting artists, hosts, and audiences. The application streamlines the organization and promotion of open mic nights, providing tools for signup management, real-time updates, and comprehensive event coordination.
+Open Mic Guru is a real-time management platform for open mic events, connecting artists, hosts, 
+and audiences. The application streamlines the organization and promotion of open mic nights, 
+providing tools for signup management, real-time updates, and comprehensive event coordination.
 
 ## Key Features
 
@@ -215,18 +217,23 @@ The frontend application will run on `http://localhost:3000`
    cp setup.js.example setup.js   ```
 3. Update setup.js with your test credentials
 
-Note: The setup.js file contains test environment variables and should not be committed to version control.
+Note: The setup.js file contains test environment variables and should not be committed to version 
+control.
 
 ## Testing Setup
 
-The project uses a comprehensive testing setup to ensure code quality and reliability. The testing setup includes:
+The project uses a comprehensive testing setup to ensure code quality and reliability. The testing 
+setup includes:
 
-- **Frontend Testing**: Utilizes Jest and React Testing Library for unit and integration tests. Coverage reports are generated and stored in the `frontend/coverage` directory.
-- **Backend Testing**: Uses Jest for testing API endpoints and database interactions. Coverage reports are generated and stored in the `backend/coverage` directory.
+- **Frontend Testing**: Utilizes Jest and React Testing Library for unit and integration tests. 
+- Coverage reports are generated and stored in the `frontend/coverage` directory.
+- **Backend Testing**: Uses Jest for testing API endpoints and database interactions. Coverage 
+- reports are generated and stored in the `backend/coverage` directory.
 
 ### Continuous Integration
 
-The project is integrated with GitHub Actions for continuous integration. The CI pipeline is configured to:
+The project is integrated with GitHub Actions for continuous integration. The CI pipeline is 
+configured to:
 
 - Run frontend and backend tests in parallel to speed up the testing process.
 - Collect coverage reports from both frontend and backend tests.
