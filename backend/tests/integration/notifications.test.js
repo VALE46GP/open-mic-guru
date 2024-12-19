@@ -1,12 +1,10 @@
 const request = require('supertest');
 const express = require('express');
 const db = require('../../src/db');
-const { createNotification } = require('../../src/utils/notifications');
 const notificationsController = require('../../src/controllers/notifications');
 
-// Mock dependencies
+// Mock database
 jest.mock('../../src/db');
-jest.mock('../../src/utils/notifications');
 
 const app = express();
 app.use(express.json());

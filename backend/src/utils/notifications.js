@@ -7,15 +7,15 @@ async function createNotification(userId, type, message, eventId = null, lineupS
             'SELECT * FROM notification_preferences WHERE user_id = $1',
             [userId]
         );
-        
+
         console.log('Notification preferences for user:', userId, prefsResult.rows[0]);
-        
+
         const prefs = prefsResult.rows[0];
         if (!prefs) {
             console.log('No notification preferences found for user:', userId);
             return;
         }
-        
+
         // Check if this type of notification is enabled
         if (type.includes('event') && !prefs.notify_event_updates) {
             console.log('Event notifications disabled for user:', userId);
@@ -38,7 +38,7 @@ async function createNotification(userId, type, message, eventId = null, lineupS
              RETURNING *`,
             [userId, type, message, eventId, lineupSlotId]
         );
-        
+
         console.log('Notification created:', result.rows[0]);
 
         // Get complete notification data for broadcast
@@ -72,7 +72,7 @@ async function createNotification(userId, type, message, eventId = null, lineupS
         return result.rows[0];
     } catch (err) {
         console.error('Error creating notification:', err);
-        throw err;
+        return undefined; // Return undefined instead of throwing
     }
 }
 
