@@ -1,4 +1,5 @@
 const db = require('../db');
+const { logger } = require('../../tests/utils/logger');
 
 const venuesController = {
     async checkOrCreateVenue(req, res) {
@@ -20,7 +21,7 @@ const venuesController = {
                 res.status(201).json({ venueId: newVenue.rows[0].id });
             }
         } catch (err) {
-            console.error('Venue creation error:', err);
+            logger.error('Venue creation error:', err);
             res.status(500).json({ error: 'Failed to process venue' });
         }
     }

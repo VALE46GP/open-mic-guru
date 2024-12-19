@@ -1,4 +1,5 @@
 const jwt = require('jsonwebtoken');
+const { logger } = require('../../tests/utils/logger');
 
 const verifyToken = (req, res, next) => {
     const authHeader = req.headers['authorization'];
@@ -10,7 +11,7 @@ const verifyToken = (req, res, next) => {
 
     jwt.verify(token, process.env.JWT_SECRET, (err, decoded) => {
         if (err) {
-            console.error('Token verification failed:', err.message);
+            logger.error('Token verification failed:', err.message);
             return res.status(403).json({ error: 'Invalid token' });
         }
 

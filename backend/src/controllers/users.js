@@ -2,6 +2,7 @@ const db = require('../db');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const AWS = require('aws-sdk');
+const { logger } = require('../../tests/utils/logger');
 
 // Configure AWS SDK
 AWS.config.update({
@@ -61,7 +62,7 @@ const usersController = {
             `);
             res.json(result.rows);
         } catch (err) {
-            console.error(err);
+            logger.error(err);
             res.status(500).json({ error: 'Server error' });
         }
     },
@@ -125,7 +126,7 @@ const usersController = {
                 res.status(201).json({ user: result.rows[0], token });
             }
         } catch (err) {
-            console.error('Database Error:', err);
+            logger.error('Database Error:', err);
             res.status(500).json({ error: 'Server error', details: err.message });
         }
     },
@@ -154,7 +155,7 @@ const usersController = {
 
             res.json({ token });
         } catch (err) {
-            console.error(err);
+            logger.error(err);
             res.status(500).json({ error: 'Server error' });
         }
     },
@@ -212,7 +213,7 @@ const usersController = {
 
             res.json({ user: userQuery.rows[0], events: eventsQuery.rows });
         } catch (err) {
-            console.error(err);
+            logger.error(err);
             res.status(500).json({ error: 'Server error' });
         }
     },
@@ -260,7 +261,7 @@ const usersController = {
             const uploadURL = await s3.getSignedUrlPromise('putObject', s3Params);
             res.json({ uploadURL });
         } catch (err) {
-            console.error(err);
+            logger.error(err);
             res.status(500).json({ error: 'Error generating upload URL' });
         }
     },

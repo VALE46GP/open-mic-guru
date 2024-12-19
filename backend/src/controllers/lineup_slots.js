@@ -1,6 +1,7 @@
 const db = require('../db');
 const { createNotification } = require('../utils/notifications');
 const { calculateSlotStartTime } = require('../utils/timeCalculations');
+const { logger } = require('../../tests/utils/logger');
 
 const lineupSlotsController = {
     async createSlot(req, res) {
@@ -149,8 +150,8 @@ const lineupSlotsController = {
             req.app.locals.broadcastLineupUpdate(lineupData);
             res.status(201).json(result.rows[0]);
         } catch (err) {
-            console.error('Error signing up for lineup:', err);
-            res.status(500).json({ error: 'Server error' });
+            logger.error(err);
+            res.status(500).json({ error: 'Server error', details: err.message });
         }
     },
 
@@ -170,7 +171,7 @@ const lineupSlotsController = {
             `, [eventId]);
             res.json(result.rows);
         } catch (err) {
-            console.error(err);
+            logger.error(err);
             res.status(500).json({ error: 'Server error', details: err.message });
         }
     },
@@ -330,7 +331,7 @@ const lineupSlotsController = {
             req.app.locals.broadcastLineupUpdate(lineupData);
             res.json({ message: 'Slots reordered successfully' });
         } catch (err) {
-            console.error('Error reordering slots:', err);
+            logger.error('Error reordering slots:', err);
             res.status(500).json({ error: 'Server error' });
         }
     }

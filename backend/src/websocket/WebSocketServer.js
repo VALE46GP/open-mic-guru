@@ -1,5 +1,6 @@
 const WebSocket = require('ws');
 const jwt = require('jsonwebtoken');
+const { logger } = require('../../tests/utils/logger');
 
 function initializeWebSocketServer(server) {
     const wss = new WebSocket.Server({
@@ -51,7 +52,7 @@ function initializeWebSocketServer(server) {
                     clients.delete(ws);
                 });
             } catch (err) {
-                console.error('Invalid token:', err);
+                logger.error('Invalid token:', err);
             }
         }
     });

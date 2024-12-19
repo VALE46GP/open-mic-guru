@@ -1,5 +1,6 @@
 const pool = require('./index');
 const tables = require('./schema');
+const { logger } = require('../../tests/utils/logger');
 
 async function initializeDatabase(isTest = false) {
     const client = await pool.connect();
@@ -19,14 +20,14 @@ async function initializeDatabase(isTest = false) {
 
         for (const tableName of tableOrder) {
             await client.query(tables[tableName]);
-            console.log(`Created table: ${tableName}`);
+            logger.log(`Created table: ${tableName}`);
         }
 
         await client.query('COMMIT');
-        console.log(`Database initialization completed successfully for ${isTest ? 'test' : 'production'} environment`);
+        logger.log(`Database initialization completed successfully for ${isTest ? 'test' : 'production'} environment`);
     } catch (error) {
         await client.query('ROLLBACK');
-        console.error('Database initialization failed:', error);
+        logger.error('Database initialization failed:', error);
         throw error;
     } finally {
         client.release();

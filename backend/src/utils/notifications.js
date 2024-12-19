@@ -1,4 +1,5 @@
 const db = require('../db');
+const { logger } = require('../../tests/utils/logger');
 
 async function createNotification(userId, type, message, eventId = null, lineupSlotId = null, req = null) {
     try {
@@ -8,25 +9,25 @@ async function createNotification(userId, type, message, eventId = null, lineupS
             [userId]
         );
 
-        console.log('Notification preferences for user:', userId, prefsResult.rows[0]);
+        logger.log('Notification preferences for user:', userId, prefsResult.rows[0]);
 
         const prefs = prefsResult.rows[0];
         if (!prefs) {
-            console.log('No notification preferences found for user:', userId);
+            logger.log('No notification preferences found for user:', userId);
             return;
         }
 
         // Check if this type of notification is enabled
         if (type.includes('event') && !prefs.notify_event_updates) {
-            console.log('Event notifications disabled for user:', userId);
+            logger.log('Event notifications disabled for user:', userId);
             return;
         }
         if (type.includes('lineup') && !prefs.notify_signup_notifications) {
-            console.log('Lineup notifications disabled for user:', userId);
+            logger.log('Lineup notifications disabled for user:', userId);
             return;
         }
         if (!type.includes('event') && !type.includes('lineup') && !prefs.notify_other) {
-            console.log('Other notifications disabled for user:', userId);
+            logger.log('Other notifications disabled for user:', userId);
             return;
         }
 
@@ -39,7 +40,7 @@ async function createNotification(userId, type, message, eventId = null, lineupS
             [userId, type, message, eventId, lineupSlotId]
         );
 
-        console.log('Notification created:', result.rows[0]);
+        logger.log('Notification created:', result.rows[0]);
 
         // Get complete notification data for broadcast
         const notificationData = await db.query(`
@@ -71,7 +72,7 @@ async function createNotification(userId, type, message, eventId = null, lineupS
 
         return result.rows[0];
     } catch (err) {
-        console.error('Error creating notification:', err);
+        logger.error('Error creating notification:', err);
         return undefined; // Return undefined instead of throwing
     }
 }

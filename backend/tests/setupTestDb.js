@@ -1,5 +1,6 @@
 const pool = require('../src/db');
 const tables = require('../src/db/schema');
+const { logger } = require('../tests/utils/logger');
 
 async function setupTestDb() {
     const client = await pool.connect();
@@ -98,7 +99,7 @@ async function setupTestDb() {
         `);
 
         await client.query('COMMIT');
-        console.log('Test database setup completed successfully');
+        logger.log('Test database setup completed successfully');
     } catch (error) {
         await client.query('ROLLBACK');
         console.error('Test database setup failed:', error);

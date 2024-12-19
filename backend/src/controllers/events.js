@@ -3,6 +3,7 @@ const AWS = require('aws-sdk');
 const { calculateSlotStartTime } = require('../utils/timeCalculations');
 const { createNotification } = require('../utils/notifications');
 const { createApiResponse, createErrorResponse } = require('../utils/apiResponse');
+const { logger } = require('../../tests/utils/logger');
 
 // Configure AWS SDK
 AWS.config.update({
@@ -131,7 +132,7 @@ const eventsController = {
                 events: Array.from(eventsMap.values())
             }));
         } catch (err) {
-            console.error(err);
+            logger.error(err);
             res.status(500).json(createErrorResponse('Server error'));
         }
     },
@@ -233,7 +234,7 @@ const eventsController = {
                 }
             }));
         } catch (err) {
-            console.error(err);
+            logger.error(err);
             res.status(500).json(createErrorResponse('Server error'));
         }
     },
@@ -266,7 +267,7 @@ const eventsController = {
 
             res.status(201).json(result.rows[0]);
         } catch (err) {
-            console.error(err);
+            logger.error(err);
             res.status(500).json(createErrorResponse('Server error'));
         }
     },
@@ -435,7 +436,7 @@ const eventsController = {
             req.app.locals.broadcastLineupUpdate(updateData);
             res.json(result.rows[0]);
         } catch (err) {
-            console.error(err);
+            logger.error(err);
             res.status(500).json(createErrorResponse('Server error'));
         }
     },

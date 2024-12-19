@@ -1,5 +1,6 @@
 const db = require('../db');
 const { calculateSlotStartTime } = require('../utils/timeCalculations');
+const { logger } = require('../../tests/utils/logger');
 
 const notificationsController = {
     async getUserNotifications(req, res) {
@@ -63,7 +64,7 @@ const notificationsController = {
 
             res.json(processedNotifications);
         } catch (err) {
-            console.error('Error fetching notifications:', err);
+            logger.error('Error fetching notifications:', err);
             res.status(500).json({ error: 'Server error' });
         }
     },
@@ -88,7 +89,7 @@ const notificationsController = {
                 updatedNotifications: result.rows
             });
         } catch (err) {
-            console.error('Error marking notifications as read:', err);
+            logger.error('Error marking notifications as read:', err);
             res.status(500).json({ error: 'Server error' });
         }
     },
@@ -113,7 +114,7 @@ const notificationsController = {
                 res.json(result.rows[0]);
             }
         } catch (err) {
-            console.error('Error fetching notification preferences:', err);
+            logger.error('Error fetching notification preferences:', err);
             res.status(500).json({ error: 'Server error' });
         }
     },
@@ -142,7 +143,7 @@ const notificationsController = {
 
             res.json(result.rows[0]);
         } catch (err) {
-            console.error('Error updating notification preferences:', err);
+            logger.error('Error updating notification preferences:', err);
             res.status(500).json({ error: 'Server error' });
         }
     },
