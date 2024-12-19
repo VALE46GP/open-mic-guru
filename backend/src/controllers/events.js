@@ -255,7 +255,7 @@ const eventsController = {
 
             const host_id = userId;
 
-            if (new Date(start_time) >= new Date(end_time)) {
+            if (start_time && end_time && new Date(start_time) >= new Date(end_time)) {
                 return res.status(400).json(createErrorResponse('Start time must be before end time'));
             }
 
