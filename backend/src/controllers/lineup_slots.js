@@ -181,7 +181,12 @@ const lineupSlotsController = {
             const { slotId } = req.params;
 
             const slotQuery = await db.query(`
-                SELECT ls.*, e.start_time, e.slot_duration, e.setup_duration, e.host_id, e.name as event_name
+                SELECT ls.*,
+                       e.start_time,
+                       e.slot_duration,
+                       e.setup_duration,
+                       e.host_id,
+                       e.name as event_name
                 FROM lineup_slots ls
                 JOIN events e ON ls.event_id = e.id
                 WHERE ls.id = $1

@@ -1,14 +1,13 @@
 const request = require('supertest');
 const express = require('express');
 const { mockDb, resetMockDb } = require('../helpers/mockDb');
+const lineupSlotsController = require('../../src/controllers/lineup_slots');
 
 // Mock dependencies before requiring the controller
 jest.mock('../../src/db', () => mockDb);
 jest.mock('../../src/utils/notifications', () => ({
     createNotification: jest.fn().mockResolvedValue({ id: 1 })
 }));
-
-const lineupSlotsController = require('../../src/controllers/lineup_slots');
 
 // Setup express app with proper middleware
 const app = express();
@@ -38,6 +37,7 @@ app.use((req, res, next) => {
 app.post('/lineup-slots', lineupSlotsController.createSlot);
 app.get('/lineup-slots/:eventId', lineupSlotsController.getEventSlots);
 app.put('/lineup-slots/reorder', lineupSlotsController.reorderSlots);
+app.delete('/lineup-slots/:slotId', lineupSlotsController.deleteSlot);
 
 describe('Lineup Slots Controller', () => {
     beforeEach(() => {
@@ -316,6 +316,160 @@ describe('Lineup Slots Controller', () => {
             expect(response.status).toBe(400);
             expect(response.body).toHaveProperty('error', 'Invalid slots data');
             expect(mockDb.query).not.toHaveBeenCalled();
+        });
+    });
+
+    describe('Slot Reordering Edge Cases', () => {
+        it('should handle concurrent slot updates', async () => {
+            const mockEvent = {
+                id: 1,
+                start_time: new Date('2024-03-01T19:00:00Z'),
+                slot_duration: { minutes: 10 },
+                setup_duration: { minutes: 5 }
+            };
+
+            // Mock the database responses
+            mockDb.query
+                .mockResolvedValueOnce({ rows: [mockEvent] })  // Event query
+                .mockResolvedValueOnce({ rows: [] })  // BEGIN
+                .mockResolvedValueOnce({ rows: [{ slot_number: 1, user_id: 1 }] })  // First slot query
+                .mockResolvedValueOnce({ rows: [{ id: 1 }] })  // First update
+                .mockResolvedValueOnce({ rows: [{ slot_number: 2, user_id: 2 }] })  // Second slot query
+                .mockResolvedValueOnce({ rows: [{ id: 2 }] })  // Second update
+                .mockResolvedValueOnce({ rows: [] });  // COMMIT
+
+            const response = await request(app)
+                .put('/lineup-slots/reorder')
+                .send({
+                    slots: [
+                        { slot_id: 1, slot_number: 2 },
+                        { slot_id: 2, slot_number: 1 }
+                    ]
+                });
+
+            expect(response.status).toBe(200);
+            expect(response.body).toHaveProperty('message', 'Slots reordered successfully');
+            expect(mockDb.query).toHaveBeenCalledTimes(7);
+        });
+
+        it('should handle invalid slot numbers during reordering', async () => {
+            const response = await request(app)
+                .put('/lineup-slots/reorder')
+                .send({
+                    slots: [
+                        { slot_id: 1, slot_number: 0 },  // Invalid slot number
+                        { slot_id: 2, slot_number: -1 }  // Invalid slot number
+                    ]
+                });
+
+            expect(response.status).toBe(400);
+            expect(response.body).toHaveProperty('error', 'Invalid slot numbers');
+        });
+
+        it('should validate maximum slot numbers', async () => {
+            const response = await request(app)
+                .put('/lineup-slots/reorder')
+                .send({
+                    slots: [
+                        { slot_id: 1, slot_number: 101 }  // Exceeds maximum allowed
+                    ]
+                });
+
+            expect(response.status).toBe(400);
+            expect(response.body).toHaveProperty('error', 'Invalid slot numbers');
+        });
+    });
+
+    describe('Error Handling for Invalid Requests', () => {
+        it('should handle missing non-user name', async () => {
+            mockDb.query
+                .mockResolvedValueOnce({ rows: [{ active: true }] })  // Event active check
+                .mockResolvedValueOnce({ rows: [{ host_id: 2 }] });   // Host check
+
+            const response = await request(app)
+                .post('/lineup-slots')
+                .send({
+                    event_id: 1,
+                    slot_number: 1
+                    // Missing slot_name for non-user
+                });
+
+            expect(response.status).toBe(400);
+            expect(response.body).toHaveProperty('error', 'Non-users must provide a name');
+        });
+
+        it('should handle database errors during slot creation', async () => {
+            mockDb.query.mockRejectedValueOnce(new Error('Database error'));
+
+            const response = await request(app)
+                .post('/lineup-slots')
+                .send({
+                    event_id: 1,
+                    slot_number: 1,
+                    slot_name: 'Test Slot'
+                });
+
+            expect(response.status).toBe(500);
+            expect(response.body).toHaveProperty('error', 'Server error');
+        });
+    });
+
+    describe('Cleanup Operations', () => {
+        it('should properly clean up on slot deletion', async () => {
+            // Reset mock between tests
+            mockDb.query.mockReset();
+
+            const mockSlot = {
+                id: 1,
+                event_id: 1,
+                slot_number: 1,
+                user_id: 1,
+                slot_name: 'Test Slot',
+                host_id: 1,
+                event_name: 'Test Event',
+                start_time: new Date('2024-03-01T19:00:00Z'),
+                slot_duration: { minutes: 10 },
+                setup_duration: { minutes: 5 }
+            };
+
+            // First query setup (SELECT query)
+            mockDb.query.mockImplementationOnce((query, params) => {
+                return Promise.resolve({ rows: [mockSlot] });
+            });
+
+            // Second query setup (DELETE query)
+            mockDb.query.mockImplementationOnce((query, params) => {
+                return Promise.resolve({ rowCount: 1 });
+            });
+
+            const response = await request(app)
+                .delete('/lineup-slots/1');
+
+            expect(response.status).toBe(200);
+            expect(response.body).toEqual({ message: 'Slot deleted successfully' });
+            expect(mockDb.query).toHaveBeenCalledTimes(2);
+            expect(app.locals.broadcastLineupUpdate).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    type: 'LINEUP_UPDATE',
+                    eventId: mockSlot.event_id,
+                    action: 'DELETE',
+                    data: expect.objectContaining({
+                        slotId: 1,
+                        slot_number: mockSlot.slot_number
+                    })
+                })
+            );
+        });
+
+        it('should handle missing slot during deletion', async () => {
+            // Mock the initial slot query to return no results
+            mockDb.query.mockResolvedValueOnce({ rows: [] });
+
+            const response = await request(app)
+                .delete('/lineup-slots/999');
+
+            expect(response.status).toBe(404);
+            expect(response.body).toEqual({ error: 'Slot not found' });
         });
     });
 });
