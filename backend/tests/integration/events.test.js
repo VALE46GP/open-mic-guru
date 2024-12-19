@@ -15,8 +15,11 @@ jest.mock('aws-sdk', () => ({
     }))
 }));
 
+const mockBroadcastLineupUpdate = jest.fn();
+
 const app = express();
 app.use(express.json());
+app.locals.broadcastLineupUpdate = mockBroadcastLineupUpdate;
 
 // Mock middleware
 const mockVerifyToken = (req, res, next) => {
@@ -149,6 +152,97 @@ describe('Events Controller', () => {
 
             expect(response.status).toBe(200);
             expect(response.body).toHaveProperty('uploadURL', 'https://test-signed-url.com');
+        });
+    });
+
+    describe('PATCH /events/:eventId', () => {
+        it('should update event details', async () => {
+            const mockEvent = {
+                id: 1,
+                name: 'Updated Event',
+                start_time: '2024-03-01T19:00:00Z',
+                end_time: '2024-03-01T22:00:00Z'
+            };
+
+            // Mock host check
+            db.query
+                .mockResolvedValueOnce({ rows: [{ host_id: 1 }] }) // Host check
+                .mockResolvedValueOnce({ rows: [{
+                        name: 'Original Event',
+                        start_time: '2024-03-01T18:00:00Z',
+                        venue_id: 1,
+                        slot_duration: { minutes: 10 },
+                        setup_duration: { minutes: 5 },
+                        types: ['music'],
+                        active: true
+                    }] }) // Original event query
+                .mockResolvedValueOnce({ rows: [] }) // Lineup users query
+                .mockResolvedValueOnce({ rows: [mockEvent] }); // Update query
+
+            const response = await request(app)
+                .patch('/events/1')
+                .send({
+                    name: 'Updated Event',
+                    start_time: '2024-03-01T19:00:00Z',
+                    end_time: '2024-03-01T22:00:00Z'
+                });
+
+            expect(response.status).toBe(200);
+            expect(response.body).toHaveProperty('name', 'Updated Event');
+            expect(mockBroadcastLineupUpdate).toHaveBeenCalled();
+        });
+    });
+
+    describe('PUT /events/:eventId/extend', () => {
+        it('should extend event duration', async () => {
+            const mockEvent = {
+                host_id: 1,
+                name: 'Test Event',
+                start_time: '2024-03-01T20:00:00Z',
+                end_time: '2024-03-01T22:00:00Z',
+                slot_duration: { minutes: 10 },
+                setup_duration: { minutes: 5 }
+            };
+
+            db.query
+                .mockResolvedValueOnce({ rows: [mockEvent] }) // Event query
+                .mockResolvedValueOnce({ rows: [{
+                        ...mockEvent,
+                        end_time: '2024-03-01T23:00:00Z'
+                    }] }) // Update query
+                .mockResolvedValueOnce({ rows: [] }); // Lineup users query
+
+            const response = await request(app)
+                .put('/events/1/extend')
+                .send({ additional_slots: 2 });
+
+            expect(response.status).toBe(200);
+            expect(response.body).toHaveProperty('end_time');
+            expect(mockBroadcastLineupUpdate).toHaveBeenCalled();
+        });
+    });
+
+    describe('DELETE /events/:eventId', () => {
+        it('should delete event when requested by host', async () => {
+            db.query
+                .mockResolvedValueOnce({ rows: [{ host_id: 1 }] }) // Host check
+                .mockResolvedValueOnce({ rows: [] }) // Delete lineup slots
+                .mockResolvedValueOnce({ rows: [] }); // Delete event
+
+            const response = await request(app)
+                .delete('/events/1');
+
+            expect(response.status).toBe(204);
+        });
+
+        it('should reject deletion from non-host', async () => {
+            db.query.mockResolvedValueOnce({ rows: [{ host_id: 2 }] });
+
+            const response = await request(app)
+                .delete('/events/1');
+
+            expect(response.status).toBe(403);
+            expect(response.body).toHaveProperty('message', 'Only the host can delete this event');
         });
     });
 });
