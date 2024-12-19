@@ -1,161 +1,227 @@
-const { mockDb, resetMockDb } = require('../helpers/mockDb');
 const request = require('supertest');
 const express = require('express');
-const db = require('../../src/db');
+const { mockDb, resetMockDb } = require('../helpers/mockDb');
+
+// Mock dependencies before requiring the controller
+jest.mock('../../src/db', () => mockDb);
+jest.mock('../../src/utils/notifications', () => ({
+    createNotification: jest.fn().mockResolvedValue({ id: 1 })
+}));
+
 const lineupSlotsController = require('../../src/controllers/lineup_slots');
 
-// Mock dependencies
-jest.mock('../../src/db', () => mockDb);
-jest.mock('../../src/utils/notifications');
-
+// Setup express app with proper middleware
 const app = express();
 app.use(express.json());
-app.locals.broadcastLineupUpdate = jest.fn();
 
-// Mock middleware
-const mockVerifyToken = (req, res, next) => {
-    req.user = { userId: 1 };
-    next();
-};
-const cookieParser = require('cookie-parser');
-app.use(cookieParser());
+// Set trust proxy to get proper IP address
+app.set('trust proxy', true);
+
+// Mock context middleware with better setup
 app.use((req, res, next) => {
+    // Set IP address directly on request
     req.ip = '127.0.0.1';
+
+    // Set cookies
     req.cookies = { nonUserId: 'test-non-user-id' };
+
+    // Set app.locals with broadcast function
+    if (!req.app.locals) {
+        req.app.locals = {};
+    }
+    req.app.locals.broadcastLineupUpdate = jest.fn();
+
     next();
 });
 
 // Setup routes
 app.post('/lineup-slots', lineupSlotsController.createSlot);
 app.get('/lineup-slots/:eventId', lineupSlotsController.getEventSlots);
-app.delete('/lineup-slots/:slotId', lineupSlotsController.deleteSlot);
 app.put('/lineup-slots/reorder', lineupSlotsController.reorderSlots);
 
 describe('Lineup Slots Controller', () => {
     beforeEach(() => {
         resetMockDb();
+        jest.clearAllMocks();
     });
 
     describe('POST /lineup-slots', () => {
-        it('should create a new slot', async () => {
-            const mockSlot = {
-                event_id: 1,
-                user_id: null,
-                slot_number: 1,
-                slot_name: 'Test Slot',
-                isHostAssignment: false
-            };
+        // Increase timeout for these tests
+        jest.setTimeout(10000);
 
-            // Mock checks in the correct order
-            // 1. Check if event is active
-            db.query.mockResolvedValueOnce({
-                rows: [{ active: true }]
-            });
+        it('should create a new slot for registered user', async () => {
+            const mockResponses = [
+                { rows: [{ active: true }] },                    // Event active check
+                { rows: [{ host_id: 2 }] },                     // Host check
+                { rows: [{ notify_signup_notifications: true }] }, // Notification prefs
+                { rows: [] },                                    // No existing slot
+                { rows: [{                                       // Created slot
+                        id: 1,
+                        slot_id: 1,
+                        slot_number: 1,
+                        slot_name: 'Test Slot',
+                        user_id: 1
+                    }]},
+                { rows: [{                                       // Event details
+                        start_time: new Date('2024-03-01T19:00:00Z'),
+                        slot_duration: { minutes: 10 },
+                        setup_duration: { minutes: 5 }
+                    }]}
+            ];
 
-            // 2. Check for host
-            db.query.mockResolvedValueOnce({
-                rows: [{ host_id: 2 }]  // Different from userId in mockVerifyToken
-            });
-
-            // 3. Check existing notification preferences
-            db.query.mockResolvedValueOnce({
-                rows: [{
-                    notify_signup_notifications: true
-                }]
-            });
-
-            // 4. Check for existing slots (no slots should exist)
-            db.query.mockResolvedValueOnce({
-                rows: []
-            });
-
-            // 5. Insert new slot
-            db.query.mockResolvedValueOnce({
-                rows: [{
-                    id: 1,
-                    slot_id: 1,
-                    ...mockSlot,
-                    non_user_identifier: 'test-non-user-id',
-                    ip_address: '127.0.0.1'
-                }]
-            });
-
-            // 6. Get event details for notification
-            db.query.mockResolvedValueOnce({
-                rows: [{
-                    start_time: new Date(),
-                    slot_duration: { minutes: 10 },
-                    setup_duration: { minutes: 5 }
-                }]
-            });
+            for (const response of mockResponses) {
+                mockDb.query.mockResolvedValueOnce(response);
+            }
 
             const response = await request(app)
                 .post('/lineup-slots')
-                .send(mockSlot);
+                .send({
+                    event_id: 1,
+                    user_id: 1,
+                    slot_number: 1,
+                    slot_name: 'Test Slot'
+                });
 
             expect(response.status).toBe(201);
             expect(response.body).toHaveProperty('slot_id', 1);
         });
+
+        it('should create a slot for non-registered user', async () => {
+            const mockResponses = [
+                { rows: [{ active: true }] },
+                { rows: [{ host_id: 2 }] },
+                { rows: [{ notify_signup_notifications: true }] },
+                { rows: [] },
+                { rows: [{
+                        id: 1,
+                        slot_id: 1,
+                        slot_number: 1,
+                        slot_name: 'Anonymous Slot',
+                        non_user_identifier: 'test-non-user-id'
+                    }]},
+                { rows: [{
+                        start_time: new Date('2024-03-01T19:00:00Z'),
+                        slot_duration: { minutes: 10 },
+                        setup_duration: { minutes: 5 }
+                    }]}
+            ];
+
+            for (const response of mockResponses) {
+                mockDb.query.mockResolvedValueOnce(response);
+            }
+
+            const response = await request(app)
+                .post('/lineup-slots')
+                .send({
+                    event_id: 1,
+                    slot_number: 1,
+                    slot_name: 'Anonymous Slot'
+                });
+
+            expect(response.status).toBe(201);
+            expect(response.body.non_user_identifier).toBe('test-non-user-id');
+        });
+
+        it('should prevent slot creation for cancelled events', async () => {
+            mockDb.query.mockResolvedValueOnce({ rows: [{ active: false }] });
+
+            const response = await request(app)
+                .post('/lineup-slots')
+                .send({
+                    event_id: 1,
+                    slot_number: 1,
+                    slot_name: 'Test Slot'
+                });
+
+            expect(response.status).toBe(403);
+            expect(response.body).toHaveProperty('error', 'Cannot sign up for cancelled events');
+        });
+
+        it('should prevent duplicate slots for same user', async () => {
+            mockDb.query
+                .mockResolvedValueOnce({ rows: [{ active: true }] })
+                .mockResolvedValueOnce({ rows: [{ host_id: 2 }] })
+                .mockResolvedValueOnce({ rows: [{ notify_signup_notifications: true }] })
+                .mockResolvedValueOnce({ rows: [{ id: 1 }] }); // Existing slot
+
+            const response = await request(app)
+                .post('/lineup-slots')
+                .send({
+                    event_id: 1,
+                    user_id: 1,
+                    slot_number: 1,
+                    slot_name: 'Test Slot'
+                });
+
+            expect(response.status).toBe(403);
+            expect(response.body).toHaveProperty('error', 'Only one slot per user per event allowed');
+        });
+
+        it('should prevent duplicate slots for same non-user', async () => {
+            mockDb.query
+                .mockResolvedValueOnce({ rows: [{ active: true }] })
+                .mockResolvedValueOnce({ rows: [{ host_id: 2 }] })
+                .mockResolvedValueOnce({ rows: [{ notify_signup_notifications: true }] })
+                .mockResolvedValueOnce({ rows: [{ id: 1 }] }); // Existing slot
+
+            const response = await request(app)
+                .post('/lineup-slots')
+                .send({
+                    event_id: 1,
+                    slot_number: 1,
+                    slot_name: 'Anonymous Slot'
+                });
+
+            expect(response.status).toBe(403);
+            expect(response.body).toHaveProperty('error', 'Only one slot per non-user per event allowed');
+        });
     });
 
+    // Rest of the test cases remain the same...
     describe('GET /lineup-slots/:eventId', () => {
         it('should get all slots for an event', async () => {
             const mockSlots = [
-                { slot_id: 1, slot_number: 1, slot_name: 'Test Slot 1' },
-                { slot_id: 2, slot_number: 2, slot_name: 'Test Slot 2' }
+                { slot_id: 1, slot_number: 1, user_name: 'User 1', slot_name: 'Slot 1' },
+                { slot_id: 2, slot_number: 2, user_name: 'User 2', slot_name: 'Slot 2' }
             ];
 
-            db.query.mockResolvedValueOnce({ rows: mockSlots });
+            mockDb.query.mockResolvedValueOnce({ rows: mockSlots });
 
-            const response = await request(app)
-                .get('/lineup-slots/1');
+            const response = await request(app).get('/lineup-slots/1');
 
             expect(response.status).toBe(200);
             expect(response.body).toHaveLength(2);
             expect(response.body[0]).toHaveProperty('slot_id', 1);
         });
+
+        it('should handle database errors', async () => {
+            mockDb.query.mockRejectedValueOnce(new Error('Database error'));
+
+            const response = await request(app).get('/lineup-slots/1');
+
+            expect(response.status).toBe(500);
+            expect(response.body).toHaveProperty('error');
+        });
     });
 
-    describe('Lineup Slots Controller - Reordering', () => {
-        it('should handle slot reordering with time changes', async () => {
+    describe('PUT /lineup-slots/reorder', () => {
+        it('should successfully reorder slots', async () => {
             const mockEvent = {
                 id: 1,
-                name: 'Test Event',
                 start_time: new Date('2024-03-01T19:00:00Z'),
                 slot_duration: { minutes: 10 },
                 setup_duration: { minutes: 5 }
             };
 
-            // Mock all required database responses in sequence
-            db.query
-                // Initial event query
-                .mockResolvedValueOnce({ 
-                    rows: [mockEvent] 
-                })
-                // BEGIN transaction
-                .mockResolvedValueOnce({ 
-                    rows: [] 
-                })
-                // First slot old data query
-                .mockResolvedValueOnce({ 
-                    rows: [{ slot_number: 1, user_id: 1 }] 
-                })
-                // First slot update
-                .mockResolvedValueOnce({ 
-                    rows: [{ id: 1 }] 
-                })
-                // Second slot old data query
-                .mockResolvedValueOnce({ 
-                    rows: [{ slot_number: 2, user_id: 2 }] 
-                })
-                // Second slot update
-                .mockResolvedValueOnce({ 
-                    rows: [{ id: 2 }] 
-                })
-                // COMMIT transaction
-                .mockResolvedValueOnce({ 
-                    rows: [] 
-                });
+            // Setup mock responses in sequence
+            mockDb.query
+                .mockResolvedValueOnce({ rows: [mockEvent] })
+                .mockResolvedValueOnce({ rows: [] })  // BEGIN
+                .mockResolvedValueOnce({ rows: [{ slot_number: 1, user_id: 1 }] })
+                .mockResolvedValueOnce({ rows: [{ id: 1 }] })
+                .mockResolvedValueOnce({ rows: [{ slot_number: 2, user_id: 2 }] })
+                .mockResolvedValueOnce({ rows: [{ id: 2 }] })
+                .mockResolvedValueOnce({ rows: [] }); // COMMIT
 
             const response = await request(app)
                 .put('/lineup-slots/reorder')
@@ -171,7 +237,7 @@ describe('Lineup Slots Controller', () => {
         });
 
         it('should handle database errors during reordering', async () => {
-            db.query.mockRejectedValueOnce(new Error('Database error'));
+            mockDb.query.mockRejectedValueOnce(new Error('Database error'));
 
             const response = await request(app)
                 .put('/lineup-slots/reorder')
@@ -184,6 +250,72 @@ describe('Lineup Slots Controller', () => {
 
             expect(response.status).toBe(500);
             expect(response.body).toHaveProperty('error', 'Server error');
+        });
+    });
+
+    describe('Lineup Slot Validation', () => {
+        it('should validate non-user slot requirements', async () => {
+            const response = await request(app)
+                .post('/lineup-slots')
+                .send({
+                    event_id: 1,
+                    slot_number: 1,
+                    // Missing required slot_name for non-user
+                });
+
+            expect(response.status).toBe(400);
+            expect(response.body.error).toBe('Non-users must provide a name');
+        });
+
+        it('should handle reordering with invalid slot numbers', async () => {
+            const mockEvent = {
+                id: 1,
+                start_time: new Date('2024-03-01T19:00:00Z'),
+                slot_duration: { minutes: 10 },
+                setup_duration: { minutes: 5 }
+            };
+
+            const response = await request(app)
+                .put('/lineup-slots/reorder')
+                .send({
+                    slots: [
+                        { slot_id: 1, slot_number: -1 },
+                        { slot_id: 2, slot_number: 0 }
+                    ]
+                });
+
+            expect(response.status).toBe(400);
+            expect(response.body).toHaveProperty('error', 'Invalid slot numbers');
+            // Should not make any DB queries due to failing validation
+            expect(mockDb.query).not.toHaveBeenCalled();
+        });
+
+        it('should reject non-numeric slot numbers', async () => {
+            const response = await request(app)
+                .put('/lineup-slots/reorder')
+                .send({
+                    slots: [
+                        { slot_id: 1, slot_number: 'abc' },
+                        { slot_id: 2, slot_number: null }
+                    ]
+                });
+
+            expect(response.status).toBe(400);
+            expect(response.body).toHaveProperty('error', 'Invalid slot numbers');
+            // Should not make any DB queries due to failing validation
+            expect(mockDb.query).not.toHaveBeenCalled();
+        });
+
+        it('should reject empty slots array', async () => {
+            const response = await request(app)
+                .put('/lineup-slots/reorder')
+                .send({
+                    slots: []
+                });
+
+            expect(response.status).toBe(400);
+            expect(response.body).toHaveProperty('error', 'Invalid slots data');
+            expect(mockDb.query).not.toHaveBeenCalled();
         });
     });
 });

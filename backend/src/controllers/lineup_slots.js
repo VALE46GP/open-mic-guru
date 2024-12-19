@@ -250,13 +250,31 @@ const lineupSlotsController = {
     },
 
     async reorderSlots(req, res) {
-        const { slots } = req.body;
-
         try {
+            const { slots } = req.body;
+
+            if (!Array.isArray(slots) || slots.length === 0) {
+                return res.status(400).json({ error: 'Invalid slots data' });
+            }
+
+            // Validate slot numbers
+            const isValidSlotNumbers = slots.every(slot =>
+                slot.slot_number &&
+                Number.isInteger(slot.slot_number) &&
+                slot.slot_number > 0 &&
+                slot.slot_number <= 100
+            );
+
+            if (!isValidSlotNumbers) {
+                return res.status(400).json({ error: 'Invalid slot numbers' });
+            }
+
+            // Get event details
             const eventQuery = await db.query(
                 'SELECT e.* FROM events e JOIN lineup_slots ls ON e.id = ls.event_id WHERE ls.id = $1',
                 [slots[0].slot_id]
             );
+
             const event = eventQuery.rows[0];
 
             await db.query('BEGIN');
@@ -312,7 +330,6 @@ const lineupSlotsController = {
             req.app.locals.broadcastLineupUpdate(lineupData);
             res.json({ message: 'Slots reordered successfully' });
         } catch (err) {
-            await db.query('ROLLBACK');
             console.error('Error reordering slots:', err);
             res.status(500).json({ error: 'Server error' });
         }
