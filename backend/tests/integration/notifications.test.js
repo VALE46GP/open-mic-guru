@@ -1,10 +1,11 @@
+const { mockDb, resetMockDb } = require('../helpers/mockDb');
 const request = require('supertest');
 const express = require('express');
 const db = require('../../src/db');
 const notificationsController = require('../../src/controllers/notifications');
 
 // Mock database
-jest.mock('../../src/db');
+jest.mock('../../src/db', () => mockDb);
 
 const app = express();
 app.use(express.json());
@@ -25,8 +26,7 @@ app.delete('/notifications', mockVerifyToken, notificationsController.deleteNoti
 
 describe('Notifications Controller', () => {
     beforeEach(() => {
-        jest.clearAllMocks();
-        db.query.mockReset();
+        resetMockDb();
     });
 
     describe('GET /notifications', () => {

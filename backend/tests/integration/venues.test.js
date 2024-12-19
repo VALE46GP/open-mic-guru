@@ -1,10 +1,11 @@
+const { mockDb, resetMockDb } = require('../helpers/mockDb');
 const request = require('supertest');
 const express = require('express');
 const db = require('../../src/db');
 const venuesController = require('../../src/controllers/venues');
 
 // Mock dependencies
-jest.mock('../../src/db');
+jest.mock('../../src/db', () => mockDb);
 
 const app = express();
 app.use(express.json());
@@ -14,8 +15,7 @@ app.post('/venues/checkOrCreate', venuesController.checkOrCreateVenue);
 
 describe('Venues Controller', () => {
     beforeEach(() => {
-        jest.clearAllMocks();
-        db.query.mockReset();
+        resetMockDb();
     });
 
     describe('POST /venues/checkOrCreate', () => {

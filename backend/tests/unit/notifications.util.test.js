@@ -1,14 +1,15 @@
+const { mockDb, resetMockDb } = require('../helpers/mockDb');
 const db = require('../../src/db');
 const { createNotification } = require('../../src/utils/notifications');
 
 // Mock the database
-jest.mock('../../src/db');
+jest.mock('../../src/db', () => mockDb);
 
 describe('Notifications Utility', () => {
     let mockReq;
 
     beforeEach(() => {
-        jest.clearAllMocks();
+        resetMockDb();
         mockReq = {
             app: {
                 locals: {

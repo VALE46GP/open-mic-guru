@@ -1,10 +1,11 @@
+const { mockDb, resetMockDb } = require('../helpers/mockDb');
 const request = require('supertest');
 const express = require('express');
 const db = require('../../src/db');
 const lineupSlotsController = require('../../src/controllers/lineup_slots');
 
 // Mock dependencies
-jest.mock('../../src/db');
+jest.mock('../../src/db', () => mockDb);
 jest.mock('../../src/utils/notifications');
 
 const app = express();
@@ -32,8 +33,7 @@ app.put('/lineup-slots/reorder', lineupSlotsController.reorderSlots);
 
 describe('Lineup Slots Controller', () => {
     beforeEach(() => {
-        jest.clearAllMocks();
-        db.query.mockReset();
+        resetMockDb();
     });
 
     describe('POST /lineup-slots', () => {
@@ -113,6 +113,77 @@ describe('Lineup Slots Controller', () => {
             expect(response.status).toBe(200);
             expect(response.body).toHaveLength(2);
             expect(response.body[0]).toHaveProperty('slot_id', 1);
+        });
+    });
+
+    describe('Lineup Slots Controller - Reordering', () => {
+        it('should handle slot reordering with time changes', async () => {
+            const mockEvent = {
+                id: 1,
+                name: 'Test Event',
+                start_time: new Date('2024-03-01T19:00:00Z'),
+                slot_duration: { minutes: 10 },
+                setup_duration: { minutes: 5 }
+            };
+
+            // Mock all required database responses in sequence
+            db.query
+                // Initial event query
+                .mockResolvedValueOnce({ 
+                    rows: [mockEvent] 
+                })
+                // BEGIN transaction
+                .mockResolvedValueOnce({ 
+                    rows: [] 
+                })
+                // First slot old data query
+                .mockResolvedValueOnce({ 
+                    rows: [{ slot_number: 1, user_id: 1 }] 
+                })
+                // First slot update
+                .mockResolvedValueOnce({ 
+                    rows: [{ id: 1 }] 
+                })
+                // Second slot old data query
+                .mockResolvedValueOnce({ 
+                    rows: [{ slot_number: 2, user_id: 2 }] 
+                })
+                // Second slot update
+                .mockResolvedValueOnce({ 
+                    rows: [{ id: 2 }] 
+                })
+                // COMMIT transaction
+                .mockResolvedValueOnce({ 
+                    rows: [] 
+                });
+
+            const response = await request(app)
+                .put('/lineup-slots/reorder')
+                .send({
+                    slots: [
+                        { slot_id: 1, slot_number: 2 },
+                        { slot_id: 2, slot_number: 1 }
+                    ]
+                });
+
+            expect(response.status).toBe(200);
+            expect(response.body).toHaveProperty('message', 'Slots reordered successfully');
+        });
+
+        it('should handle database errors during reordering', async () => {
+            db.query.mockRejectedValueOnce(new Error('Database error'));
+
+            const response = await request(app)
+                .put('/lineup-slots/reorder')
+                .send({
+                    slots: [
+                        { slot_id: 1, slot_number: 2 },
+                        { slot_id: 2, slot_number: 1 }
+                    ]
+                });
+
+            expect(response.status).toBe(500);
+            expect(response.body).toHaveProperty('error', 'Server error');
         });
     });
 });

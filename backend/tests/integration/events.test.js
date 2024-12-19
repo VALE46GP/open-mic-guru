@@ -1,3 +1,4 @@
+const { mockDb, resetMockDb } = require('../helpers/mockDb');
 const request = require('supertest');
 const express = require('express');
 const db = require('../../src/db');
@@ -5,7 +6,7 @@ const eventsController = require('../../src/controllers/events');
 const AWS = require('aws-sdk');
 
 // Mock dependencies
-jest.mock('../../src/db');
+jest.mock('../../src/db', () => mockDb);
 jest.mock('aws-sdk', () => ({
     config: {
         update: jest.fn()
@@ -38,8 +39,7 @@ app.post('/events/upload', eventsController.getUploadUrl);
 
 describe('Events Controller', () => {
     beforeEach(() => {
-        jest.clearAllMocks();
-        db.query.mockReset();
+        resetMockDb();
     });
 
     describe('GET /events', () => {

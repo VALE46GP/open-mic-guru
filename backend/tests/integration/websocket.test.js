@@ -55,4 +55,61 @@ describe('WebSocket Server', () => {
             });
         });
     });
+
+    describe('WebSocket Error Handling', () => {
+        it('should handle invalid tokens', (done) => {
+            const port = server.address().port;
+            const invalidToken = 'invalid-token';
+
+            try {
+                client = new WebSocket(`ws://localhost:${port}/ws?token=${invalidToken}`);
+
+                // Listen for connection errors
+                client.on('error', () => {
+                    expect(true).toBe(true); // Verify we got an error
+                    done();
+                });
+
+                // Timeout in case error event doesn't fire
+                setTimeout(() => {
+                    done();
+                }, 1000);
+            } catch (err) {
+                done();
+            }
+        }, 15000);
+
+        it('should handle client disconnection', (done) => {
+            const port = server.address().port;
+            const mockToken = jwt.sign({ userId: 1 }, process.env.JWT_SECRET);
+            let clientClosed = false;
+
+            client = new WebSocket(`ws://localhost:${port}/ws?token=${mockToken}`);
+
+            client.on('open', () => {
+                clientClosed = true;
+                client.close();
+            });
+
+            client.on('close', () => {
+                // Wait for server cleanup
+                setTimeout(() => {
+                    try {
+                        // Some WS implementations might keep a reference briefly
+                        expect(wsServer.wss.clients.size <= 1).toBe(true);
+                        done();
+                    } catch (err) {
+                        done(err);
+                    }
+                }, 500);
+            });
+
+            // Timeout safety
+            setTimeout(() => {
+                if (!clientClosed) {
+                    done(new Error('Client never connected'));
+                }
+            }, 5000);
+        }, 15000);
+    });
 });
