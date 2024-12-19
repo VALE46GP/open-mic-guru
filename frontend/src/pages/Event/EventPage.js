@@ -292,7 +292,7 @@ function EventPage() {
                 )}
                 <p className="event-page__info">Slot
                     Duration: {eventDetails?.event?.slot_duration?.minutes} minutes</p>
-                <p className="event-page__info">Event Details: {eventDetails?.event?.additional_info}</p>
+                <p className="event-page__info">Details: {eventDetails?.event?.additional_info}</p>
                 <div className="event-page__host-image-container">
                     <Link to={`/users/${eventDetails?.host?.id}`}>
                         {eventDetails?.host?.image && (
