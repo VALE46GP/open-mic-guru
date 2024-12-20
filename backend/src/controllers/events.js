@@ -1,6 +1,6 @@
 const AWS = require('aws-sdk');
 const { eventQueries } = require('../db/queries/events');
-const { calculateSlotStartTime } = require('../utils/timeCalculations');
+const { calculateSlotStartTime, formatTimeToLocalString } = require('../utils/timeCalculations');
 const { createNotification } = require('../utils/notifications');
 const { createApiResponse, createErrorResponse } = require('../utils/apiResponse');
 const { logger } = require('../../tests/utils/logger');
@@ -16,61 +16,52 @@ const s3 = new AWS.S3();
 
 function getUpdateMessage(originalEvent, updatedFields) {
     const changes = [];
-
-    if (updatedFields.name !== undefined && updatedFields.name !== originalEvent.name) {
-        changes.push(`Name changed to "${updatedFields.name}"`);
-    }
-
-    if (updatedFields.start_time !== undefined &&
-        new Date(updatedFields.start_time).getTime() !== new Date(originalEvent.start_time).getTime()) {
-        const oldTime = new Date(originalEvent.start_time).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
-        const newTime = new Date(updatedFields.start_time).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
-        changes.push(`Start time changed from ${oldTime} to ${newTime}`);
-    }
-
-    if (updatedFields.end_time !== undefined &&
-        new Date(updatedFields.end_time).getTime() !== new Date(originalEvent.end_time).getTime()) {
-        const oldTime = new Date(originalEvent.end_time).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
-        const newTime = new Date(updatedFields.end_time).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
-        changes.push(`End time changed from ${oldTime} to ${newTime}`);
-    }
-
-    if (updatedFields.venue_id !== undefined && updatedFields.venue_id !== originalEvent.venue_id) {
-        changes.push('Venue has been changed');
-    }
-
-    if (updatedFields.slot_duration !== undefined && originalEvent.slot_duration) {
-        const newDuration = typeof updatedFields.slot_duration === 'object'
-            ? updatedFields.slot_duration.minutes
-            : Math.floor(updatedFields.slot_duration / 60);
-        const oldDuration = typeof originalEvent.slot_duration === 'object'
-            ? originalEvent.slot_duration.minutes
-            : Math.floor(originalEvent.slot_duration / 60);
-
-        if (newDuration !== oldDuration) {
-            changes.push(`Slot duration changed from ${oldDuration} to ${newDuration} minutes`);
+    
+    // Convert all times to UTC for comparison
+    const originalStartUTC = new Date(originalEvent.start_time);
+    const originalEndUTC = new Date(originalEvent.end_time);
+    
+    if (updatedFields.start_time !== undefined) {
+        const updatedStartUTC = new Date(updatedFields.start_time);
+        
+        // Compare UTC timestamps
+        if (originalStartUTC.getTime() !== updatedStartUTC.getTime()) {
+            // Format times in local timezone
+            const oldTime = originalStartUTC.toLocaleTimeString('en-US', { 
+                hour: 'numeric', 
+                minute: '2-digit',
+                hour12: true,
+                timeZone: 'America/Los_Angeles'
+            });
+            const newTime = updatedStartUTC.toLocaleTimeString('en-US', { 
+                hour: 'numeric', 
+                minute: '2-digit',
+                hour12: true,
+                timeZone: 'America/Los_Angeles'
+            });
+            changes.push(`Start time changed from ${oldTime} to ${newTime}`);
         }
     }
 
-    if (updatedFields.types &&
-        (!originalEvent.types ||
-            JSON.stringify(updatedFields.types.sort()) !== JSON.stringify(originalEvent.types.sort()))) {
-        const oldTypes = (originalEvent.types || [])
-            .map(t => t.charAt(0).toUpperCase() + t.slice(1).replace('_', ' '));
-        const newTypes = updatedFields.types
-            .map(t => t.charAt(0).toUpperCase() + t.slice(1).replace('_', ' '));
-
-        if (oldTypes.length === 0) {
-            changes.push(`Event types added: ${newTypes.join(', ')}`);
-        } else if (newTypes.length === 0) {
-            changes.push('Event types removed');
-        } else {
-            changes.push(`Event types changed to ${newTypes.join(', ')}`);
+    // Only include end time if it was explicitly changed
+    if ('end_time' in updatedFields) {
+        const updatedEndUTC = new Date(updatedFields.end_time);
+        
+        if (originalEndUTC.getTime() !== updatedEndUTC.getTime()) {
+            const oldTime = originalEndUTC.toLocaleTimeString('en-US', { 
+                hour: 'numeric', 
+                minute: '2-digit',
+                hour12: true,
+                timeZone: 'America/Los_Angeles'
+            });
+            const newTime = updatedEndUTC.toLocaleTimeString('en-US', { 
+                hour: 'numeric', 
+                minute: '2-digit',
+                hour12: true,
+                timeZone: 'America/Los_Angeles'
+            });
+            changes.push(`End time changed from ${oldTime} to ${newTime}`);
         }
-    }
-
-    if (updatedFields.active !== undefined && updatedFields.active !== originalEvent.active) {
-        changes.push(updatedFields.active ? 'Event has been reinstated' : 'Event has been cancelled');
     }
 
     return changes.join(', ');
@@ -246,15 +237,22 @@ const eventsController = {
             const values = [];
             let paramCount = 1;
 
-            const fields = {
-                name, start_time, end_time, slot_duration,
-                setup_duration, venue_id, additional_info,
-                image, types, active
-            };
+            const updatedFields = {};
 
-            for (const [key, value] of Object.entries(fields)) {
+            if (name !== undefined) updatedFields.name = name;
+            if (start_time !== undefined) updatedFields.start_time = start_time;
+            if (req.body.end_time !== undefined) updatedFields.end_time = end_time;
+            if (venue_id !== undefined) updatedFields.venue_id = venue_id;
+            if (slot_duration !== undefined) updatedFields.slot_duration = slot_duration;
+            if (setup_duration !== undefined) updatedFields.setup_duration = setup_duration;
+            if (types !== undefined) updatedFields.types = types;
+            if (active !== undefined) updatedFields.active = active;
+
+            console.log('Fields being checked for updates:', updatedFields);
+
+            for (const [key, value] of Object.entries(updatedFields)) {
                 if (value !== undefined) {
-                    updates.push(`${key} = ${paramCount}`);
+                    updates.push(`${key} = $${paramCount}`);
                     values.push(value);
                     paramCount++;
                 }
@@ -284,16 +282,7 @@ const eventsController = {
             const updatedEvent = await eventQueries.updateEvent(eventId, updates, values);
 
             // Generate notification message
-            const updateMessage = getUpdateMessage(originalEvent, {
-                ...(name !== undefined && { name }),
-                ...(start_time !== undefined && { start_time }),
-                ...(end_time !== undefined && { end_time }),
-                ...(venue_id !== undefined && { venue_id }),
-                ...(slot_duration !== undefined && { slot_duration }),
-                ...(setup_duration !== undefined && { setup_duration }),
-                ...(types !== undefined && { types }),
-                ...(active !== undefined && { active })
-            });
+            const updateMessage = getUpdateMessage(originalEvent, updatedFields);
 
             if (updateMessage) {
                 for (const performer of lineupUsers) {
@@ -309,10 +298,7 @@ const eventsController = {
                             );
 
                             if (originalTimes[performer.user_id].getTime() !== newTime.getTime()) {
-                                message += `. Your performance time is ${new Date(newTime).toLocaleTimeString([], {
-                                    hour: 'numeric',
-                                    minute: '2-digit'
-                                })}`;
+                                message += `. Your performance time is ${formatTimeToLocalString(newTime)}`;
                             }
                         }
 
@@ -404,12 +390,7 @@ const eventsController = {
                         eventData.setup_duration
                     );
 
-                    const message = `The event "${eventData.name}" has been extended. Your performance time is ${
-                        new Date(slotTime).toLocaleTimeString([], {
-                            hour: 'numeric',
-                            minute: '2-digit'
-                        })
-                    }`;
+                    const message = `The event "${eventData.name}" has been extended. Your performance time is ${formatTimeToLocalString(slotTime)}`;
 
                     await createNotification(
                         performer.user_id,

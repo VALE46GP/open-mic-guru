@@ -35,4 +35,18 @@ function hasTimeRelatedChanges(originalEvent, updatedFields) {
     return startTimeChanged || slotDurationChanged || setupDurationChanged;
 }
 
-module.exports = { calculateSlotStartTime, hasTimeRelatedChanges };
+function formatTimeToLocalString(date) {
+    if (!(date instanceof Date)) {
+        date = new Date(date);
+    }
+    
+    // Convert directly to Pacific time
+    return date.toLocaleTimeString('en-US', {
+        hour: 'numeric',
+        minute: '2-digit',
+        hour12: true,
+        timeZone: 'America/Los_Angeles'
+    });
+}
+
+module.exports = { calculateSlotStartTime, hasTimeRelatedChanges, formatTimeToLocalString };

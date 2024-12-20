@@ -122,13 +122,14 @@ const eventQueries = {
     },
 
     async updateEvent(eventId, updates, values) {
-        const query = `
+        const updateQuery = `
             UPDATE events 
             SET ${updates.join(', ')} 
             WHERE id = $${values.length} 
             RETURNING *
         `;
-        const result = await db.query(query, values);
+
+        const result = await db.query(updateQuery, values);
         return result.rows[0];
     },
 
