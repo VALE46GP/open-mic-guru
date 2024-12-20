@@ -445,10 +445,10 @@ function CreateEvent() {
             </div>
             {showStatusModal && (
                 <div className="create-event__modal">
-                    <div className="create-event__modal-content">
+                    <div className="create-event__modal-content" data-testid="status-modal">
                         <h4>
-                            {isEventActive 
-                                ? 'Are you sure you want to cancel this event?' 
+                            {isEventActive
+                                ? 'Are you sure you want to cancel this event?'
                                 : 'Are you sure you want to reinstate this event?'}
                         </h4>
                         <p>
