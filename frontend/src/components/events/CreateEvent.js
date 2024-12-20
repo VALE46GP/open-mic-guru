@@ -44,61 +44,63 @@ function CreateEvent() {
             const fetchEventDetails = async () => {
                 try {
                     const response = await fetch(`/api/events/${eventId}`);
-                    const data = await response.json();
-                    setEventData(data);
-                    setNewEventName(data.event?.name || '');
-
-                    if (data.event?.image) {
-                        setImagePreview(data.event.image);
-                        setEventImage(data.event.image);
-                    }
-
-                    if (data.event?.start_time) {
-                        const startDate = new Date(data.event.start_time);
-                        setStartTime(startDate.toLocaleString('sv-SE', {
-                            year: 'numeric',
-                            month: '2-digit',
-                            day: '2-digit',
-                            hour: '2-digit',
-                            minute: '2-digit',
-                            second: '2-digit'
-                        }).slice(0, 16));
-                    }
-
-                    if (data.event?.end_time) {
-                        const endDate = new Date(data.event.end_time);
-                        setEndTime(endDate.toLocaleString('sv-SE', {
-                            year: 'numeric',
-                            month: '2-digit',
-                            day: '2-digit',
-                            hour: '2-digit',
-                            minute: '2-digit',
-                            second: '2-digit'
-                        }).slice(0, 16));
-                    }
-
-                    setSlotDuration(data.event?.slot_duration?.minutes ? data.event.slot_duration.minutes.toString() : '10');
-                    setSetupDuration(data.event?.setup_duration?.minutes ? data.event.setup_duration.minutes.toString() : '5');
+                    const { data } = await response.json();
                     
-                    if (data.venue) {
-                        const venueData = {
-                            name: data.venue.name,
-                            address: data.venue.address,
-                            latitude: data.venue.latitude,
-                            longitude: data.venue.longitude,
-                            geometry: {
-                                location: {
-                                    lat: () => data.venue.latitude,
-                                    lng: () => data.venue.longitude
+                    if (data.event) {
+                        setEventData(data);
+                        setNewEventName(data.event.name || '');
+                        setAdditionalInfo(data.event.additional_info || '');
+                        setEventTypes(data.event.event_types || []);
+                        setIsEventActive(data.event.active ?? true);
+
+                        if (data.event.image) {
+                            setImagePreview(data.event.image);
+                            setEventImage(data.event.image);
+                        }
+
+                        if (data.event.start_time) {
+                            const date = new Date(data.event.start_time);
+                            const localDateString = date.getFullYear() + '-' +
+                                String(date.getMonth() + 1).padStart(2, '0') + '-' +
+                                String(date.getDate()).padStart(2, '0') + 'T' +
+                                String(date.getHours()).padStart(2, '0') + ':' +
+                                String(date.getMinutes()).padStart(2, '0');
+                            setStartTime(localDateString);
+                        }
+
+                        if (data.event.end_time) {
+                            const date = new Date(data.event.end_time);
+                            const localDateString = date.getFullYear() + '-' +
+                                String(date.getMonth() + 1).padStart(2, '0') + '-' +
+                                String(date.getDate()).padStart(2, '0') + 'T' +
+                                String(date.getHours()).padStart(2, '0') + ':' +
+                                String(date.getMinutes()).padStart(2, '0');
+                            setEndTime(localDateString);
+                        }
+
+                        setSlotDuration(data.event.slot_duration?.minutes 
+                            ? data.event.slot_duration.minutes.toString() 
+                            : '10');
+                        
+                        setSetupDuration(data.event.setup_duration?.minutes 
+                            ? data.event.setup_duration.minutes.toString() 
+                            : '5');
+
+                        if (data.venue) {
+                            setSelectedVenue({
+                                name: data.venue.name,
+                                address: data.venue.address,
+                                latitude: data.venue.latitude,
+                                longitude: data.venue.longitude,
+                                geometry: {
+                                    location: {
+                                        lat: () => data.venue.latitude,
+                                        lng: () => data.venue.longitude
+                                    }
                                 }
-                            }
-                        };
-                        setSelectedVenue(venueData);
+                            });
+                        }
                     }
-                    
-                    setAdditionalInfo(data.event?.additional_info || '');
-                    setEventTypes(data.event?.event_types || []);
-                    setIsEventActive(data.event?.active ?? true);
                 } catch (error) {
                     console.error('Error fetching event details:', error);
                 }
@@ -199,8 +201,19 @@ function CreateEvent() {
                 body: JSON.stringify({
                     name: newEventName,
                     venue_id: venueId,
-                    start_time: startTime,
-                    end_time: endTime,
+                    start_time: (() => {
+                        const [datePart, timePart] = startTime.split('T');
+                        const [year, month, day] = datePart.split('-');
+                        const [hours, minutes] = timePart.split(':');
+                        // Create date in UTC
+                        return new Date(Date.UTC(year, month - 1, day, hours, minutes)).toISOString();
+                    })(),
+                    end_time: (() => {
+                        const [datePart, timePart] = endTime.split('T');
+                        const [year, month, day] = datePart.split('-');
+                        const [hours, minutes] = timePart.split(':');
+                        return new Date(Date.UTC(year, month - 1, day, hours, minutes)).toISOString();
+                    })(),
                     slot_duration: slotDuration * 60,
                     setup_duration: setupDuration * 60,
                     additional_info: additionalInfo,
