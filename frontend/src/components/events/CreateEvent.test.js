@@ -43,11 +43,21 @@ let venueSelectCallback = null;
 // VenueAutocomplete mock that saves the callback
 jest.mock('../shared/VenueAutocomplete', () => {
     return function MockVenueAutocomplete({ onPlaceSelected }) {
-        venueSelectCallback = onPlaceSelected;
         return (
             <input
                 data-testid="venue-autocomplete"
                 placeholder="Choose a location"
+                onChange={() => onPlaceSelected({
+                    name: 'Test Venue',
+                    address: '123 Test St',
+                    formatted_address: '123 Test St',
+                    geometry: {
+                        location: {
+                            lat: () => 40.7128,
+                            lng: () => -74.0060
+                        }
+                    }
+                })}
             />
         );
     };
@@ -67,12 +77,6 @@ const renderComponent = () => {
             </MemoryRouter>
         </AuthProvider>
     );
-};
-
-const selectVenue = async () => {
-    await act(async () => {
-        venueSelectCallback(mockVenue);
-    });
 };
 
 describe('CreateEvent Component', () => {
@@ -106,7 +110,10 @@ describe('CreateEvent Component', () => {
         renderComponent();
 
         // Select venue first
-        await selectVenue();
+        await act(async () => {
+            const venueInput = screen.getByTestId('venue-autocomplete');
+            fireEvent.change(venueInput, { target: { value: 'Test Venue' } });
+        });
 
         // Fill form with invalid times
         await act(async () => {
@@ -132,8 +139,11 @@ describe('CreateEvent Component', () => {
     it('successfully submits form with valid data', async () => {
         renderComponent();
 
-        // Select venue
-        await selectVenue();
+        // Select venue first
+        await act(async () => {
+            const venueInput = screen.getByTestId('venue-autocomplete');
+            fireEvent.change(venueInput, { target: { value: 'Test Venue' } });
+        });
 
         // Fill form with valid data
         await act(async () => {
@@ -166,7 +176,8 @@ describe('CreateEvent Component', () => {
                     method: 'POST',
                     headers: expect.objectContaining({
                         'Content-Type': 'application/json'
-                    })
+                    }),
+                    body: expect.any(String)
                 })
             );
         });
