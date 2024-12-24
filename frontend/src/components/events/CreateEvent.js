@@ -234,7 +234,6 @@ function CreateEvent() {
                 // Only process new images
                 try {
                     imageUrl = await processImage(eventImage);
-                    console.log('Processed new image URL:', imageUrl);
                 } catch (error) {
                     console.error('Error processing image:', error);
                     alert('Failed to upload image. Please try again.');
@@ -261,8 +260,6 @@ function CreateEvent() {
                 types: eventTypes,
                 active: pendingStatusChange ? !isEventActive : isEventActive
             };
-
-            console.log('Final payload image URL:', payload.image); // Debug log
 
             const response = await authenticatedFetch(url, {
                 method,
