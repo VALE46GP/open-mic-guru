@@ -167,6 +167,13 @@ function CreateEvent() {
         }
     };
 
+    const processImage = async (file) => {
+        if (file instanceof File) {
+            return URL.createObjectURL(file);  // Return the URL for new files
+        }
+        return file;  // Return existing URLs as-is
+    };
+
     const handleSubmit = async () => {
         if (!selectedVenue) {
             alert("Please select a location from the dropdown.");
@@ -189,10 +196,7 @@ function CreateEvent() {
             console.log('Converted UTC end time:', utcEndTime);
 
             let venueId = await checkOrCreateVenue(selectedVenue);
-            let imageUrl = eventImage;
-            if (eventImage && eventImage instanceof File) {
-                imageUrl = await handleImageChange(eventImage);
-            }
+            let imageUrl = await processImage(eventImage);
 
             const url = isEditMode ? `/api/events/${eventId}` : '/api/events';
             const method = isEditMode ? 'PATCH' : 'POST';

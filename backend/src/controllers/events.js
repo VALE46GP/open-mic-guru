@@ -280,6 +280,12 @@ const eventsController = {
                 paramCount++;
             }
 
+            if (image !== undefined) {
+                updates.push(`image = $${paramCount}`);
+                values.push(image);
+                paramCount++;
+            }
+
             if (updates.length === 0) {
                 return res.status(400).json(createErrorResponse('No fields to update'));
             }
