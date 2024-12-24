@@ -16,11 +16,18 @@ AWS.config.update({
 const s3 = new AWS.S3();
 
 async function getUpdateMessage(originalEvent, updatedFields, venueTimezone) {
+    console.log('getUpdateMessage received:', {
+        originalEvent,
+        updatedFields,
+        venueTimezone
+    });
+
     const changes = [];
 
     try {
-        // Only add start_time changes if start_time was actually modified
-        if (updatedFields.start_time !== undefined) {
+        // Handle start time changes
+        if (updatedFields.start_time !== undefined && 
+            new Date(updatedFields.start_time).getTime() !== new Date(originalEvent.start_time).getTime()) {
             const originalDate = new Date(originalEvent.start_time);
             const updatedDate = new Date(updatedFields.start_time);
 
@@ -31,25 +38,64 @@ async function getUpdateMessage(originalEvent, updatedFields, venueTimezone) {
             const updatedDateStr = formatDateInTimezone(updatedDate, venueTimezone);
 
             if (originalDateStr !== updatedDateStr) {
-                changes.push(`Start time updated from ${originalFormatted} on ${originalDateStr} to ${updatedFormatted} on ${updatedDateStr}`);
+                changes.push(`Start time updated from ${originalFormatted} on ${originalDateStr} to ${updatedFormatted} on ${updatedDateStr}.`);
             } else {
-                changes.push(`Start time updated from ${originalFormatted} to ${updatedFormatted}`);
+                changes.push(`Start time updated from ${originalFormatted} to ${updatedFormatted}.`);
             }
         }
-        console.log('getUpdateMessage input:', {
-            originalEvent: {
-                start_time: originalEvent.start_time,
-                end_time: originalEvent.end_time
-            },
-            updatedFields,
-            venueTimezone
-        });
-    } catch (error) {
-        console.error('Error formatting time message:', error);
-        return 'Event times have been updated';
-    }
 
-    return changes.join(', ');
+        // Handle slot duration changes
+        if (updatedFields.slot_duration !== undefined) {
+            const originalMinutes = typeof originalEvent.slot_duration === 'object' 
+                ? originalEvent.slot_duration.minutes 
+                : Math.floor(originalEvent.slot_duration / 60);
+            
+            const updatedMinutes = typeof updatedFields.slot_duration === 'object'
+                ? updatedFields.slot_duration.minutes
+                : Math.floor(updatedFields.slot_duration / 60);
+
+            if (originalMinutes !== updatedMinutes) {
+                changes.push(`Slot duration changed from ${originalMinutes} minutes to ${updatedMinutes} minutes.`);
+            }
+        }
+
+        // Handle setup duration changes
+        if (updatedFields.setup_duration !== undefined) {
+            const originalMinutes = typeof originalEvent.setup_duration === 'object'
+                ? originalEvent.setup_duration.minutes
+                : Math.floor(originalEvent.setup_duration / 60);
+            
+            const updatedMinutes = typeof updatedFields.setup_duration === 'object'
+                ? updatedFields.setup_duration.minutes
+                : Math.floor(updatedFields.setup_duration / 60);
+
+            if (originalMinutes !== updatedMinutes) {
+                changes.push(`Setup duration changed from ${originalMinutes} minutes to ${updatedMinutes} minutes.`);
+            }
+        }
+
+        // Handle venue changes - only if venue_id actually changed
+        if (updatedFields.venue_id !== undefined && 
+            updatedFields.venue_id !== originalEvent.venue_id && 
+            updatedFields.venue_name) {
+            changes.push(`Location changed to ${updatedFields.venue_name}.`);
+        }
+
+        console.log('Debug venue change check:', {
+            venueIdDefined: updatedFields.venue_id !== undefined,
+            venueIdChanged: updatedFields.venue_id !== originalEvent.venue_id,
+            hasVenueName: Boolean(updatedFields.venue_name)
+        });
+
+        if (changes.length === 0) {
+            return 'Event details have been updated.';
+        }
+
+        return changes.join('. ');
+    } catch (error) {
+        console.error('Error formatting update message:', error);
+        return 'Event details have been updated.';
+    }
 }
 
 const eventsController = {
@@ -300,20 +346,55 @@ const eventsController = {
             // Create Notifications
             if (start_time !== undefined || end_time !== undefined || slot_duration !== undefined || setup_duration !== undefined) {
                 try {
-                    // Get venue timezone
-                    const venueInfo = await eventQueries.getVenueInfo(originalEvent.venue_id);
+                    // Only get venue info if venue has changed
+                    let venueInfo;
+                    if (venue_id && venue_id !== originalEvent.venue_id) {
+                        venueInfo = await eventQueries.getVenueInfo(venue_id);
+                    } else {
+                        venueInfo = await eventQueries.getVenueInfo(originalEvent.venue_id);
+                    }
                     const timezone = venueInfo?.timezone || 'UTC';
 
                     // Get all users in the lineup
                     const lineupUsers = await eventQueries.getLineupUsers(eventId);
+
+                    // Add these logs right before getting venue info
+                    console.log('Debug venue info:', {
+                        venue_id,
+                        originalVenueId: originalEvent.venue_id,
+                        isVenueChanged: venue_id !== originalEvent.venue_id
+                    });
+
+                    // Add this log after getting venue info
+                    console.log('Debug venueInfo:', venueInfo);
 
                     // Get the update message
                     const updateMessage = await getUpdateMessage(originalEvent, {
                         start_time,
                         end_time,
                         slot_duration,
-                        setup_duration
+                        setup_duration,
+                        ...(venueInfo && venue_id !== originalEvent.venue_id ? {
+                            venue_id,
+                            venue_name: venueInfo.name
+                        } : {})
                     }, timezone);
+
+                    // Add this log before creating the update message
+                    console.log('Debug updateMessage params:', {
+                        originalEvent,
+                        updatedFields: {
+                            start_time,
+                            end_time,
+                            slot_duration,
+                            setup_duration,
+                            ...(venueInfo && venue_id !== originalEvent.venue_id ? {
+                                venue_id,
+                                venue_name: venueInfo.name
+                            } : {})
+                        },
+                        timezone
+                    });
 
                     // Create notifications for each user
                     for (const performer of lineupUsers) {
@@ -325,7 +406,7 @@ const eventsController = {
                                 setup_duration || originalEvent.setup_duration
                             );
 
-                            const message = `${updateMessage} Your new performance time is ${formatTimeToLocalString(slotTime, timezone)}`;
+                            const message = `${updateMessage} Your new performance time is ${formatTimeToLocalString(slotTime, timezone)}.`;
 
                             await createNotification(
                                 performer.user_id,
