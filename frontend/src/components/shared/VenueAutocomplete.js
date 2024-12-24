@@ -22,9 +22,11 @@ const VenueAutocomplete = ({
     };
 
     useEffect(() => {
+        if (process.env.NODE_ENV === 'test') return;
+
         let autocomplete = null;
         const checkGoogleMapsLoaded = setInterval(() => {
-            if (window.google && window.google.maps && window.google.maps.places && autocompleteInputRef.current) {
+            if (window.google?.maps?.places && autocompleteInputRef.current) {
                 clearInterval(checkGoogleMapsLoaded);
 
                 autocomplete = new window.google.maps.places.Autocomplete(
@@ -70,12 +72,7 @@ const VenueAutocomplete = ({
             }
         }, 100);
 
-        return () => {
-            clearInterval(checkGoogleMapsLoaded);
-            if (autocomplete) {
-                window.google.maps.event.clearInstanceListeners(autocomplete);
-            }
-        };
+        return () => clearInterval(checkGoogleMapsLoaded);
     }, [onPlaceSelected, specificCoordinates]);
 
     useEffect(() => {

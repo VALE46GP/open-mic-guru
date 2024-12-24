@@ -126,37 +126,30 @@ function CreateEvent() {
         }
     }, []);
 
-    useEffect(() => {
-        if (selectedVenue && selectedVenue.address_components) {
-            const formattedAddress = selectedVenue.address_components.map(ac => ac.short_name).join(', ');
-            const latitude = selectedVenue.geometry.location.lat();
-            const longitude = selectedVenue.geometry.location.lng();
+    const handleVenueSelect = (place) => {
+        if (!place || !place.geometry) return;
 
-            // Always ensure timezone is set
-            const venueTimezone = 'America/Los_Angeles'; // Hardcode for now since you're in SF
-            console.log('Setting venue with timezone:', venueTimezone);
+        const latitude = place.geometry.location.lat();
+        const longitude = place.geometry.location.lng();
+        const formattedAddress = place.address_components?.map(ac => ac.short_name).join(', ') || place.address;
 
-            setSelectedVenue(prevVenue => {
-                console.log("Previous venue state:", prevVenue);
-                const newVenue = {
-                    ...prevVenue,
-                    name: selectedVenue?.name || '',
-                    address: formattedAddress || '',
-                    latitude: latitude || 0,
-                    longitude: longitude || 0,
-                    timezone: venueTimezone,
-                    geometry: {
-                        location: {
-                            lat: () => latitude,
-                            lng: () => longitude
-                        }
-                    }
-                };
-                console.log("New venue state:", newVenue);
-                return newVenue;
-            });
-        }
-    }, [selectedVenue]);
+        const processedVenue = {
+            ...place,
+            name: place.name || '',
+            address: formattedAddress,
+            latitude,
+            longitude,
+            timezone: place.timezone || 'America/Los_Angeles',
+            geometry: {
+                location: {
+                    lat: () => latitude,
+                    lng: () => longitude
+                }
+            }
+        };
+
+        setSelectedVenue(processedVenue);
+    };
 
     // TODO: test image updates
     const handleImageChange = (e) => {
@@ -392,9 +385,7 @@ function CreateEvent() {
                     <h2 className="create-event__title">Location</h2>
                     <div className="create-event__form-content">
                         <VenueAutocomplete
-                            onPlaceSelected={(place) => {
-                                setSelectedVenue(place);
-                            }}
+                            onPlaceSelected={handleVenueSelect}
                             resetTrigger={resetTrigger}
                             onResetComplete={handleResetComplete}
                             initialValue={selectedVenue ? `${selectedVenue.name}, ${selectedVenue.address}` : ''}
