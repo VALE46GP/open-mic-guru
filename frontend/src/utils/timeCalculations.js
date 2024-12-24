@@ -1,5 +1,3 @@
-import { format, formatInTimeZone, toZonedTime } from 'date-fns-tz';
-
 const timezoneCache = new Map();
 
 async function getTimezoneFromCoordinates(latitude, longitude) {
@@ -56,33 +54,30 @@ async function formatEventTimeInVenueTimezone(utcTimeStr, venue, formatStr = 'MM
 
     try {
         const timezone = await getTimezoneFromCoordinates(venue.latitude, venue.longitude);
-
+        
         // Create a UTC date object
         const utcDate = new Date(utcTimeStr);
-
-        // Convert UTC to venue's timezone
-        const options = {
+        
+        // Convert directly to venue timezone
+        const venueTime = utcDate.toLocaleString('en-US', {
             timeZone: timezone,
             month: 'short',
             day: 'numeric',
             hour: 'numeric',
             minute: '2-digit',
             hour12: true
-        };
+        });
 
-        // This will convert the UTC time to the venue's timezone
-        const venueTime = utcDate.toLocaleString('en-US', options);
-
-        console.log({
-            inputUTC: utcTimeStr,
+        console.log('Simple timezone conversion:', {
+            input: utcTimeStr,
+            utcDate: utcDate.toISOString(),
             timezone,
-            outputVenueTime: venueTime
+            result: venueTime
         });
 
         return venueTime;
     } catch (error) {
         console.error('Error formatting venue time:', error);
-        // Fall back to UTC if there's an error
         return new Date(utcTimeStr).toLocaleString('en-US', {
             month: 'short',
             day: 'numeric',
@@ -94,10 +89,29 @@ async function formatEventTimeInVenueTimezone(utcTimeStr, venue, formatStr = 'MM
 }
 
 function convertToUTC(localTime, timezone) {
-    const date = new Date(localTime);
-    const tzDate = new Date(date.toLocaleString('en-US', { timeZone: timezone }));
-    const offset = tzDate.getTime() - date.getTime();
-    return new Date(date.getTime() - offset).toISOString();
+    // Create a date object in the local timezone
+    const localDate = new Date(localTime);
+    
+    // Get the parts of the date in the specified timezone
+    const parts = new Date(localDate.toLocaleString('en-US', { timeZone: timezone }))
+        .toISOString()
+        .match(/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})/);
+    
+    if (!parts) {
+        throw new Error('Invalid date format');
+    }
+    
+    // Create UTC date using the timezone-adjusted components
+    const utcTime = Date.UTC(
+        parseInt(parts[1]), // year
+        parseInt(parts[2]) - 1, // month (0-based)
+        parseInt(parts[3]), // day
+        parseInt(parts[4]), // hour
+        parseInt(parts[5]), // minute
+        parseInt(parts[6])  // second
+    );
+    
+    return new Date(utcTime).toISOString();
 }
 
 export {

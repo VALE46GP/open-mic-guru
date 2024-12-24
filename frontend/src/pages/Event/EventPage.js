@@ -36,33 +36,6 @@ function EventPage() {
     }, []);
 
     useEffect(() => {
-        async function formatTimes() {
-            if (!eventDetails?.event || !eventDetails?.venue) return;
-
-            console.log('Raw UTC time from database:', eventDetails.event.start_time);
-            console.log('Venue:', eventDetails.venue);
-
-            const formattedStart = await formatEventTimeInVenueTimezone(
-                eventDetails.event.start_time,
-                eventDetails.venue,
-                'MMM d, h:mm aa'
-            );
-            const formattedEnd = await formatEventTimeInVenueTimezone(
-                eventDetails.event.end_time,
-                eventDetails.venue,
-                'MMM d, h:mm aa'
-            );
-
-            console.log('Formatted start time:', formattedStart);
-            console.log('Formatted end time:', formattedEnd);
-
-            setFormattedStartTime(formattedStart);
-            setFormattedEndTime(formattedEnd);
-        }
-        formatTimes();
-    }, [eventDetails]);
-
-    useEffect(() => {
         const fetchEventDetails = async () => {
             try {
                 const response = await fetch(`/api/events/${eventId}`);
@@ -154,24 +127,17 @@ function EventPage() {
     }, [lastMessage, eventId]);
 
     useEffect(() => {
-        async function formatTimes() {
+        async function updateFormattedTimes() {
             if (!eventDetails?.event || !eventDetails?.venue) return;
-
-            const start = await formatEventTimeInVenueTimezone(
-                eventDetails.event.start_time,
-                eventDetails.venue,
-                'MMM d, h:mm aa'
-            );
-            const end = await formatEventTimeInVenueTimezone(
-                eventDetails.event.end_time,
-                eventDetails.venue,
-                'MMM d, h:mm aa'
-            );
-
+            
+            const start = await formatEventTime(eventDetails.event.start_time);
+            const end = await formatEventTime(eventDetails.event.end_time);
+            
             setFormattedStartTime(start);
             setFormattedEndTime(end);
         }
-        formatTimes();
+        
+        updateFormattedTimes();
     }, [eventDetails]);
 
     if (isLoading) return <div>Loading...</div>;
@@ -270,16 +236,16 @@ function EventPage() {
         }
     };
 
-    // When displaying event times
-    const formatEventTime = (dateString) => {
-        const date = new Date(dateString);
-        return date.toLocaleString([], {
-            year: 'numeric',
-            month: 'long',
-            day: 'numeric',
-            hour: 'numeric',
-            minute: '2-digit'
-        }).replace(',', ' at');
+    // Update the formatEventTime function
+    const formatEventTime = async (dateString) => {
+        if (!eventDetails?.venue) return '';
+        
+        const venue = {
+            latitude: eventDetails.venue.latitude,
+            longitude: eventDetails.venue.longitude
+        };
+        
+        return await formatEventTimeInVenueTimezone(dateString, venue);
     };
 
     // const toggleDeleteConfirmModal = () => {
