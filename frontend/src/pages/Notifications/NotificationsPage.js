@@ -2,9 +2,48 @@ import React, { useState, useEffect } from 'react';
 import { useNotifications } from '../../context/NotificationsContext';
 import EventCard from '../../components/events/EventCard';
 import './NotificationsPage.sass';
+import { formatEventTimeInVenueTimezone } from '../../utils/timeCalculations';
 import { BsChevronDown, BsChevronRight } from 'react-icons/bs';
 import { Modal, Button } from 'react-bootstrap';
 import { FaTrash } from 'react-icons/fa';
+
+function NotificationMessage({ notification, venue, isRead, isLocallyViewed }) {
+    const [formattedTime, setFormattedTime] = useState('');
+
+    useEffect(() => {
+        async function formatTime() {
+            if (notification.created_at && venue) {
+                const formatted = await formatEventTimeInVenueTimezone(
+                    notification.created_at,
+                    venue
+                );
+                setFormattedTime(formatted);
+            }
+        }
+        formatTime();
+    }, [notification, venue]);
+
+    return (
+        <div
+            className={`notifications__message ${
+                isRead && !isLocallyViewed
+                    ? 'notifications__message--read'
+                    : ''
+            }`}
+        >
+            <span
+                className={`notifications__time ${
+                    isRead && !isLocallyViewed
+                        ? 'notifications__time--read'
+                        : ''
+                }`}
+            >
+                {formattedTime}
+            </span>
+            <p>{notification.message}</p>
+        </div>
+    );
+}
 
 function NotificationsPage() {
     const { notifications, markAsRead, deleteNotifications, fetchNotifications } = useNotifications();
@@ -40,6 +79,12 @@ function NotificationsPage() {
                         performer_slot_time: performerNotification ? performerNotification.performer_slot_time : null,
                         event_types: notification.event_types,
                         active: notification.active
+                    },
+                    venue: {
+                        name: notification.venue_name,
+                        address: notification.venue_address,
+                        latitude: notification.venue_latitude,
+                        longitude: notification.venue_longitude
                     },
                     notifications: [],
                     unreadCount: 0
@@ -166,10 +211,9 @@ function NotificationsPage() {
                     <div className="notifications__list">
                         {Object.entries(groupedNotifications)
                             .sort(([, a], [, b]) => {
-                                // Get the most recent notification date for each event
                                 const latestA = Math.max(...a.notifications.map(n => new Date(n.created_at)));
                                 const latestB = Math.max(...b.notifications.map(n => new Date(n.created_at)));
-                                return latestB - latestA; // Sort in descending order (newest first)
+                                return latestB - latestA;
                             })
                             .map(([eventId, data]) => (
                                 <div key={eventId} className="notifications__event-group">
@@ -218,25 +262,13 @@ function NotificationsPage() {
                                             {data.notifications
                                                 .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
                                                 .map(notification => (
-                                                    <div
+                                                    <NotificationMessage
                                                         key={notification.id}
-                                                        className={`notifications__message ${
-                                                            notification.is_read && !locallyViewedNotifications.has(notification.id)
-                                                                ? 'notifications__message--read'
-                                                                : ''
-                                                        }`}
-                                                    >
-                                                        <span
-                                                            className={`notifications__time ${
-                                                                notification.is_read && !locallyViewedNotifications.has(notification.id)
-                                                                    ? 'notifications__time--read'
-                                                                    : ''
-                                                            }`}
-                                                        >
-                                                            {new Date(notification.created_at).toLocaleDateString()}
-                                                        </span>
-                                                        <p>{notification.message}</p>
-                                                    </div>
+                                                        notification={notification}
+                                                        venue={data.venue}
+                                                        isRead={notification.is_read}
+                                                        isLocallyViewed={locallyViewedNotifications.has(notification.id)}
+                                                    />
                                                 ))
                                             }
                                         </div>

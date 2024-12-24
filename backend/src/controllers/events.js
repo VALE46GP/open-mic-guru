@@ -16,51 +16,24 @@ const s3 = new AWS.S3();
 
 function getUpdateMessage(originalEvent, updatedFields) {
     const changes = [];
-    
-    // Convert all times to UTC for comparison
+
+    // Convert times to UTC for comparison
     const originalStartUTC = new Date(originalEvent.start_time);
     const originalEndUTC = new Date(originalEvent.end_time);
-    
+
     if (updatedFields.start_time !== undefined) {
         const updatedStartUTC = new Date(updatedFields.start_time);
-        
-        // Compare UTC timestamps
+
         if (originalStartUTC.getTime() !== updatedStartUTC.getTime()) {
-            // Format times in local timezone
-            const oldTime = originalStartUTC.toLocaleTimeString('en-US', { 
-                hour: 'numeric', 
-                minute: '2-digit',
-                hour12: true,
-                timeZone: 'America/Los_Angeles'
-            });
-            const newTime = updatedStartUTC.toLocaleTimeString('en-US', { 
-                hour: 'numeric', 
-                minute: '2-digit',
-                hour12: true,
-                timeZone: 'America/Los_Angeles'
-            });
-            changes.push(`Start time changed from ${oldTime} to ${newTime}`);
+            changes.push(`Start time updated to ${updatedStartUTC.toISOString()}`);
         }
     }
 
-    // Only include end time if it was explicitly changed
     if ('end_time' in updatedFields) {
         const updatedEndUTC = new Date(updatedFields.end_time);
-        
+
         if (originalEndUTC.getTime() !== updatedEndUTC.getTime()) {
-            const oldTime = originalEndUTC.toLocaleTimeString('en-US', { 
-                hour: 'numeric', 
-                minute: '2-digit',
-                hour12: true,
-                timeZone: 'America/Los_Angeles'
-            });
-            const newTime = updatedEndUTC.toLocaleTimeString('en-US', { 
-                hour: 'numeric', 
-                minute: '2-digit',
-                hour12: true,
-                timeZone: 'America/Los_Angeles'
-            });
-            changes.push(`End time changed from ${oldTime} to ${newTime}`);
+            changes.push(`End time updated to ${updatedEndUTC.toISOString()}`);
         }
     }
 
@@ -157,12 +130,13 @@ const eventsController = {
     },
 
     async createEvent(req, res) {
+        console.log('createEvent: ', req, res)
+
         try {
-            const userId = req.user.userId;
             const {
                 venue_id,
-                start_time,
-                end_time,
+                start_time, // UTC
+                end_time,   // UTC
                 slot_duration,
                 setup_duration = 5,
                 name,
@@ -171,20 +145,21 @@ const eventsController = {
                 types
             } = req.body;
 
+            // Validate UTC times
             if (start_time && end_time && new Date(start_time) >= new Date(end_time)) {
                 return res.status(400).json(createErrorResponse('Start time must be before end time'));
             }
 
             const eventData = {
                 venue_id,
-                start_time,
-                end_time,
+                start_time,  // UTC
+                end_time,    // UTC
                 slot_duration,
                 setup_duration,
                 name,
                 additional_info,
                 image,
-                host_id: userId,
+                host_id: req.user.userId,
                 types
             };
 
@@ -196,7 +171,10 @@ const eventsController = {
         }
     },
 
+    // TODO: check that images and additional_info are being updated
     async updateEvent(req, res) {
+        console.log('updateEvent: ', req.body)
+
         const { eventId } = req.params;
         const userId = req.user.userId;
 

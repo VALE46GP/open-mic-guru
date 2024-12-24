@@ -1,9 +1,45 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
+import { formatEventTimeInVenueTimezone } from '../../utils/timeCalculations';
 import BorderBox from '../shared/BorderBox/BorderBox';
 import { Link } from 'react-router-dom';
 import './EventCard.sass';
 
 function EventCard({ event, slotTime }) {
+    const [formattedEventTime, setFormattedEventTime] = useState('');
+    const [formattedSlotTime, setFormattedSlotTime] = useState('');
+
+    useEffect(() => {
+        async function formatTimes() {
+            if (event?.start_time) {
+                const venue = {
+                    latitude: event.venue_latitude,
+                    longitude: event.venue_longitude
+                };
+                const formatted = await formatEventTimeInVenueTimezone(
+                    event.start_time,
+                    venue,
+                    'MMM d, h:mm aa'
+                );
+                setFormattedEventTime(formatted);
+            }
+
+            if (slotTime) {
+                const venue = {
+                    latitude: event.venue_latitude,
+                    longitude: event.venue_longitude
+                };
+                const formatted = await formatEventTimeInVenueTimezone(
+                    slotTime,
+                    venue,
+                    'h:mm aa'
+                );
+                setFormattedSlotTime(formatted);
+            }
+        }
+
+        formatTimes();
+    }, [event, slotTime]);
+
     return (
         <Link to={`/events/${event.event_id}`} className="event-card__link">
             <div className="event-card__wrapper">
@@ -45,22 +81,14 @@ function EventCard({ event, slotTime }) {
                                 {event.venue_name || 'Unknown Venue'}
                             </span>
                             <span className="event-card__meta-item">
-                                {new Date(event.start_time).toLocaleString([], {
-                                    month: 'short',
-                                    day: 'numeric',
-                                    hour: 'numeric',
-                                    minute: '2-digit'
-                                })}
+                                {formattedEventTime}
                             </span>
                             <span className="event-card__meta-item">
                                 Hosted by: {event.host_name}
                             </span>
                             {slotTime && (
-                                <span className="event-card__meta-item event-card__slot-time">
-                                    Slot time: {new Date(slotTime).toLocaleTimeString([], {
-                                        hour: '2-digit',
-                                        minute: '2-digit'
-                                    })}
+                                <span className="event-card__slot-time">
+                                    {formattedSlotTime}
                                 </span>
                             )}
                         </div>

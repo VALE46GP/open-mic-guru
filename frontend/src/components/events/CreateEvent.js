@@ -1,7 +1,6 @@
-// src/components/events/CreateEvent.js
-
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../hooks/useAuth';
+import { getTimezoneFromCoordinates, convertToUTC } from '../../utils/timeCalculations';
 import { useNavigate, useParams } from 'react-router-dom';
 import VenueAutocomplete from '../shared/VenueAutocomplete';
 import TextInput from '../shared/TextInput';
@@ -31,6 +30,7 @@ function CreateEvent() {
     const [isEventActive, setIsEventActive] = useState(true);
     const [showStatusModal, setShowStatusModal] = useState(false);
     const [pendingStatusChange, setPendingStatusChange] = useState(false);
+    const [timezone, setTimezone] = useState('America/Los_Angeles');
 
     const EVENT_TYPE_OPTIONS = [
         { label: 'Music', value: 'music' },
@@ -140,6 +140,7 @@ function CreateEvent() {
         }
     }, [selectedVenue]);
 
+    // TODO: test image updates
     const handleImageChange = (e) => {
         const file = e.target.files[0];
         if (file) {
@@ -158,62 +159,35 @@ function CreateEvent() {
             return;
         }
 
-        // If there's a pending status change, show the confirmation modal
-        if (pendingStatusChange) {
-            setShowStatusModal(true);
-            return;
-        }
-
-        await saveEvent();
-    };
-
-    const saveEvent = async () => {
-        let venueId = await checkOrCreateVenue(selectedVenue);
-        let imageUrl = eventImage;
-
-        if (eventImage && eventImage instanceof File) {
-            try {
-                const response = await authenticatedFetch('/api/events/upload', {
-                    method: 'POST',
-                    body: JSON.stringify({
-                        fileName: eventImage.name,
-                        fileType: eventImage.type
-                    })
-                });
-                const data = await response.json();
-                
-                await axios.put(data.uploadURL, eventImage, {
-                    headers: { 'Content-Type': eventImage.type }
-                });
-                imageUrl = data.uploadURL.split('?')[0];
-            } catch (error) {
-                console.error('Error uploading image:', error);
-                return;
-            }
-        }
-
-        const url = isEditMode ? `/api/events/${eventId}` : '/api/events';
-        const method = isEditMode ? 'PATCH' : 'POST';
-
         try {
+            // Get venue timezone
+            const timezone = await getTimezoneFromCoordinates(
+                selectedVenue.latitude,
+                selectedVenue.longitude
+            );
+
+            // Use convertToUTC instead of zonedTimeToUtc
+            const utcStartTime = convertToUTC(startTime, timezone);
+            const utcEndTime = convertToUTC(endTime, timezone);
+
+            let venueId = await checkOrCreateVenue(selectedVenue);
+            let imageUrl = eventImage;
+
+            if (eventImage && eventImage instanceof File) {
+                imageUrl = await handleImageChange(eventImage);
+            }
+
+            // Rest of the submit code remains the same
+            const url = isEditMode ? `/api/events/${eventId}` : '/api/events';
+            const method = isEditMode ? 'PATCH' : 'POST';
+
             const response = await authenticatedFetch(url, {
                 method,
                 body: JSON.stringify({
                     name: newEventName,
                     venue_id: venueId,
-                    start_time: (() => {
-                        const [datePart, timePart] = startTime.split('T');
-                        const [year, month, day] = datePart.split('-');
-                        const [hours, minutes] = timePart.split(':');
-                        // Create date in UTC
-                        return new Date(Date.UTC(year, month - 1, day, hours, minutes)).toISOString();
-                    })(),
-                    end_time: (() => {
-                        const [datePart, timePart] = endTime.split('T');
-                        const [year, month, day] = datePart.split('-');
-                        const [hours, minutes] = timePart.split(':');
-                        return new Date(Date.UTC(year, month - 1, day, hours, minutes)).toISOString();
-                    })(),
+                    start_time: utcStartTime,
+                    end_time: utcEndTime,
                     slot_duration: slotDuration * 60,
                     setup_duration: setupDuration * 60,
                     additional_info: additionalInfo,
@@ -225,8 +199,7 @@ function CreateEvent() {
             });
 
             if (!response.ok) {
-                const error = await response.json();
-                throw new Error(error.error || 'Failed to save event');
+                throw new Error('Failed to save event');
             }
 
             const data = await response.json();
@@ -273,7 +246,7 @@ function CreateEvent() {
     };
 
     const handleConfirmStatusChange = async () => {
-        await saveEvent();
+        await handleSubmit();
     };
 
     return (
