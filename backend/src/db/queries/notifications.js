@@ -13,6 +13,7 @@ const notificationQueries = {
                 e.types as event_types,
                 e.active,
                 v.name as venue_name,
+                v.timezone as venue_timezone,
                 u.name as host_name,
                 u.image as host_image,
                 e.host_id = n.user_id as is_host,
@@ -40,6 +41,8 @@ const notificationQueries = {
     },
 
     async markNotificationsAsRead(notificationIds, userId) {
+        await db.query("SET timezone TO 'UTC'");
+        
         const result = await db.query(
             `UPDATE notifications 
              SET is_read = TRUE, 

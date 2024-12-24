@@ -12,10 +12,10 @@ function NotificationMessage({ notification, venue, isRead, isLocallyViewed }) {
 
     useEffect(() => {
         async function formatTime() {
-            if (notification.created_at && venue) {
-                const formatted = await formatEventTimeInVenueTimezone(
+            if (notification.created_at) {
+                const formatted = formatEventTimeInVenueTimezone(
                     notification.created_at,
-                    venue
+                    { timezone: venue?.timezone }
                 );
                 setFormattedTime(formatted);
             }
@@ -260,7 +260,11 @@ function NotificationsPage() {
                                     {expandedEvents.has(eventId) && (
                                         <div className="notifications__messages">
                                             {data.notifications
-                                                .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
+                                                .sort((a, b) => {
+                                                    const dateA = new Date(a.created_at);
+                                                    const dateB = new Date(b.created_at);
+                                                    return dateB.getTime() - dateA.getTime();
+                                                })
                                                 .map(notification => (
                                                     <NotificationMessage
                                                         key={notification.id}
