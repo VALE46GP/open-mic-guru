@@ -87,7 +87,7 @@ describe('Venues Controller', () => {
                 });
 
             expect(response.status).toBe(500);
-            expect(response.body).toHaveProperty('error', 'Failed to process venue');
+            expect(response.body.message).toBe('Failed to process venue');
         });
     });
 });

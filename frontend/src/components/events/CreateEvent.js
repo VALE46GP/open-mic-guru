@@ -54,7 +54,6 @@ function CreateEvent() {
 
                         if (data.event.image) {
                             setImagePreview(data.event.image);
-                            setEventImage(data.event.image);
                         }
 
                         if (data.event.start_time) {
@@ -154,16 +153,63 @@ function CreateEvent() {
     const handleImageChange = (e) => {
         const file = e.target.files[0];
         if (file) {
+            // Only set the preview URL in imagePreview
             setImagePreview(URL.createObjectURL(file));
+            // Set the actual file in eventImage
             setEventImage(file);
+            
+            // Clean up the blob URL when component unmounts
+            return () => URL.revokeObjectURL(imagePreview);
         }
     };
 
     const processImage = async (file) => {
-        if (file instanceof File) {
-            return URL.createObjectURL(file);  // Return the URL for new files
+        // If no file is provided or it's already an S3 URL, return as-is
+        if (!file || (typeof file === 'string' && file.includes('amazonaws.com'))) {
+            return file;
         }
-        return file;  // Return existing URLs as-is
+
+        if (file instanceof File) {
+            try {
+                // Get the S3 upload URL
+                const response = await fetch('/api/events/upload', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        fileName: file.name,
+                        fileType: file.type
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error('Failed to get upload URL');
+                }
+
+                const { uploadURL } = await response.json();
+
+                // Upload to S3
+                const uploadResponse = await fetch(uploadURL, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': file.type
+                    },
+                    body: file
+                });
+
+                if (!uploadResponse.ok) {
+                    throw new Error('Failed to upload image');
+                }
+
+                // Return the S3 URL (remove query parameters)
+                return uploadURL.split('?')[0];
+            } catch (error) {
+                console.error('Error uploading image:', error);
+                throw error;
+            }
+        }
+        return null;  // Return null for invalid cases
     };
 
     const handleSubmit = async () => {
@@ -181,26 +227,46 @@ function CreateEvent() {
             const utcEndTime = convertToUTC(endTime, selectedVenue?.timezone);
 
             let venueId = await checkOrCreateVenue(selectedVenue);
-            let imageUrl = await processImage(eventImage);
+            
+            // Process image before creating the payload
+            let imageUrl;
+            if (eventImage instanceof File) {
+                // Only process new images
+                try {
+                    imageUrl = await processImage(eventImage);
+                    console.log('Processed new image URL:', imageUrl);
+                } catch (error) {
+                    console.error('Error processing image:', error);
+                    alert('Failed to upload image. Please try again.');
+                    return;
+                }
+            } else if (isEditMode && !eventImage) {
+                // If editing and no new image was selected, use the existing preview URL
+                imageUrl = imagePreview;
+            }
 
             const url = isEditMode ? `/api/events/${eventId}` : '/api/events';
             const method = isEditMode ? 'PATCH' : 'POST';
 
+            const payload = {
+                name: newEventName,
+                venue_id: venueId,
+                start_time: utcStartTime,
+                end_time: utcEndTime,
+                slot_duration: slotDuration * 60,
+                setup_duration: setupDuration * 60,
+                additional_info: additionalInfo,
+                host_id: getUserId(),
+                ...(imageUrl && { image: imageUrl }), // Only include image if we have a URL
+                types: eventTypes,
+                active: pendingStatusChange ? !isEventActive : isEventActive
+            };
+
+            console.log('Final payload image URL:', payload.image); // Debug log
+
             const response = await authenticatedFetch(url, {
                 method,
-                body: JSON.stringify({
-                    name: newEventName,
-                    venue_id: venueId,
-                    start_time: utcStartTime,
-                    end_time: utcEndTime,
-                    slot_duration: slotDuration * 60,
-                    setup_duration: setupDuration * 60,
-                    additional_info: additionalInfo,
-                    host_id: getUserId(),
-                    image: imageUrl,
-                    types: eventTypes,
-                    active: pendingStatusChange ? !isEventActive : isEventActive
-                })
+                body: JSON.stringify(payload)
             });
 
             if (!response.ok) {

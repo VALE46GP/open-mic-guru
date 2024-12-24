@@ -77,7 +77,9 @@ describe('Notifications Controller', () => {
                 { id: 1, is_read: true }
             ];
 
-            db.query.mockResolvedValueOnce({ rows: mockUpdatedNotifications });
+            db.query
+                .mockResolvedValueOnce({ rows: mockUpdatedNotifications })  // Update query
+                .mockResolvedValueOnce({ rows: mockUpdatedNotifications }); // Get updated notifications
 
             const response = await request(app)
                 .post('/notifications/mark-read')
@@ -85,7 +87,7 @@ describe('Notifications Controller', () => {
 
             expect(response.status).toBe(200);
             expect(response.body).toHaveProperty('success', true);
-            expect(response.body).toHaveProperty('updatedNotifications');
+            expect(response.body.updatedNotifications).toEqual(mockUpdatedNotifications);
         });
     });
 

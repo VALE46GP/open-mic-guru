@@ -317,7 +317,7 @@ function EventPage() {
                         rel="noopener noreferrer"
                         className="event-page__location-link"
                     >
-                        {eventDetails?.venue?.name}, {eventDetails?.venue?.address}
+                        {eventDetails?.venue?.name}
                     </a>
                 </p>
                 <div className="event-page__map-container">

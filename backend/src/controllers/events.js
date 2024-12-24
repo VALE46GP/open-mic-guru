@@ -188,8 +188,6 @@ const eventsController = {
     },
 
     async createEvent(req, res) {
-        console.log('createEvent: ', req, res)
-
         try {
             const {
                 venue_id,
@@ -327,6 +325,11 @@ const eventsController = {
             }
 
             if (image !== undefined) {
+                console.log('Debug - Image before update:', {
+                    imageValue: image,
+                    imageType: typeof image,
+                    isS3URL: typeof image === 'string' && image.includes('amazonaws.com')
+                });
                 updates.push(`image = $${paramCount}`);
                 values.push(image);
                 paramCount++;

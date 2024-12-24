@@ -157,39 +157,65 @@ describe('Events Controller', () => {
 
     describe('PATCH /events/:eventId', () => {
         it('should update event details', async () => {
-            const mockEvent = {
-                id: 1,
-                name: 'Updated Event',
-                start_time: '2024-03-01T19:00:00Z',
-                end_time: '2024-03-01T22:00:00Z'
-            };
+            // Reset the mock DB before test
+            resetMockDb();
 
-            // Mock host check
-            db.query
-                .mockResolvedValueOnce({ rows: [{ host_id: 1 }] }) // Host check
-                .mockResolvedValueOnce({ rows: [{
+            // Mock the sequence of DB calls
+            const mockResponses = [
+                { rows: [] },  // SET timezone query
+                { rows: [{ // Event exists check
+                        id: 1,
+                        name: 'Original Event',
+                        start_time: '2024-03-01T18:00:00Z',
+                        end_time: '2024-03-01T22:00:00Z',
+                        venue_id: 1,
+                        host_id: 1,
+                        slot_duration: { minutes: 10 },
+                        setup_duration: { minutes: 5 },
+                        types: ['comedy'],
+                        active: true
+                    }]},
+                { rows: [{ host_id: 1 }]}, // Host check
+                { rows: [{ // Get original event
+                        id: 1,
                         name: 'Original Event',
                         start_time: '2024-03-01T18:00:00Z',
                         venue_id: 1,
-                        slot_duration: { minutes: 10 },
-                        setup_duration: { minutes: 5 },
-                        types: ['music'],
+                        host_id: 1
+                    }]},
+                { rows: [{ // Update query result
+                        id: 1,
+                        name: 'Updated Event',
+                        start_time: '2024-03-01T18:00:00Z',
+                        venue_id: 1,
+                        host_id: 1,
                         active: true
-                    }] }) // Original event query
-                .mockResolvedValueOnce({ rows: [] }) // Lineup users query
-                .mockResolvedValueOnce({ rows: [mockEvent] }); // Update query
+                    }]},
+                { rows: [] } // Any additional queries
+            ];
+
+            // Setup mock to return responses in sequence
+            mockResponses.forEach(response => {
+                mockDb.query.mockImplementationOnce(() => Promise.resolve(response));
+            });
 
             const response = await request(app)
                 .patch('/events/1')
                 .send({
-                    name: 'Updated Event',
-                    start_time: '2024-03-01T19:00:00Z',
-                    end_time: '2024-03-01T22:00:00Z'
+                    eventId: 1,
+                    name: 'Updated Event'
                 });
 
             expect(response.status).toBe(200);
             expect(response.body).toHaveProperty('name', 'Updated Event');
-            expect(mockBroadcastLineupUpdate).toHaveBeenCalled();
+            expect(mockBroadcastLineupUpdate).toHaveBeenCalledWith({
+                type: 'EVENT_UPDATE',
+                eventId: 1,
+                data: expect.objectContaining({
+                    id: 1,
+                    name: 'Updated Event'
+                })
+            });
         });
     });
 

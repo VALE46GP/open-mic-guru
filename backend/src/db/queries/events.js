@@ -156,6 +156,11 @@ const eventQueries = {
         console.log('Final SQL query:', query);
         console.log('Query values:', values);
 
+        console.log('Debug - Update query values:', {
+            allValues: values,
+            imageValue: values.find(v => typeof v === 'string' && (v.includes('amazonaws.com') || v.includes('blob:')))
+        });
+
         const result = await db.query(query, values);
         console.log('Raw database result:', result.rows[0]);
 
