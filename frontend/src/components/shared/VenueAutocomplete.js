@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import './VenueAutocomplete.sass';
+import { getTimezoneFromOffset } from '../../utils/timeCalculations';
 
 const VenueAutocomplete = ({
                                onPlaceSelected,
@@ -44,6 +45,7 @@ const VenueAutocomplete = ({
                     const viewport = place.geometry.viewport;
                     const location = place.geometry.location;
 
+                    // Include the timezone information in the processed place
                     const processedPlace = {
                         ...place,
                         name: place.name || place.formatted_address,
@@ -55,7 +57,8 @@ const VenueAutocomplete = ({
                                 getNorthEast: () => viewport.getNorthEast(),
                                 getSouthWest: () => viewport.getSouthWest()
                             } : null
-                        }
+                        },
+                        timezone: getTimezoneFromOffset(place.utc_offset_minutes)  // Convert offset to timezone
                     };
 
                     onPlaceSelected(processedPlace);

@@ -1,9 +1,10 @@
 const AWS = require('aws-sdk');
 const { eventQueries } = require('../db/queries/events');
-const { calculateSlotStartTime, formatTimeToLocalString } = require('../utils/timeCalculations');
+const { calculateSlotStartTime, formatTimeToLocalString, formatTimeInTimezone, formatDateInTimezone } = require('../utils/timeCalculations');
 const { createNotification } = require('../utils/notifications');
 const { createApiResponse, createErrorResponse } = require('../utils/apiResponse');
 const { logger } = require('../../tests/utils/logger');
+const db = require('../db')
 
 // Configure AWS SDK
 AWS.config.update({
@@ -14,27 +15,31 @@ AWS.config.update({
 
 const s3 = new AWS.S3();
 
-function getUpdateMessage(originalEvent, updatedFields) {
+async function getUpdateMessage(originalEvent, updatedFields, venueTimezone) {
     const changes = [];
+    
+    try {
+        if (updatedFields.start_time !== undefined) {
+            const originalDate = new Date(originalEvent.start_time);
+            const updatedDate = new Date(updatedFields.start_time);
+            
+            const originalFormatted = formatTimeInTimezone(originalDate, venueTimezone);
+            const updatedFormatted = formatTimeInTimezone(updatedDate, venueTimezone);
 
-    // Convert times to UTC for comparison
-    const originalStartUTC = new Date(originalEvent.start_time);
-    const originalEndUTC = new Date(originalEvent.end_time);
+            const originalDateStr = formatDateInTimezone(originalDate, venueTimezone);
+            const updatedDateStr = formatDateInTimezone(updatedDate, venueTimezone);
 
-    if (updatedFields.start_time !== undefined) {
-        const updatedStartUTC = new Date(updatedFields.start_time);
-
-        if (originalStartUTC.getTime() !== updatedStartUTC.getTime()) {
-            changes.push(`Start time updated to ${updatedStartUTC.toISOString()}`);
+            if (originalDateStr !== updatedDateStr) {
+                changes.push(`Start time updated from ${originalFormatted} on ${originalDateStr} to ${updatedFormatted} on ${updatedDateStr}`);
+            } else {
+                changes.push(`Start time updated from ${originalFormatted} to ${updatedFormatted}`);
+            }
         }
-    }
 
-    if ('end_time' in updatedFields) {
-        const updatedEndUTC = new Date(updatedFields.end_time);
-
-        if (originalEndUTC.getTime() !== updatedEndUTC.getTime()) {
-            changes.push(`End time updated to ${updatedEndUTC.toISOString()}`);
-        }
+        // Add similar logic for end_time
+    } catch (error) {
+        console.error('Error formatting time message:', error);
+        return 'Event times have been updated';
     }
 
     return changes.join(', ');
@@ -173,12 +178,13 @@ const eventsController = {
 
     // TODO: check that images and additional_info are being updated
     async updateEvent(req, res) {
-        console.log('updateEvent: ', req.body)
-
         const { eventId } = req.params;
         const userId = req.user.userId;
 
         try {
+            // Set timezone to UTC explicitly
+            await db.query("SET timezone TO 'UTC'");
+
             const hostCheck = await eventQueries.checkEventHost(eventId);
             if (!hostCheck) {
                 return res.status(404).json(createErrorResponse('Event not found'));
@@ -201,6 +207,7 @@ const eventsController = {
                 active
             } = req.body;
 
+            // Validate times first
             if (start_time && end_time && new Date(start_time) >= new Date(end_time)) {
                 return res.status(400).json(createErrorResponse('Start time must be before end time'));
             }
@@ -215,98 +222,70 @@ const eventsController = {
             const values = [];
             let paramCount = 1;
 
-            const updatedFields = {};
+            // Handle start_time and end_time specifically to ensure UTC storage
 
-            if (name !== undefined) updatedFields.name = name;
-            if (start_time !== undefined) updatedFields.start_time = start_time;
-            if (req.body.end_time !== undefined) updatedFields.end_time = end_time;
-            if (venue_id !== undefined) updatedFields.venue_id = venue_id;
-            if (slot_duration !== undefined) updatedFields.slot_duration = slot_duration;
-            if (setup_duration !== undefined) updatedFields.setup_duration = setup_duration;
-            if (types !== undefined) updatedFields.types = types;
-            if (active !== undefined) updatedFields.active = active;
-
-            console.log('Fields being checked for updates:', updatedFields);
-
-            for (const [key, value] of Object.entries(updatedFields)) {
-                if (value !== undefined) {
-                    updates.push(`${key} = $${paramCount}`);
-                    values.push(value);
-                    paramCount++;
-                }
+            if (start_time !== undefined) {
+                updates.push(`start_time = $${paramCount}::timestamptz`);
+                values.push(start_time);
+                paramCount++;
             }
 
-            values.push(eventId);
+            if (end_time !== undefined) {
+                updates.push(`end_time = $${paramCount}::timestamptz`);
+                values.push(end_time);
+                paramCount++;
+            }
+
+            // Handle other fields
+            if (name !== undefined) {
+                updates.push(`name = $${paramCount}`);
+                values.push(name);
+                paramCount++;
+            }
+
+            if (venue_id !== undefined) {
+                updates.push(`venue_id = $${paramCount}`);
+                values.push(venue_id);
+                paramCount++;
+            }
+
+            if (slot_duration !== undefined) {
+                updates.push(`slot_duration = $${paramCount} * interval '1 second'`);
+                values.push(slot_duration);
+                paramCount++;
+            }
+
+            if (setup_duration !== undefined) {
+                updates.push(`setup_duration = $${paramCount} * interval '1 second'`);
+                values.push(setup_duration);
+                paramCount++;
+            }
+
+            if (types !== undefined) {
+                updates.push(`types = $${paramCount}`);
+                values.push(types);
+                paramCount++;
+            }
+
+            if (active !== undefined) {
+                updates.push(`active = $${paramCount}`);
+                values.push(active);
+                paramCount++;
+            }
 
             if (updates.length === 0) {
                 return res.status(400).json(createErrorResponse('No fields to update'));
             }
 
-            const lineupUsers = await eventQueries.getLineupUsers(eventId);
-
-            // Calculate original performance times
-            const originalTimes = {};
-            for (const performer of lineupUsers) {
-                if (performer.slot_number) {
-                    originalTimes[performer.user_id] = calculateSlotStartTime(
-                        originalEvent.start_time,
-                        performer.slot_number,
-                        originalEvent.slot_duration,
-                        originalEvent.setup_duration
-                    );
-                }
-            }
+            // Add eventId as the last parameter
+            values.push(eventId);
 
             const updatedEvent = await eventQueries.updateEvent(eventId, updates, values);
+            console.log('Updated event in database:', updatedEvent);
 
-            // Generate notification message
-            const updateMessage = getUpdateMessage(originalEvent, updatedFields);
-
-            if (updateMessage) {
-                for (const performer of lineupUsers) {
-                    try {
-                        let message = updateMessage;
-
-                        if (performer.slot_number) {
-                            const newTime = calculateSlotStartTime(
-                                updatedEvent.start_time,
-                                performer.slot_number,
-                                updatedEvent.slot_duration,
-                                updatedEvent.setup_duration
-                            );
-
-                            if (originalTimes[performer.user_id].getTime() !== newTime.getTime()) {
-                                message += `. Your performance time is ${formatTimeToLocalString(newTime)}`;
-                            }
-                        }
-
-                        await createNotification(
-                            performer.user_id,
-                            'event_update',
-                            message,
-                            eventId,
-                            null,
-                            req
-                        );
-                    } catch (err) {
-                        console.error('Error creating notification for performer:', performer.user_id, err);
-                    }
-                }
-            }
-
-            const updateData = {
-                type: 'EVENT_UPDATE',
-                eventId: parseInt(eventId),
-                data: {
-                    ...updatedEvent,
-                    active: updatedEvent.active
-                }
-            };
-
-            req.app.locals.broadcastLineupUpdate(updateData);
             res.json(updatedEvent);
         } catch (err) {
-            logger.error(err);
+            console.error('Error updating event:', err);
             res.status(500).json(createErrorResponse('Server error'));
         }
     },

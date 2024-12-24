@@ -241,11 +241,10 @@ function EventPage() {
         if (!eventDetails?.venue) return '';
         
         const venue = {
-            latitude: eventDetails.venue.latitude,
-            longitude: eventDetails.venue.longitude
+            timezone: eventDetails.venue.timezone
         };
         
-        return await formatEventTimeInVenueTimezone(dateString, venue);
+        return formatEventTimeInVenueTimezone(dateString, venue);
     };
 
     // const toggleDeleteConfirmModal = () => {

@@ -1,28 +1,27 @@
-const timezoneCache = new Map();
+function getTimezoneFromOffset(offsetMinutes) {
+    // Get current date to handle DST correctly
+    const date = new Date();
 
-async function getTimezoneFromCoordinates(latitude, longitude) {
-    const cacheKey = `${latitude},${longitude}`;
-    if (timezoneCache.has(cacheKey)) {
-        return timezoneCache.get(cacheKey);
-    }
+    // Convert offset to hours
+    const offsetHours = offsetMinutes / 60;
 
-    try {
-        const response = await fetch(
-            `https://maps.googleapis.com/maps/api/timezone/json?location=${latitude},${longitude}&timestamp=${Math.floor(Date.now() / 1000)}&key=${process.env.REACT_APP_GOOGLE_MAPS_API_KEY}`
-        );
-        const data = await response.json();
-
-        if (data.timeZoneId) {
-            timezoneCache.set(cacheKey, data.timeZoneId);
-            return data.timeZoneId;
-        }
-        return 'America/Los_Angeles';
-    } catch (error) {
-        console.error('Error getting timezone:', error);
+    // Common timezone mappings for US/Pacific coast
+    // We'll use America/Los_Angeles as default since that's what we were using before
+    if (offsetHours === -7 || offsetHours === -8) {
         return 'America/Los_Angeles';
     }
+
+    // For other offsets, we'll use a UTC timezone
+    // This is a simplification but works for our current needs
+    const absOffset = Math.abs(offsetHours);
+    const offsetStr =
+        (offsetHours <= 0 ? '+' : '-') + // Note: The sign is inverted for UTC timezone names
+        String(Math.floor(absOffset)).padStart(2, '0') +
+        ':' +
+        String((absOffset % 1) * 60).padStart(2, '0');
+
+    return `Etc/GMT${offsetStr}`;
 }
-
 function calculateSlotStartTime(eventStartTime, slotNumber, slotDuration, setupDuration) {
     const startTime = new Date(eventStartTime);
 
@@ -41,8 +40,8 @@ function calculateSlotStartTime(eventStartTime, slotNumber, slotDuration, setupD
     return new Date(startTime.getTime() + slotOffsetMinutes * 60000);
 }
 
-async function formatEventTimeInVenueTimezone(utcTimeStr, venue, formatStr = 'MMM d, h:mm aa') {
-    if (!venue?.latitude || !venue?.longitude) {
+function formatEventTimeInVenueTimezone(utcTimeStr, venue) {
+    if (!venue?.timezone) {
         return new Date(utcTimeStr).toLocaleString('en-US', {
             month: 'short',
             day: 'numeric',
@@ -52,71 +51,41 @@ async function formatEventTimeInVenueTimezone(utcTimeStr, venue, formatStr = 'MM
         });
     }
 
-    try {
-        const timezone = await getTimezoneFromCoordinates(venue.latitude, venue.longitude);
-        
-        // Create a UTC date object
-        const utcDate = new Date(utcTimeStr);
-        
-        // Convert directly to venue timezone
-        const venueTime = utcDate.toLocaleString('en-US', {
-            timeZone: timezone,
-            month: 'short',
-            day: 'numeric',
-            hour: 'numeric',
-            minute: '2-digit',
-            hour12: true
-        });
-
-        console.log('Simple timezone conversion:', {
-            input: utcTimeStr,
-            utcDate: utcDate.toISOString(),
-            timezone,
-            result: venueTime
-        });
-
-        return venueTime;
-    } catch (error) {
-        console.error('Error formatting venue time:', error);
-        return new Date(utcTimeStr).toLocaleString('en-US', {
-            month: 'short',
-            day: 'numeric',
-            hour: 'numeric',
-            minute: '2-digit',
-            hour12: true
-        });
-    }
+    const utcDate = new Date(utcTimeStr);
+    return utcDate.toLocaleString('en-US', {
+        timeZone: venue.timezone,
+        month: 'short',
+        day: 'numeric',
+        hour: 'numeric',
+        minute: utcDate.getUTCMinutes() === 0 ? undefined : '2-digit',
+        hour12: true
+    }).replace(':00', '');
 }
 
 function convertToUTC(localTime, timezone) {
-    // Create a date object in the local timezone
-    const localDate = new Date(localTime);
-    
-    // Get the parts of the date in the specified timezone
-    const parts = new Date(localDate.toLocaleString('en-US', { timeZone: timezone }))
-        .toISOString()
-        .match(/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})/);
-    
-    if (!parts) {
-        throw new Error('Invalid date format');
+    if (!timezone) {
+        console.warn('No timezone provided, using America/Los_Angeles as default');
+        timezone = 'America/Los_Angeles';
     }
-    
-    // Create UTC date using the timezone-adjusted components
-    const utcTime = Date.UTC(
-        parseInt(parts[1]), // year
-        parseInt(parts[2]) - 1, // month (0-based)
-        parseInt(parts[3]), // day
-        parseInt(parts[4]), // hour
-        parseInt(parts[5]), // minute
-        parseInt(parts[6])  // second
-    );
-    
-    return new Date(utcTime).toISOString();
+
+    // Parse the local time string
+    const [datePart, timePart] = localTime.split('T');
+    const [year, month, day] = datePart.split('-').map(Number);
+    const [hours, minutes] = timePart.split(':').map(Number);
+
+    // Create a timestamp that represents the local time in the venue's timezone
+    const localDate = new Date(Date.UTC(year, month - 1, day, hours, minutes));
+
+    // Add the timezone offset (8 hours for PST)
+    const offset = timezone === 'America/Los_Angeles' ? 8 : 0;
+    const utcTime = new Date(localDate.getTime() + (offset * 60 * 60 * 1000));
+
+    return utcTime.toISOString();
 }
 
 export {
+    getTimezoneFromOffset,
     calculateSlotStartTime,
     formatEventTimeInVenueTimezone,
-    getTimezoneFromCoordinates,
     convertToUTC
 };

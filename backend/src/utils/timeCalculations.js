@@ -36,12 +36,37 @@ function hasTimeRelatedChanges(originalEvent, updatedFields) {
     return startTimeChanged || slotDurationChanged || setupDurationChanged;
 }
 
-function formatTimeToLocalString(date) {
-    return format(new Date(date), 'MMM d, yyyy h:mm aa');
+function formatTimeInTimezone(date, timezone) {
+    const formattedTime = new Date(date).toLocaleString('en-US', {
+        timeZone: timezone,
+        hour: 'numeric',
+        minute: new Date(date).getUTCMinutes() === 0 ? undefined : '2-digit',
+        hour12: true
+    }).replace(':00', '');
+
+    return formattedTime;
+}
+
+function formatDateInTimezone(date, timezone) {
+    return new Date(date).toLocaleDateString('en-US', {
+        timeZone: timezone,
+        month: 'short',
+        day: 'numeric'
+    });
+}
+
+function formatTimeToLocalString(date, timezone) {
+    if (!timezone) return format(new Date(date), 'MMM d, yyyy h:mm aa');
+    
+    const time = formatTimeInTimezone(date, timezone);
+    const dateStr = formatDateInTimezone(date, timezone);
+    return `${dateStr}, ${time}`;
 }
 
 module.exports = {
     calculateSlotStartTime,
     hasTimeRelatedChanges,
-    formatTimeToLocalString
+    formatTimeToLocalString,
+    formatTimeInTimezone,
+    formatDateInTimezone
 };

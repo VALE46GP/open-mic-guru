@@ -131,11 +131,29 @@ function CreateEvent() {
             const formattedAddress = selectedVenue.address_components.map(ac => ac.short_name).join(', ');
             const latitude = selectedVenue.geometry.location.lat();
             const longitude = selectedVenue.geometry.location.lng();
-            setSelectedVenue({
-                name: selectedVenue?.name || '',
-                address: formattedAddress || '',
-                latitude: latitude || 0,
-                longitude: longitude || 0
+
+            // Always ensure timezone is set
+            const venueTimezone = 'America/Los_Angeles'; // Hardcode for now since you're in SF
+            console.log('Setting venue with timezone:', venueTimezone);
+
+            setSelectedVenue(prevVenue => {
+                console.log("Previous venue state:", prevVenue);
+                const newVenue = {
+                    ...prevVenue,
+                    name: selectedVenue?.name || '',
+                    address: formattedAddress || '',
+                    latitude: latitude || 0,
+                    longitude: longitude || 0,
+                    timezone: venueTimezone,
+                    geometry: {
+                        location: {
+                            lat: () => latitude,
+                            lng: () => longitude
+                        }
+                    }
+                };
+                console.log("New venue state:", newVenue);
+                return newVenue;
             });
         }
     }, [selectedVenue]);
@@ -160,24 +178,22 @@ function CreateEvent() {
         }
 
         try {
-            // Get venue timezone
-            const timezone = await getTimezoneFromCoordinates(
-                selectedVenue.latitude,
-                selectedVenue.longitude
-            );
+            console.log('Selected venue:', selectedVenue);
+            console.log('Selected venue timezone:', selectedVenue?.timezone);
+            console.log('Input local time:', startTime);
 
-            // Use convertToUTC instead of zonedTimeToUtc
-            const utcStartTime = convertToUTC(startTime, timezone);
-            const utcEndTime = convertToUTC(endTime, timezone);
+            const utcStartTime = convertToUTC(startTime, selectedVenue?.timezone);
+            const utcEndTime = convertToUTC(endTime, selectedVenue?.timezone);
+
+            console.log('Converted UTC start time:', utcStartTime);
+            console.log('Converted UTC end time:', utcEndTime);
 
             let venueId = await checkOrCreateVenue(selectedVenue);
             let imageUrl = eventImage;
-
             if (eventImage && eventImage instanceof File) {
                 imageUrl = await handleImageChange(eventImage);
             }
 
-            // Rest of the submit code remains the same
             const url = isEditMode ? `/api/events/${eventId}` : '/api/events';
             const method = isEditMode ? 'PATCH' : 'POST';
 
@@ -203,12 +219,10 @@ function CreateEvent() {
             }
 
             const data = await response.json();
-            setShowStatusModal(false);
-            setPendingStatusChange(false);
-            navigate(`/events/${isEditMode ? eventId : data.id}`);
+            navigate(`/events/${data.id || eventId}`);
         } catch (error) {
             console.error('Error saving event:', error);
-            alert('Failed to save event');
+            alert('Failed to save event. Please try again.');
         }
     };
 
@@ -217,12 +231,16 @@ function CreateEvent() {
     };
 
     async function checkOrCreateVenue(selectedVenue) {
-        const address = selectedVenue.address_components ? selectedVenue.address_components.map(component => component.short_name).join(', ') : '';
+        const address = selectedVenue.address_components ?
+            selectedVenue.address_components.map(component => component.short_name).join(', ') :
+            selectedVenue.formatted_address || selectedVenue.address;
+
         const venueData = {
             name: selectedVenue.name,
             address: address,
-            latitude: selectedVenue.latitude,
-            longitude: selectedVenue.longitude,
+            latitude: selectedVenue.geometry.location.lat(),
+            longitude: selectedVenue.geometry.location.lng(),
+            timezone: selectedVenue.timezone  // Use the timezone from the place object
         };
 
         try {

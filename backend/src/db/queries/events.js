@@ -93,22 +93,32 @@ const eventQueries = {
     },
 
     async createEvent(eventData) {
-        const {
-            venue_id,
-            start_time,
-            end_time,
-            slot_duration,
-            setup_duration,
-            name,
-            additional_info,
-            image,
-            host_id,
-            types
-        } = eventData;
-
-        const result = await db.query(
-            'INSERT INTO events (venue_id, start_time, end_time, slot_duration, setup_duration, name, additional_info, image, host_id, types) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) RETURNING *',
-            [venue_id, start_time, end_time, slot_duration, setup_duration, name, additional_info, image, host_id, types]
+        const result = await db.query(`
+            INSERT INTO events (
+                venue_id, 
+                start_time,
+                end_time,
+                slot_duration,
+                setup_duration,
+                name,
+                additional_info,
+                image,
+                host_id,
+                types
+            ) VALUES ($1, $2::timestamptz, $3::timestamptz, $4, $5, $6, $7, $8, $9, $10)
+            RETURNING *`,
+            [
+                eventData.venue_id,
+                eventData.start_time,
+                eventData.end_time,
+                eventData.slot_duration,
+                eventData.setup_duration,
+                eventData.name,
+                eventData.additional_info,
+                eventData.image,
+                eventData.host_id,
+                eventData.types
+            ]
         );
         return result.rows[0];
     },
@@ -121,15 +131,33 @@ const eventQueries = {
         return result.rows[0];
     },
 
+    // TODO: test that all fields update
     async updateEvent(eventId, updates, values) {
-        const updateQuery = `
-            UPDATE events 
-            SET ${updates.join(', ')} 
-            WHERE id = $${values.length} 
-            RETURNING *
+        await db.query("SET timezone TO 'UTC'");
+
+        const query = `
+            WITH updated AS (
+            UPDATE events
+            SET start_time = $1::timestamptz,
+            end_time = $2::timestamptz,
+                name = $3,
+                venue_id = $4,
+                slot_duration = $5 * interval '1 second',
+                setup_duration = $6 * interval '1 second',
+                types = $7,
+                active = $8
+            WHERE id = $9
+                RETURNING *
+                )
+            SELECT * FROM updated;
         `;
 
-        const result = await db.query(updateQuery, values);
+        console.log('Final SQL query:', query);
+        console.log('Query values:', values);
+
+        const result = await db.query(query, values);
+        console.log('Raw database result:', result.rows[0]);
+
         return result.rows[0];
     },
 
@@ -157,6 +185,16 @@ const eventQueries = {
         const result = await db.query(
             'UPDATE events SET end_time = $1 WHERE id = $2 RETURNING *',
             [newEndTime, eventId]
+        );
+        return result.rows[0];
+    },
+
+    async getVenueInfo(venueId) {
+        const result = await db.query(`
+            SELECT v.id, v.name, v.latitude, v.longitude, v.timezone, v.address
+            FROM venues v
+            WHERE v.id = $1`,
+            [venueId]
         );
         return result.rows[0];
     }
