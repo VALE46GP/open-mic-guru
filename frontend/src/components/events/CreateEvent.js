@@ -30,7 +30,6 @@ function CreateEvent() {
     const [isEventActive, setIsEventActive] = useState(true);
     const [showStatusModal, setShowStatusModal] = useState(false);
     const [pendingStatusChange, setPendingStatusChange] = useState(false);
-    const [timezone, setTimezone] = useState('America/Los_Angeles');
 
     const EVENT_TYPE_OPTIONS = [
         { label: 'Music', value: 'music' },
@@ -122,7 +121,7 @@ function CreateEvent() {
 
             return () => clearInterval(checkGoogleMapsLoaded);
         } else {
-            setIsGoogleMapsLoaded(true); // Directly set as loaded in tests
+            setIsGoogleMapsLoaded(true);
         }
     }, []);
 
@@ -178,15 +177,8 @@ function CreateEvent() {
         }
 
         try {
-            console.log('Selected venue:', selectedVenue);
-            console.log('Selected venue timezone:', selectedVenue?.timezone);
-            console.log('Input local time:', startTime);
-
             const utcStartTime = convertToUTC(startTime, selectedVenue?.timezone);
             const utcEndTime = convertToUTC(endTime, selectedVenue?.timezone);
-
-            console.log('Converted UTC start time:', utcStartTime);
-            console.log('Converted UTC end time:', utcEndTime);
 
             let venueId = await checkOrCreateVenue(selectedVenue);
             let imageUrl = await processImage(eventImage);
