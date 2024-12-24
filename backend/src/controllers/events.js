@@ -17,12 +17,13 @@ const s3 = new AWS.S3();
 
 async function getUpdateMessage(originalEvent, updatedFields, venueTimezone) {
     const changes = [];
-    
+
     try {
+        // Only add start_time changes if start_time was actually modified
         if (updatedFields.start_time !== undefined) {
             const originalDate = new Date(originalEvent.start_time);
             const updatedDate = new Date(updatedFields.start_time);
-            
+
             const originalFormatted = formatTimeInTimezone(originalDate, venueTimezone);
             const updatedFormatted = formatTimeInTimezone(updatedDate, venueTimezone);
 
@@ -35,8 +36,14 @@ async function getUpdateMessage(originalEvent, updatedFields, venueTimezone) {
                 changes.push(`Start time updated from ${originalFormatted} to ${updatedFormatted}`);
             }
         }
-
-        // Add similar logic for end_time
+        console.log('getUpdateMessage input:', {
+            originalEvent: {
+                start_time: originalEvent.start_time,
+                end_time: originalEvent.end_time
+            },
+            updatedFields,
+            venueTimezone
+        });
     } catch (error) {
         console.error('Error formatting time message:', error);
         return 'Event times have been updated';
@@ -282,6 +289,65 @@ const eventsController = {
 
             const updatedEvent = await eventQueries.updateEvent(eventId, updates, values);
             console.log('Updated event in database:', updatedEvent);
+
+            // TODO: Improve notification message for when slot_time or setup_duration are changed.
+            // Create Notifications
+            if (start_time !== undefined || end_time !== undefined || slot_duration !== undefined || setup_duration !== undefined) {
+                try {
+                    // Get venue timezone
+                    const venueInfo = await eventQueries.getVenueInfo(originalEvent.venue_id);
+                    const timezone = venueInfo?.timezone || 'UTC';
+
+                    // Get all users in the lineup
+                    const lineupUsers = await eventQueries.getLineupUsers(eventId);
+
+                    // Get the update message
+                    const updateMessage = await getUpdateMessage(originalEvent, {
+                        start_time,
+                        end_time,
+                        slot_duration,
+                        setup_duration
+                    }, timezone);
+
+                    // Create notifications for each user
+                    for (const performer of lineupUsers) {
+                        try {
+                            const slotTime = calculateSlotStartTime(
+                                start_time || originalEvent.start_time,
+                                performer.slot_number,
+                                slot_duration || originalEvent.slot_duration,
+                                setup_duration || originalEvent.setup_duration
+                            );
+
+                            const message = `${updateMessage} Your new performance time is ${formatTimeToLocalString(slotTime, timezone)}`;
+
+                            await createNotification(
+                                performer.user_id,
+                                'event_update',
+                                message,
+                                eventId,
+                                null,
+                                req
+                            );
+                        } catch (err) {
+                            console.error('Error creating notification for performer:', performer.user_id, err);
+                        }
+                    }
+
+                    // Broadcast update to connected clients
+                    if (req.app.locals.broadcastLineupUpdate) {
+                        const updateData = {
+                            type: 'EVENT_UPDATE',
+                            eventId: parseInt(eventId),
+                            data: updatedEvent
+                        };
+                        req.app.locals.broadcastLineupUpdate(updateData);
+                    }
+                } catch (err) {
+                    console.error('Error sending notifications:', err);
+                    // Don't throw error here - we still want to return the updated event
+                }
+            }
 
             res.json(updatedEvent);
         } catch (err) {
