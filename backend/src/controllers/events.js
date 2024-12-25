@@ -16,12 +16,6 @@ AWS.config.update({
 const s3 = new AWS.S3();
 
 async function getUpdateMessage(originalEvent, updatedFields, venueTimezone) {
-    console.log('getUpdateMessage received:', {
-        originalEvent,
-        updatedFields,
-        venueTimezone
-    });
-
     const changes = [];
 
     try {
@@ -80,12 +74,6 @@ async function getUpdateMessage(originalEvent, updatedFields, venueTimezone) {
             updatedFields.venue_name) {
             changes.push(`Location changed to ${updatedFields.venue_name}.`);
         }
-
-        console.log('Debug venue change check:', {
-            venueIdDefined: updatedFields.venue_id !== undefined,
-            venueIdChanged: updatedFields.venue_id !== originalEvent.venue_id,
-            hasVenueName: Boolean(updatedFields.venue_name)
-        });
 
         if (changes.length === 0) {
             return 'Event details have been updated.';
@@ -343,7 +331,6 @@ const eventsController = {
             values.push(eventId);
 
             const updatedEvent = await eventQueries.updateEvent(eventId, updates, values);
-            console.log('Updated event in database:', updatedEvent);
 
             // TODO: Improve notification message for when slot_time or setup_duration are changed.
             // Create Notifications
@@ -361,16 +348,6 @@ const eventsController = {
                     // Get all users in the lineup
                     const lineupUsers = await eventQueries.getLineupUsers(eventId);
 
-                    // Add these logs right before getting venue info
-                    console.log('Debug venue info:', {
-                        venue_id,
-                        originalVenueId: originalEvent.venue_id,
-                        isVenueChanged: venue_id !== originalEvent.venue_id
-                    });
-
-                    // Add this log after getting venue info
-                    console.log('Debug venueInfo:', venueInfo);
-
                     // Get the update message
                     const updateMessage = await getUpdateMessage(originalEvent, {
                         start_time,
@@ -382,22 +359,6 @@ const eventsController = {
                             venue_name: venueInfo.name
                         } : {})
                     }, timezone);
-
-                    // Add this log before creating the update message
-                    console.log('Debug updateMessage params:', {
-                        originalEvent,
-                        updatedFields: {
-                            start_time,
-                            end_time,
-                            slot_duration,
-                            setup_duration,
-                            ...(venueInfo && venue_id !== originalEvent.venue_id ? {
-                                venue_id,
-                                venue_name: venueInfo.name
-                            } : {})
-                        },
-                        timezone
-                    });
 
                     // Create notifications for each user
                     for (const performer of lineupUsers) {

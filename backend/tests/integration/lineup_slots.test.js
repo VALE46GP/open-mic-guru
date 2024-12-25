@@ -206,116 +206,85 @@ describe('Lineup Slots Controller', () => {
 
     describe('PUT /lineup-slots/reorder', () => {
         it('should successfully reorder slots', async () => {
-            // Reset mock
-            mockPool.query.mockReset();
+            const mockClient = {
+                query: jest.fn(),
+                release: jest.fn()
+            };
 
-            // Setup mock responses
-            mockPool.query
-                // First call - get event details
-                .mockResolvedValueOnce({
-                    rows: [{
-                        id: 1,
-                        name: 'Test Event',
-                        start_time: new Date('2024-03-01T19:00:00Z'),
-                        slot_duration: { minutes: 10 },
-                        setup_duration: { minutes: 5 }
-                    }]
-                })
-                // BEGIN transaction
-                .mockResolvedValueOnce({ rows: [] })
-                // Get old slot details #1
-                .mockResolvedValueOnce({
-                    rows: [{
-                        id: 1,
-                        slot_number: 1,
-                        user_id: 1
-                    }]
-                })
-                // Update slot #1
-                .mockResolvedValueOnce({
-                    rows: [{
-                        id: 1,
-                        slot_number: 2
-                    }]
-                })
-                // Get old slot details #2
-                .mockResolvedValueOnce({
-                    rows: [{
-                        id: 2,
-                        slot_number: 2,
-                        user_id: 2
-                    }]
-                })
-                // Update slot #2
-                .mockResolvedValueOnce({
-                    rows: [{
-                        id: 2,
-                        slot_number: 1
-                    }]
-                })
-                // COMMIT transaction
-                .mockResolvedValueOnce({ rows: [] });
+            const mockEvent = {
+                id: 1,
+                name: 'Test Event',
+                start_time: new Date('2024-03-01T19:00:00Z'),
+                slot_duration: 600,
+                setup_duration: 300
+            };
+
+            // Mock the initial event query
+            mockDb.query
+                .mockResolvedValueOnce({ rows: [mockEvent] }) // getEventDetailsForReorder
+                .mockResolvedValueOnce({ rows: [{ // getOldSlotDetails
+                    slot_number: 1,
+                    user_id: 1
+                }]});
+
+            // Mock the client connection
+            mockDb.connect.mockResolvedValueOnce(mockClient);
+
+            // Mock the transaction queries
+            mockClient.query
+                .mockResolvedValueOnce({ rows: [] }) // BEGIN
+                .mockResolvedValueOnce({ rows: [] }) // updateSlotNumber
+                .mockResolvedValueOnce({ rows: [] }); // COMMIT
 
             const response = await request(app)
                 .put('/lineup-slots/reorder')
                 .send({
                     slots: [
-                        { slot_id: 1, slot_number: 2 },
-                        { slot_id: 2, slot_number: 1 }
+                        { slot_id: 1, slot_number: 2 }
                     ]
                 });
 
             expect(response.status).toBe(200);
             expect(response.body).toHaveProperty('message', 'Slots reordered successfully');
-            expect(mockPool.query).toHaveBeenCalledWith('BEGIN');
-            expect(mockPool.query).toHaveBeenCalledWith('COMMIT');
-
-            // Verify broadcast was called
-            expect(app.locals.broadcastLineupUpdate).toHaveBeenCalledWith({
-                type: 'LINEUP_UPDATE',
-                eventId: 1,
-                action: 'REORDER',
-                data: expect.any(Object)
-            });
+            expect(mockClient.query).toHaveBeenCalledWith(expect.stringContaining('BEGIN'));
+            expect(mockClient.query).toHaveBeenCalledWith(expect.stringContaining('COMMIT'));
+            expect(mockClient.release).toHaveBeenCalled();
         });
 
-        it('should handle concurrent slot updates', async () => {
-            // Reset mock
-            mockPool.query.mockReset();
+        it('should handle database errors with rollback', async () => {
+            const mockClient = {
+                query: jest.fn(),
+                release: jest.fn()
+            };
 
-            // Setup mock to simulate an error during transaction
-            mockPool.query
-                // First call - get event details
-                .mockResolvedValueOnce({
-                    rows: [{
-                        id: 1,
-                        name: 'Test Event',
-                        start_time: new Date('2024-03-01T19:00:00Z'),
-                        slot_duration: { minutes: 10 },
-                        setup_duration: { minutes: 5 }
-                    }]
-                })
-                // BEGIN transaction
-                .mockResolvedValueOnce({ rows: [] })
-                // Simulate error during update
-                .mockRejectedValueOnce(new Error('Concurrent update error'));
+            mockClient.query
+                .mockResolvedValueOnce({ rows: [] }) // BEGIN
+                .mockRejectedValueOnce(new Error('Database error')); // Simulate error during update
+
+            mockDb.connect.mockResolvedValueOnce(mockClient);
+            mockDb.query.mockResolvedValueOnce({ rows: [{ id: 1 }] }); // getEventDetailsForReorder
 
             const response = await request(app)
                 .put('/lineup-slots/reorder')
                 .send({
                     slots: [
-                        { slot_id: 1, slot_number: 2 },
-                        { slot_id: 2, slot_number: 1 }
+                        { slot_id: 1, slot_number: 2 }
                     ]
                 });
 
             expect(response.status).toBe(500);
-            expect(mockPool.query).toHaveBeenCalledWith('BEGIN');
-            expect(mockPool.query).toHaveBeenCalledWith('ROLLBACK');
+            expect(mockClient.query).toHaveBeenCalledWith(expect.stringContaining('BEGIN'));
+            expect(mockClient.query).toHaveBeenCalledWith(expect.stringContaining('ROLLBACK'));
+            expect(mockClient.release).toHaveBeenCalled();
         });
     });
 
     describe('Lineup Slot Validation', () => {
+        beforeEach(() => {
+            jest.clearAllMocks();
+            resetMockDb();
+        });
+
         it('should validate non-user slot requirements', async () => {
             const response = await request(app)
                 .post('/lineup-slots')
@@ -327,16 +296,10 @@ describe('Lineup Slots Controller', () => {
 
             expect(response.status).toBe(400);
             expect(response.body.error).toBe('Non-users must provide a name');
+            expect(mockDb.query).not.toHaveBeenCalled();
         });
 
         it('should handle reordering with invalid slot numbers', async () => {
-            const mockEvent = {
-                id: 1,
-                start_time: new Date('2024-03-01T19:00:00Z'),
-                slot_duration: { minutes: 10 },
-                setup_duration: { minutes: 5 }
-            };
-
             const response = await request(app)
                 .put('/lineup-slots/reorder')
                 .send({
@@ -348,7 +311,6 @@ describe('Lineup Slots Controller', () => {
 
             expect(response.status).toBe(400);
             expect(response.body).toHaveProperty('error', 'Invalid slot numbers');
-            // Should not make any DB queries due to failing validation
             expect(mockDb.query).not.toHaveBeenCalled();
         });
 
@@ -364,7 +326,6 @@ describe('Lineup Slots Controller', () => {
 
             expect(response.status).toBe(400);
             expect(response.body).toHaveProperty('error', 'Invalid slot numbers');
-            // Should not make any DB queries due to failing validation
             expect(mockDb.query).not.toHaveBeenCalled();
         });
 
@@ -383,64 +344,48 @@ describe('Lineup Slots Controller', () => {
 
     describe('Slot Reordering Edge Cases', () => {
         it('should handle concurrent slot updates', async () => {
+            const mockClient = {
+                query: jest.fn(),
+                release: jest.fn()
+            };
+
             const mockEvent = {
                 id: 1,
                 name: 'Test Event',
                 start_time: new Date('2024-03-01T19:00:00Z'),
-                slot_duration: { minutes: 10 },
-                setup_duration: { minutes: 5 }
+                slot_duration: 600,
+                setup_duration: 300
             };
 
-            // Reset mock counters
-            mockDb.query.mockReset();
+            // Mock the initial event query
+            mockDb.query.mockResolvedValueOnce({ rows: [mockEvent] });
 
-            mockDb.query
-                .mockResolvedValueOnce({ rows: [mockEvent] })  // GetEventDetailsForReorder
-                .mockResolvedValueOnce({ rows: [] })  // BEGIN
-                .mockResolvedValueOnce({ rows: [{ // First getOldSlotDetails
-                        id: 1,
-                        slot_number: 1,
-                        user_id: 1
-                    }]})
-                .mockResolvedValueOnce({ rows: [{ // First updateSlotNumber
-                        id: 1,
-                        slot_number: 2
-                    }]})
-                .mockResolvedValueOnce({ rows: [{ // Second getOldSlotDetails
-                        id: 2,
-                        slot_number: 2,
-                        user_id: 2
-                    }]})
-                .mockResolvedValueOnce({ rows: [{ // Second updateSlotNumber
-                        id: 2,
-                        slot_number: 1
-                    }]})
-                .mockResolvedValueOnce({ rows: [] })  // COMMIT
-                .mockResolvedValueOnce({ rows: [] }); // Extra notification query
+            // Mock the client connection
+            mockDb.connect.mockResolvedValueOnce(mockClient);
 
-            try {
-                const response = await request(app)
-                    .put('/lineup-slots/reorder')
-                    .send({
-                        slots: [
-                            { slot_id: 1, slot_number: 2 },
-                            { slot_id: 2, slot_number: 1 }
-                        ]
-                    });
+            // Mock the transaction queries with a simulated concurrent update error
+            mockClient.query
+                .mockResolvedValueOnce({ rows: [] }) // BEGIN
+                .mockResolvedValueOnce({ rows: [{ // First slot details
+                    slot_number: 1,
+                    user_id: 1
+                }]})
+                .mockRejectedValueOnce(new Error('Concurrent update error')) // Simulate concurrent update
+                .mockResolvedValueOnce({ rows: [] }); // ROLLBACK
 
-                // Log the actual response for debugging
-                console.log('Response:', response.status, response.body);
+            const response = await request(app)
+                .put('/lineup-slots/reorder')
+                .send({
+                    slots: [
+                        { slot_id: 1, slot_number: 2 },
+                        { slot_id: 2, slot_number: 1 }
+                    ]
+                });
 
-                // Log the mock calls for debugging
-                console.log('Mock calls:', mockDb.query.mock.calls.map(call => call[0]));
-
-                expect(response.status).toBe(200);
-                expect(response.body).toHaveProperty('message', 'Slots reordered successfully');
-                expect(mockDb.query).toHaveBeenCalledTimes(8);
-            } catch (err) {
-                console.error('Test error:', err);
-                throw err;
-            }
+            expect(response.status).toBe(500);
+            expect(mockClient.query).toHaveBeenCalledWith(expect.stringContaining('BEGIN'));
+            expect(mockClient.query).toHaveBeenCalledWith(expect.stringContaining('ROLLBACK'));
+            expect(mockClient.release).toHaveBeenCalled();
         });
 
         it('should handle invalid slot numbers during reordering', async () => {

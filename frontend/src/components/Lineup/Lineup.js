@@ -288,7 +288,10 @@ function Lineup({
                     })
                 });
 
-                if (!response.ok) throw new Error('Failed to update slot order');
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.error || 'Failed to update slot order');
+                }
             }
 
             // If new slots were added, extend the event duration
@@ -313,7 +316,7 @@ function Lineup({
             setNewSlotsCount(0);
         } catch (error) {
             console.error('Error updating slots:', error);
-            alert('Failed to save changes');
+            alert(error.message || 'Failed to save changes');
         }
     };
 
