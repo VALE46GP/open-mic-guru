@@ -3,6 +3,9 @@ const { logger } = require('../../tests/utils/logger');
 
 async function createNotification(userId, type, message, eventId = null, lineupSlotId = null, req = null) {
     try {
+        // Set timezone to UTC
+        await db.query("SET timezone TO 'UTC'");
+        
         // Check user's notification preferences
         const prefsResult = await db.query(
             'SELECT * FROM notification_preferences WHERE user_id = $1',
@@ -34,8 +37,8 @@ async function createNotification(userId, type, message, eventId = null, lineupS
         // Create the notification
         const result = await db.query(
             `INSERT INTO notifications 
-             (user_id, type, message, event_id, lineup_slot_id) 
-             VALUES ($1, $2, $3, $4, $5)
+             (user_id, type, message, event_id, lineup_slot_id, created_at) 
+             VALUES ($1, $2, $3, $4, $5, NOW())
              RETURNING *`,
             [userId, type, message, eventId, lineupSlotId]
         );

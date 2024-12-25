@@ -2,6 +2,7 @@ const { lineupSlotsQueries } = require('../db/queries/lineup_slots');
 const { createNotification } = require('../utils/notifications');
 const { calculateSlotStartTime, formatTimeToLocalString } = require('../utils/timeCalculations');
 const { logger } = require('../../tests/utils/logger');
+const db = require('../db');
 
 const lineupSlotsController = {
     async createSlot(req, res) {
@@ -193,6 +194,8 @@ const lineupSlotsController = {
     },
 
     async reorderSlots(req, res) {
+        const client = await db.connect();
+        
         try {
             const { slots } = req.body;
 
@@ -200,7 +203,6 @@ const lineupSlotsController = {
                 return res.status(400).json({ error: 'Invalid slots data' });
             }
 
-            // Validate slot numbers
             const isValidSlotNumbers = slots.every(slot =>
                 slot.slot_number &&
                 Number.isInteger(slot.slot_number) &&
@@ -213,55 +215,62 @@ const lineupSlotsController = {
             }
 
             const event = await lineupSlotsQueries.getEventDetailsForReorder(slots[0].slot_id);
+            
+            await client.query('BEGIN');
 
-            await db.query('BEGIN');
+            try {
+                for (const slot of slots) {
+                    const oldSlot = await lineupSlotsQueries.getOldSlotDetails(slot.slot_id);
 
-            for (const slot of slots) {
-                const oldSlot = await lineupSlotsQueries.getOldSlotDetails(slot.slot_id);
-
-                if (oldSlot.slot_number !== slot.slot_number && oldSlot.user_id) {
-                    const oldStartTime = calculateSlotStartTime(
-                        event.start_time,
-                        oldSlot.slot_number,
-                        event.slot_duration,
-                        event.setup_duration
-                    );
-
-                    const newStartTime = calculateSlotStartTime(
-                        event.start_time,
-                        slot.slot_number,
-                        event.slot_duration,
-                        event.setup_duration
-                    );
-
-                    if (oldStartTime.getTime() !== newStartTime.getTime()) {
-                        await createNotification(
-                            oldSlot.user_id,
-                            'slot_time_change',
-                            `Your slot time for "${event.name}" has changed from ${formatTimeToLocalString(oldStartTime)} to ${formatTimeToLocalString(newStartTime)}`,
-                            event.id,
-                            slot.slot_id
+                    if (oldSlot.slot_number !== slot.slot_number && oldSlot.user_id) {
+                        const oldStartTime = calculateSlotStartTime(
+                            event.start_time,
+                            oldSlot.slot_number,
+                            event.slot_duration,
+                            event.setup_duration
                         );
+
+                        const newStartTime = calculateSlotStartTime(
+                            event.start_time,
+                            slot.slot_number,
+                            event.slot_duration,
+                            event.setup_duration
+                        );
+
+                        if (oldStartTime.getTime() !== newStartTime.getTime()) {
+                            await createNotification(
+                                oldSlot.user_id,
+                                'slot_time_change',
+                                `Your slot time for "${event.name}" has changed from ${formatTimeToLocalString(oldStartTime)} to ${formatTimeToLocalString(newStartTime)}`,
+                                event.id,
+                                slot.slot_id
+                            );
+                        }
                     }
+
+                    await lineupSlotsQueries.updateSlotNumber(slot.slot_id, slot.slot_number);
                 }
 
-                await lineupSlotsQueries.updateSlotNumber(slot.slot_id, slot.slot_number);
+                await client.query('COMMIT');
+
+                const lineupData = {
+                    type: 'LINEUP_UPDATE',
+                    eventId: event.id,
+                    action: 'REORDER',
+                    data: { slots }
+                };
+
+                req.app.locals.broadcastLineupUpdate(lineupData);
+                res.json({ message: 'Slots reordered successfully' });
+            } catch (err) {
+                await client.query('ROLLBACK');
+                throw err;
             }
-
-            await db.query('COMMIT');
-
-            const lineupData = {
-                type: 'LINEUP_UPDATE',
-                eventId: event.id,
-                action: 'REORDER',
-                data: { slots }
-            };
-
-            req.app.locals.broadcastLineupUpdate(lineupData);
-            res.json({ message: 'Slots reordered successfully' });
         } catch (err) {
             logger.error('Error reordering slots:', err);
-            res.status(500).json({ error: 'Server error' });
+            res.status(500).json({ error: 'Server error', details: err.message });
+        } finally {
+            client.release();
         }
     }
 };

@@ -1,7 +1,6 @@
-// src/components/events/CreateEvent.js
-
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../hooks/useAuth';
+import { getTimezoneFromCoordinates, convertToUTC } from '../../utils/timeCalculations';
 import { useNavigate, useParams } from 'react-router-dom';
 import VenueAutocomplete from '../shared/VenueAutocomplete';
 import TextInput from '../shared/TextInput';
@@ -55,7 +54,6 @@ function CreateEvent() {
 
                         if (data.event.image) {
                             setImagePreview(data.event.image);
-                            setEventImage(data.event.image);
                         }
 
                         if (data.event.start_time) {
@@ -122,30 +120,96 @@ function CreateEvent() {
 
             return () => clearInterval(checkGoogleMapsLoaded);
         } else {
-            setIsGoogleMapsLoaded(true); // Directly set as loaded in tests
+            setIsGoogleMapsLoaded(true);
         }
     }, []);
 
-    useEffect(() => {
-        if (selectedVenue && selectedVenue.address_components) {
-            const formattedAddress = selectedVenue.address_components.map(ac => ac.short_name).join(', ');
-            const latitude = selectedVenue.geometry.location.lat();
-            const longitude = selectedVenue.geometry.location.lng();
-            setSelectedVenue({
-                name: selectedVenue?.name || '',
-                address: formattedAddress || '',
-                latitude: latitude || 0,
-                longitude: longitude || 0
-            });
-        }
-    }, [selectedVenue]);
+    const handleVenueSelect = (place) => {
+        if (!place || !place.geometry) return;
 
+        const latitude = place.geometry.location.lat();
+        const longitude = place.geometry.location.lng();
+        const formattedAddress = place.address_components?.map(ac => ac.short_name).join(', ') || place.address;
+
+        const processedVenue = {
+            ...place,
+            name: place.name || '',
+            address: formattedAddress,
+            latitude,
+            longitude,
+            timezone: place.timezone || 'America/Los_Angeles',
+            geometry: {
+                location: {
+                    lat: () => latitude,
+                    lng: () => longitude
+                }
+            }
+        };
+
+        setSelectedVenue(processedVenue);
+    };
+
+    // TODO: test image updates
     const handleImageChange = (e) => {
         const file = e.target.files[0];
         if (file) {
+            // Only set the preview URL in imagePreview
             setImagePreview(URL.createObjectURL(file));
+            // Set the actual file in eventImage
             setEventImage(file);
+            
+            // Clean up the blob URL when component unmounts
+            return () => URL.revokeObjectURL(imagePreview);
         }
+    };
+
+    const processImage = async (file) => {
+        // If no file is provided or it's already an S3 URL, return as-is
+        if (!file || (typeof file === 'string' && file.includes('amazonaws.com'))) {
+            return file;
+        }
+
+        if (file instanceof File) {
+            try {
+                // Get the S3 upload URL
+                const response = await fetch('/api/events/upload', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        fileName: file.name,
+                        fileType: file.type
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error('Failed to get upload URL');
+                }
+
+                const { uploadURL } = await response.json();
+
+                // Upload to S3
+                const uploadResponse = await fetch(uploadURL, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': file.type
+                    },
+                    body: file
+                });
+
+                if (!uploadResponse.ok) {
+                    throw new Error('Failed to upload image');
+                }
+
+                // Return the S3 URL (remove query parameters)
+                return uploadURL.split('?')[0];
+            } catch (error) {
+                console.error('Error uploading image:', error);
+                throw error;
+            }
+        }
+        return null;  // Return null for invalid cases
     };
 
     const handleSubmit = async () => {
@@ -158,84 +222,59 @@ function CreateEvent() {
             return;
         }
 
-        // If there's a pending status change, show the confirmation modal
-        if (pendingStatusChange) {
-            setShowStatusModal(true);
-            return;
-        }
-
-        await saveEvent();
-    };
-
-    const saveEvent = async () => {
-        let venueId = await checkOrCreateVenue(selectedVenue);
-        let imageUrl = eventImage;
-
-        if (eventImage && eventImage instanceof File) {
-            try {
-                const response = await authenticatedFetch('/api/events/upload', {
-                    method: 'POST',
-                    body: JSON.stringify({
-                        fileName: eventImage.name,
-                        fileType: eventImage.type
-                    })
-                });
-                const data = await response.json();
-                
-                await axios.put(data.uploadURL, eventImage, {
-                    headers: { 'Content-Type': eventImage.type }
-                });
-                imageUrl = data.uploadURL.split('?')[0];
-            } catch (error) {
-                console.error('Error uploading image:', error);
-                return;
-            }
-        }
-
-        const url = isEditMode ? `/api/events/${eventId}` : '/api/events';
-        const method = isEditMode ? 'PATCH' : 'POST';
-
         try {
+            const utcStartTime = convertToUTC(startTime, selectedVenue?.timezone);
+            const utcEndTime = convertToUTC(endTime, selectedVenue?.timezone);
+
+            let venueId = await checkOrCreateVenue(selectedVenue);
+            
+            // Process image before creating the payload
+            let imageUrl;
+            if (eventImage instanceof File) {
+                // Only process new images
+                try {
+                    imageUrl = await processImage(eventImage);
+                } catch (error) {
+                    console.error('Error processing image:', error);
+                    alert('Failed to upload image. Please try again.');
+                    return;
+                }
+            } else if (isEditMode && !eventImage) {
+                // If editing and no new image was selected, use the existing preview URL
+                imageUrl = imagePreview;
+            }
+
+            const url = isEditMode ? `/api/events/${eventId}` : '/api/events';
+            const method = isEditMode ? 'PATCH' : 'POST';
+
+            const payload = {
+                name: newEventName,
+                venue_id: venueId,
+                start_time: utcStartTime,
+                end_time: utcEndTime,
+                slot_duration: slotDuration * 60,
+                setup_duration: setupDuration * 60,
+                additional_info: additionalInfo,
+                host_id: getUserId(),
+                ...(imageUrl && { image: imageUrl }), // Only include image if we have a URL
+                types: eventTypes,
+                active: pendingStatusChange ? !isEventActive : isEventActive
+            };
+
             const response = await authenticatedFetch(url, {
                 method,
-                body: JSON.stringify({
-                    name: newEventName,
-                    venue_id: venueId,
-                    start_time: (() => {
-                        const [datePart, timePart] = startTime.split('T');
-                        const [year, month, day] = datePart.split('-');
-                        const [hours, minutes] = timePart.split(':');
-                        // Create date in UTC
-                        return new Date(Date.UTC(year, month - 1, day, hours, minutes)).toISOString();
-                    })(),
-                    end_time: (() => {
-                        const [datePart, timePart] = endTime.split('T');
-                        const [year, month, day] = datePart.split('-');
-                        const [hours, minutes] = timePart.split(':');
-                        return new Date(Date.UTC(year, month - 1, day, hours, minutes)).toISOString();
-                    })(),
-                    slot_duration: slotDuration * 60,
-                    setup_duration: setupDuration * 60,
-                    additional_info: additionalInfo,
-                    host_id: getUserId(),
-                    image: imageUrl,
-                    types: eventTypes,
-                    active: pendingStatusChange ? !isEventActive : isEventActive
-                })
+                body: JSON.stringify(payload)
             });
 
             if (!response.ok) {
-                const error = await response.json();
-                throw new Error(error.error || 'Failed to save event');
+                throw new Error('Failed to save event');
             }
 
             const data = await response.json();
-            setShowStatusModal(false);
-            setPendingStatusChange(false);
-            navigate(`/events/${isEditMode ? eventId : data.id}`);
+            navigate(`/events/${data.id || eventId}`);
         } catch (error) {
             console.error('Error saving event:', error);
-            alert('Failed to save event');
+            alert('Failed to save event. Please try again.');
         }
     };
 
@@ -244,12 +283,16 @@ function CreateEvent() {
     };
 
     async function checkOrCreateVenue(selectedVenue) {
-        const address = selectedVenue.address_components ? selectedVenue.address_components.map(component => component.short_name).join(', ') : '';
+        const address = selectedVenue.address_components ?
+            selectedVenue.address_components.map(component => component.short_name).join(', ') :
+            selectedVenue.formatted_address || selectedVenue.address;
+
         const venueData = {
             name: selectedVenue.name,
             address: address,
-            latitude: selectedVenue.latitude,
-            longitude: selectedVenue.longitude,
+            latitude: selectedVenue.geometry.location.lat(),
+            longitude: selectedVenue.geometry.location.lng(),
+            timezone: selectedVenue.timezone  // Use the timezone from the place object
         };
 
         try {
@@ -273,7 +316,7 @@ function CreateEvent() {
     };
 
     const handleConfirmStatusChange = async () => {
-        await saveEvent();
+        await handleSubmit();
     };
 
     return (
@@ -397,9 +440,7 @@ function CreateEvent() {
                     <h2 className="create-event__title">Location</h2>
                     <div className="create-event__form-content">
                         <VenueAutocomplete
-                            onPlaceSelected={(place) => {
-                                setSelectedVenue(place);
-                            }}
+                            onPlaceSelected={handleVenueSelect}
                             resetTrigger={resetTrigger}
                             onResetComplete={handleResetComplete}
                             initialValue={selectedVenue ? `${selectedVenue.name}, ${selectedVenue.address}` : ''}

@@ -1,28 +1,42 @@
-const db = require('../db');
+const { venueQueries } = require('../db/queries/venues');
 const { logger } = require('../../tests/utils/logger');
+const { createApiResponse, createErrorResponse } = require('../utils/apiResponse');
 
 const venuesController = {
     async checkOrCreateVenue(req, res) {
-        const { name, address, latitude, longitude } = req.body;
+        const { name, address, latitude, longitude, timezone } = req.body;
 
         try {
-            let venue = await db.query(
-                'SELECT * FROM venues WHERE name = $1 AND address = $2',
-                [name, address]
-            );
+            let venue = await venueQueries.getVenueByNameAndAddress(name, address);
 
-            if (venue.rows.length > 0) {
-                res.json({ venueId: venue.rows[0].id });
+            if (venue) {
+                res.json({ venueId: venue.id });
             } else {
-                const newVenue = await db.query(
-                    'INSERT INTO venues (name, address, latitude, longitude) VALUES ($1, $2, $3, $4) RETURNING *',
-                    [name, address, latitude, longitude]
-                );
-                res.status(201).json({ venueId: newVenue.rows[0].id });
+                const newVenue = await venueQueries.createVenue({
+                    name,
+                    address,
+                    latitude,
+                    longitude,
+                    timezone: timezone || 'America/Los_Angeles' // Default timezone if none provided
+                });
+                res.status(201).json({ venueId: newVenue.id });
             }
         } catch (err) {
             logger.error('Venue creation error:', err);
-            res.status(500).json({ error: 'Failed to process venue' });
+            res.status(500).json(createErrorResponse('Failed to process venue'));
+        }
+    },
+
+    async getVenueById(req, res) {
+        try {
+            const venue = await venueQueries.getVenueById(req.params.id);
+            if (!venue) {
+                return res.status(404).json(createErrorResponse('Venue not found'));
+            }
+            res.json(createApiResponse(venue));
+        } catch (err) {
+            logger.error('Error fetching venue:', err);
+            res.status(500).json(createErrorResponse('Server error'));
         }
     }
 };

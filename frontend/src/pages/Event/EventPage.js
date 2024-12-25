@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
+import { formatEventTimeInVenueTimezone, calculateSlotStartTime } from '../../utils/timeCalculations';
 import LocationMap from '../../components/shared/LocationMap';
 import BorderBox from '../../components/shared/BorderBox/BorderBox';
 import './EventPage.sass';
@@ -19,6 +20,8 @@ function EventPage() {
     const [error, setError] = useState(null);
     // const [showDeleteConfirmModal,ShowDeleteConfirmModal set] = useState(false);
     const [qrUrl, setQrUrl] = useState('');
+    const [formattedStartTime, setFormattedStartTime] = useState('');
+    const [formattedEndTime, setFormattedEndTime] = useState('');
     const { lastMessage } = useWebSocketContext();
 
     // Call useAuth inside the component body
@@ -123,6 +126,20 @@ function EventPage() {
         }
     }, [lastMessage, eventId]);
 
+    useEffect(() => {
+        async function updateFormattedTimes() {
+            if (!eventDetails?.event || !eventDetails?.venue) return;
+            
+            const start = await formatEventTime(eventDetails.event.start_time);
+            const end = await formatEventTime(eventDetails.event.end_time);
+            
+            setFormattedStartTime(start);
+            setFormattedEndTime(end);
+        }
+        
+        updateFormattedTimes();
+    }, [eventDetails]);
+
     if (isLoading) return <div>Loading...</div>;
     if (error) return <div>Error: {error}</div>;
     if (!eventDetails) return <div>No event found</div>;
@@ -130,25 +147,28 @@ function EventPage() {
     const generateAllSlots = () => {
         if (!eventDetails?.event) return [];
 
-        // Calculate slots based on duration
-        const slotsCount = Math.floor(
-            (new Date(eventDetails.event.end_time) - new Date(eventDetails.event.start_time)) /
-            (1000 * 60 * (eventDetails.event.slot_duration.minutes + eventDetails.event.setup_duration.minutes))
-        );
-
+        // Calculate total slots based on event duration and slot duration
         const startTime = new Date(eventDetails.event.start_time);
-        const slotDuration = eventDetails.event.slot_duration.minutes;
-        const setupDuration = eventDetails.event.setup_duration.minutes;
+        const endTime = new Date(eventDetails.event.end_time);
+        const totalMinutes = (endTime - startTime) / (1000 * 60);
+        const slotDurationMinutes = eventDetails.event.slot_duration.minutes;
+        const setupDurationMinutes = eventDetails.event.setup_duration.minutes;
+        const totalSlotsCount = Math.floor(totalMinutes / (slotDurationMinutes + setupDurationMinutes));
 
-        // Generate array of all possible slots
-        const slots = Array.from({ length: slotsCount }, (_, index) => {
+        return Array.from({ length: totalSlotsCount }, (_, index) => {
             const slotNumber = index + 1;
             const existingSlot = eventDetails.lineup.find(slot => slot.slot_number === slotNumber);
+            const slotTime = calculateSlotStartTime(
+                eventDetails.event.start_time,  // Already in UTC from backend
+                slotNumber,
+                eventDetails.event.slot_duration,
+                eventDetails.event.setup_duration
+            );
 
             if (existingSlot) {
                 return {
                     ...existingSlot,
-                    slot_start_time: new Date(startTime.getTime() + index * (slotDuration + setupDuration) * 60000),
+                    slot_start_time: slotTime,
                     slot_duration: eventDetails.event.slot_duration,
                     setup_duration: eventDetails.event.setup_duration,
                     user_image: existingSlot.user_image
@@ -162,13 +182,11 @@ function EventPage() {
                 user_id: null,
                 user_image: null,
                 is_current_non_user: false,
-                slot_start_time: new Date(startTime.getTime() + index * (slotDuration + setupDuration) * 60000),
+                slot_start_time: slotTime,
                 slot_duration: eventDetails.event.slot_duration,
                 setup_duration: eventDetails.event.setup_duration
             };
         });
-
-        return slots;
     };
 
     // Remove the local state update after successful POST
@@ -218,16 +236,15 @@ function EventPage() {
         }
     };
 
-    // When displaying event times
-    const formatEventTime = (dateString) => {
-        const date = new Date(dateString);
-        return date.toLocaleString([], {
-            year: 'numeric',
-            month: 'long',
-            day: 'numeric',
-            hour: 'numeric',
-            minute: '2-digit'
-        }).replace(',', ' at');
+    // Update the formatEventTime function
+    const formatEventTime = async (dateString) => {
+        if (!eventDetails?.venue) return '';
+        
+        const venue = {
+            timezone: eventDetails.venue.timezone
+        };
+        
+        return formatEventTimeInVenueTimezone(dateString, venue);
     };
 
     // const toggleDeleteConfirmModal = () => {
@@ -251,27 +268,7 @@ function EventPage() {
             >
                 <h1 className="event-page__title">{eventDetails?.event?.name}</h1>
                 <p className="event-page__time">
-                    {new Date(eventDetails?.event?.start_time).toLocaleString([], {
-                        month: 'short',
-                        day: 'numeric',
-                        hour: 'numeric',
-                        minute: '2-digit'
-                    })}
-                    {" - "}
-                    <span className="event-page__end-time">
-                        {new Date(eventDetails?.event?.start_time).toDateString() === new Date(eventDetails?.event?.end_time).toDateString()
-                            ? new Date(eventDetails?.event?.end_time).toLocaleString([], {
-                                hour: 'numeric',
-                                minute: '2-digit'
-                            })
-                            : new Date(eventDetails?.event?.end_time).toLocaleString([], {
-                                month: 'short',
-                                day: 'numeric',
-                                hour: 'numeric',
-                                minute: '2-digit'
-                            })
-                        }
-                    </span>
+                    {formattedStartTime} - {formattedEndTime}
                 </p>
                 {eventDetails?.event?.event_types && eventDetails.event.event_types.length > 0 && (
                     <div className="event-page__info">
@@ -320,7 +317,7 @@ function EventPage() {
                         rel="noopener noreferrer"
                         className="event-page__location-link"
                     >
-                        {eventDetails?.venue?.name}, {eventDetails?.venue?.address}
+                        {eventDetails?.venue?.name}
                     </a>
                 </p>
                 <div className="event-page__map-container">

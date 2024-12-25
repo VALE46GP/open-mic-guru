@@ -34,3 +34,35 @@ export const mockEvents = [
         venue_id: 2,
     },
 ];
+
+export const mockVenueForCreate = {
+    name: 'Test Venue',
+    address: '123 Test St',
+    formatted_address: '123 Test St',
+    geometry: {
+        location: {
+            lat: () => 40.7128,
+            lng: () => -74.0060
+        }
+    },
+    timezone: 'America/Los_Angeles',
+    latitude: 40.7128,
+    longitude: -74.0060,
+    address_components: [
+        { short_name: '123', types: ['street_number'] },
+        { short_name: 'Test St', types: ['route'] }
+    ]
+};
+
+export const mockEventResponse = {
+    id: 1,
+    name: 'Test Event',
+    venue_id: 1,
+    start_time: '2024-12-26T03:00:00.000Z',
+    end_time: '2024-12-26T05:00:00.000Z',
+    slot_duration: 600,
+    setup_duration: 300,
+    additional_info: '',
+    types: [],
+    active: true
+};
