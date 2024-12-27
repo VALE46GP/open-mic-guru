@@ -14,4 +14,10 @@ router.delete('/:slotId', lineupSlotsController.deleteSlot);
 // PUT reorder lineup slots
 router.put('/reorder', lineupSlotsController.reorderSlots);
 
+// GET signup status for an event
+router.get('/:eventId/status', lineupSlotsController.getSignupStatus);
+
+// PUT toggle signup status for an event
+router.put('/:eventId/toggle-signup', lineupSlotsController.toggleSignupStatus);
+
 module.exports = router;

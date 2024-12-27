@@ -272,6 +272,40 @@ const lineupSlotsController = {
         } finally {
             client.release();
         }
+    },
+
+    async getSignupStatus(req, res) {
+        try {
+            const { eventId } = req.params;
+            const status = await lineupSlotsQueries.getSignupStatus(eventId);
+            res.json(status);
+        } catch (err) {
+            logger.error(err);
+            res.status(500).json({ error: 'Server error' });
+        }
+    },
+
+    async toggleSignupStatus(req, res) {
+        try {
+            const { eventId } = req.params;
+            const { is_signup_open } = req.body;
+            
+            await lineupSlotsQueries.updateSignupStatus(eventId, is_signup_open);
+            
+            // Broadcast the status change to all connected clients
+            const lineupData = {
+                type: 'LINEUP_UPDATE',
+                eventId: parseInt(eventId),
+                action: 'SIGNUP_STATUS',
+                data: { is_signup_open }
+            };
+            
+            req.app.locals.broadcastLineupUpdate(lineupData);
+            res.json({ success: true });
+        } catch (err) {
+            logger.error(err);
+            res.status(500).json({ error: 'Server error' });
+        }
     }
 };
 

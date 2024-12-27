@@ -3,6 +3,8 @@ import { Link } from 'react-router-dom';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 import BorderBox from '../shared/BorderBox/BorderBox';
 import './Lineup.sass';
+import Switch from '../shared/Switch/Switch';
+import { useWebSocketContext } from '../../context/WebSocketContext';
 
 function Slot({
                   slot,
@@ -14,7 +16,8 @@ function Slot({
                   isEditing,
                   provided,
                   isDragging,
-                  isEventActive
+                  isEventActive,
+                  isSignupOpen
               }) {
     const isOwnSlot =
         (currentUserId && slot.user_id === currentUserId) ||
@@ -33,7 +36,7 @@ function Slot({
     const canInteract = !isEditing && (
         isHost ||
         isOwnSlot ||
-        (isEventActive && slot.slot_name === "Open" && !hasExistingSlot())
+        (isEventActive && isSignupOpen && slot.slot_name === "Open" && !hasExistingSlot())
     );
 
     const getSlotClass = () => {
@@ -156,10 +159,44 @@ function Lineup({
     const [isEditing, setIsEditing] = useState(false);
     const [editedSlots, setEditedSlots] = useState(slots);
     const [newSlotsCount, setNewSlotsCount] = useState(0);
+    const [isSignupOpen, setIsSignupOpen] = useState(true);
+    const { lastMessage } = useWebSocketContext();
 
     useEffect(() => {
         setEditedSlots(slots);
     }, [slots]);
+
+    useEffect(() => {
+        const fetchSignupStatus = async () => {
+            try {
+                const response = await fetch(`/api/lineup_slots/${slots[0].event_id}/status`);
+                const data = await response.json();
+                setIsSignupOpen(data.is_signup_open);
+            } catch (err) {
+                console.error('Error fetching signup status:', err);
+            }
+        };
+
+        if (slots.length > 0) {
+            fetchSignupStatus();
+        }
+    }, [slots]);
+
+    useEffect(() => {
+        if (!lastMessage) return;
+
+        try {
+            const update = JSON.parse(lastMessage.data);
+            
+            if (update.type === 'LINEUP_UPDATE') {
+                if (update.action === 'SIGNUP_STATUS' && update.eventId === slots[0]?.event_id) {
+                    setIsSignupOpen(update.data.is_signup_open);
+                }
+            }
+        } catch (err) {
+            console.error('Error processing WebSocket message:', err);
+        }
+    }, [lastMessage, slots]);
 
     const handleSlotClick = (slot) => {
         const isOwnSlot = currentUserId
@@ -340,9 +377,39 @@ function Lineup({
         setEditedSlots(consolidatedSlots);
     };
 
+    const handleSignupToggle = async () => {
+        try {
+            const response = await fetch(`/api/lineup_slots/${slots[0].event_id}/toggle-signup`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ is_signup_open: !isSignupOpen })
+            });
+
+            if (response.ok) {
+                setIsSignupOpen(!isSignupOpen);
+            }
+        } catch (err) {
+            console.error('Error toggling signup status:', err);
+        }
+    };
+
     return (
         <BorderBox onEdit={isHost ? () => setIsEditing(true) : null}>
             <h2 className="lineup__title">Lineup</h2>
+            {isHost && (
+                <div className="lineup__signup-toggle">
+                    <label>
+                        Allow Signups
+                        <Switch
+                            checked={isSignupOpen}
+                            onChange={handleSignupToggle}
+                            disabled={!isEventActive}
+                        />
+                    </label>
+                </div>
+            )}
             {isEditing && (
                 <div className="lineup__edit-controls">
                     <button onClick={handleSave}
@@ -384,6 +451,7 @@ function Lineup({
                                             provided={provided}
                                             isDragging={snapshot.isDragging}
                                             isEventActive={isEventActive}
+                                            isSignupOpen={isSignupOpen}
                                         />
                                     )}
                                 </Draggable>

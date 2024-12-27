@@ -142,6 +142,21 @@ const lineupSlotsQueries = {
             [slotId]
         );
         return result.rows[0];
+    },
+
+    async getSignupStatus(eventId) {
+        const result = await db.query(
+            'SELECT is_signup_open FROM events WHERE id = $1',
+            [eventId]
+        );
+        return result.rows[0];
+    },
+
+    async updateSignupStatus(eventId, isSignupOpen) {
+        await db.query(
+            'UPDATE events SET is_signup_open = $1 WHERE id = $2',
+            [isSignupOpen, eventId]
+        );
     }
 };
 

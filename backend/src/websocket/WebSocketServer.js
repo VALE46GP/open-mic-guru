@@ -8,12 +8,6 @@ function initializeWebSocketServer(server) {
         path: '/ws',
         clientTracking: true,
         verifyClient: ({ origin, req }, callback) => {
-            logger.log('Verifying WebSocket connection:', {
-                origin,
-                url: req.url,
-                ip: req.socket.remoteAddress
-            });
-
             if (!origin) {
                 logger.log('No origin - allowing connection');
                 callback(true);
@@ -28,12 +22,6 @@ function initializeWebSocketServer(server) {
                 const isAllowed = allowedHosts.includes(requestOrigin.hostname) &&
                     allowedPorts.includes(requestOrigin.port);
 
-                logger.log('WebSocket verification result:', {
-                    hostname: requestOrigin.hostname,
-                    port: requestOrigin.port,
-                    isAllowed
-                });
-
                 callback(isAllowed);
             } catch (error) {
                 logger.error('Error verifying WebSocket client:', error);
@@ -47,11 +35,6 @@ function initializeWebSocketServer(server) {
     wss.on('connection', (ws, req) => {
         const url = new URL(req.url, 'ws://localhost');
         const token = url.searchParams.get('token');
-
-        logger.log('New WebSocket connection attempt:', {
-            ip: req.socket.remoteAddress,
-            url: req.url
-        });
 
         if (token) {
             try {
