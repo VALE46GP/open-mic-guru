@@ -6,6 +6,7 @@ import EventCard from '../../components/events/EventCard';
 import { socialMediaPlatforms } from '../../components/utils/socialMediaPlatforms';
 import './UserPage.sass';
 import { useWebSocketContext } from '../../context/WebSocketContext';
+import { sortEventsByDate } from '../../utils/eventUtils';
 
 function UserPage() {
     const { userId } = useParams();
@@ -76,10 +77,9 @@ function UserPage() {
 
     const isOwnProfile = user && String(user.id) === String(userId);
 
-    const currentEvents = userData.events.filter(event => new Date(event.start_time) >= new Date()) || [];
-    const pastEvents = userData.events
-        .filter(event => new Date(event.start_time) < new Date())
-        .sort((a, b) => new Date(b.start_time) - new Date(a.start_time)) || [];
+    const allSortedEvents = sortEventsByDate(userData.events);
+    const currentEvents = allSortedEvents.slice(0, allSortedEvents.findIndex(event => new Date(event.start_time) < new Date()));
+    const pastEvents = allSortedEvents.slice(allSortedEvents.findIndex(event => new Date(event.start_time) < new Date()));
 
     return (
         <div className="user-page">
