@@ -24,7 +24,8 @@ export const WebSocketProvider = ({ children }) => {
                     return;
                 }
 
-                ws = new WebSocket(`ws://localhost:3001/ws?token=${token}`);
+                const wsHost = window.location.hostname;
+                ws = new WebSocket(`ws://${wsHost}:3001/ws?token=${token}`);
 
                 ws.onopen = () => {
                     console.log('WebSocket connected');
@@ -33,8 +34,7 @@ export const WebSocketProvider = ({ children }) => {
                 };
 
                 ws.onmessage = (event) => {
-                    const message = JSON.parse(event.data);
-                    setLastMessage(message);
+                    setLastMessage(event);
                 };
 
                 ws.onclose = (event) => {

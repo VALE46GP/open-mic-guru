@@ -8,8 +8,14 @@ function initializeWebSocketServer(server) {
         path: '/ws',
         clientTracking: true,
         verifyClient: ({ origin, req }, callback) => {
-            
+            logger.log('Verifying WebSocket connection:', {
+                origin,
+                url: req.url,
+                ip: req.socket.remoteAddress
+            });
+
             if (!origin) {
+                logger.log('No origin - allowing connection');
                 callback(true);
                 return;
             }
@@ -19,18 +25,18 @@ function initializeWebSocketServer(server) {
                 const allowedHosts = ['localhost', '192.168.1.104'];
                 const allowedPorts = ['3000', '3001'];
 
-                const isAllowed = allowedHosts.includes(requestOrigin.hostname) && 
-                                allowedPorts.includes(requestOrigin.port);
+                const isAllowed = allowedHosts.includes(requestOrigin.hostname) &&
+                    allowedPorts.includes(requestOrigin.port);
 
-                // console.log('WebSocket verification:', {
-                //     hostname: requestOrigin.hostname,
-                //     port: requestOrigin.port,
-                //     isAllowed
-                // });
+                logger.log('WebSocket verification result:', {
+                    hostname: requestOrigin.hostname,
+                    port: requestOrigin.port,
+                    isAllowed
+                });
 
                 callback(isAllowed);
             } catch (error) {
-                console.error('Error verifying WebSocket client:', error);
+                logger.error('Error verifying WebSocket client:', error);
                 callback(false);
             }
         }
@@ -41,6 +47,11 @@ function initializeWebSocketServer(server) {
     wss.on('connection', (ws, req) => {
         const url = new URL(req.url, 'ws://localhost');
         const token = url.searchParams.get('token');
+
+        logger.log('New WebSocket connection attempt:', {
+            ip: req.socket.remoteAddress,
+            url: req.url
+        });
 
         if (token) {
             try {
