@@ -75,7 +75,6 @@ export const AuthProvider = ({ children }) => {
         }
     }, []);
 
-    // Add to AuthContext.js
     const authenticatedFetch = async (url, options = {}) => {
         const token = getToken();
         const headers = {
@@ -83,11 +82,29 @@ export const AuthProvider = ({ children }) => {
             ...(token && { 'Authorization': `Bearer ${token}` }),
             ...options.headers
         };
-        
-        return fetch(url, {
-            ...options,
-            headers
-        });
+
+        try {
+            const response = await fetch(url, {
+                ...options,
+                headers
+            });
+
+            if (response.status === 403) {
+                const data = await response.json();
+                if (data.error === 'Invalid token') {
+                    logout();
+                    return null;
+                }
+            }
+            return response;
+        } catch (error) {
+            console.error('Fetch error:', error);
+            if (error.message.includes('token')) {
+                logout();
+                return null;
+            }
+            throw error;
+        }
     };
 
     // Provide the context values
@@ -96,7 +113,7 @@ export const AuthProvider = ({ children }) => {
             isAuthenticated,
             login,
             logout,
-            getToken, // Expose the getToken method
+            getToken,
             getUserId,
             getUserName,
             user,

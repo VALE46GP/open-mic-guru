@@ -70,7 +70,7 @@ const usersController = {
                 const token = jwt.sign(
                     { userId: newUser.id },
                     process.env.JWT_SECRET,
-                    { expiresIn: '24h' }
+                    { expiresIn: '7d' }
                 );
 
                 res.status(201).json({ user: newUser, token });

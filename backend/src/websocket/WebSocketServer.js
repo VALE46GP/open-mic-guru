@@ -41,18 +41,23 @@ function initializeWebSocketServer(server) {
     wss.on('connection', (ws, req) => {
         const url = new URL(req.url, 'ws://localhost');
         const token = url.searchParams.get('token');
-        
+
         if (token) {
             try {
                 const decoded = jwt.verify(token, process.env.JWT_SECRET);
                 const userId = decoded.userId;
                 clients.set(ws, userId);
-                
+
                 ws.on('close', () => {
                     clients.delete(ws);
                 });
             } catch (err) {
                 logger.error('Invalid token:', err);
+                if (err.name === 'TokenExpiredError') {
+                    ws.close(1000, 'Token expired');
+                } else {
+                    ws.close(1008, 'Invalid token');
+                }
             }
         }
     });

@@ -1,42 +1,68 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import useWebSocket from 'react-use-websocket';
 import { useAuth } from '../hooks/useAuth';
 
-const WebSocketContext = createContext(null);
+const WebSocketContext = createContext();
 
 export const WebSocketProvider = ({ children }) => {
-    const [socketUrl, setSocketUrl] = useState(null);
-    const [lastMessage, setLastMessage] = useState(null); // Reactive state for WebSocket messages
-    const { getToken } = useAuth();
+    const { getToken, logout, isAuthenticated } = useAuth();
+    const [socket, setSocket] = useState(null);
+    const [lastMessage, setLastMessage] = useState(null);
+    const [isConnected, setIsConnected] = useState(false);
 
     useEffect(() => {
-        const token = getToken();
-        if (token) {
-            setSocketUrl(`ws://${window.location.hostname}:3001/ws?token=${token}`);
-        }
-    }, [getToken]);
+        let ws = null;
 
-    const { sendMessage, readyState } = useWebSocket(socketUrl, {
-        shouldReconnect: (closeEvent) => true,
-        reconnectAttempts: 10,
-        reconnectInterval: 3000,
-        onOpen: () => {
-            console.log('WebSocket connected');
-        },
-        onMessage: (event) => {
-            console.log('WebSocket message received:', event);
-            setLastMessage(event); // Update the reactive state for testing and live updates
-        },
-        onError: (event) => {
-            console.error('WebSocket error:', event);
-        },
-        onClose: (event) => {
-            console.log('WebSocket closed:', event);
-        },
-    });
+        const connectWebSocket = () => {
+            const token = getToken();
+            if (!token || !isAuthenticated) return;
+
+            try {
+                // Check token expiration
+                const payload = JSON.parse(atob(token.split('.')[1]));
+                if (payload.exp * 1000 < Date.now()) {
+                    logout();
+                    return;
+                }
+
+                ws = new WebSocket(`ws://localhost:3001/ws?token=${token}`);
+
+                ws.onopen = () => {
+                    console.log('WebSocket connected');
+                    setIsConnected(true);
+                    setSocket(ws);
+                };
+
+                ws.onmessage = (event) => {
+                    const message = JSON.parse(event.data);
+                    setLastMessage(message);
+                };
+
+                ws.onclose = (event) => {
+                    console.log('WebSocket closed:', event);
+                    setIsConnected(false);
+                    setSocket(null);
+                    if (event.code === 1000 && event.reason === 'Token expired') {
+                        logout();
+                    }
+                };
+            } catch (error) {
+                console.error('WebSocket connection error:', error);
+            }
+        };
+
+        connectWebSocket();
+
+        return () => {
+            if (ws) {
+                ws.close();
+                setSocket(null);
+                setIsConnected(false);
+            }
+        };
+    }, [isAuthenticated]);
 
     return (
-        <WebSocketContext.Provider value={{ sendMessage, lastMessage, setLastMessage, readyState }}>
+        <WebSocketContext.Provider value={{ socket, lastMessage, isConnected }}>
             {children}
         </WebSocketContext.Provider>
     );
