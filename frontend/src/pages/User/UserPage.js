@@ -21,6 +21,7 @@ function UserPage() {
             try {
                 const response = await fetch(`/api/users/${userId}`);
                 const data = await response.json();
+                console.log('User data received:', data);
                 setUserData(data);
             } catch (error) {
                 console.error('Error fetching user data:', error);
@@ -94,6 +95,9 @@ function UserPage() {
                     </div>
                     <div className="user-page__user-info">
                         <h1>{userData.user.name}</h1>
+                        <div className="user-page__bio-section">
+                            <p>{userData.user.bio || "This user hasn't written a bio yet."}</p>
+                        </div>
                     </div>
                 </div>
                 {isOwnProfile && (

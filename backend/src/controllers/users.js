@@ -27,7 +27,7 @@ const usersController = {
 
     async registerUser(req, res) {
         try {
-            const { email, password, name, photoUrl, socialMediaAccounts, isUpdate, userId } = req.body;
+            const { email, password, name, photoUrl, socialMediaAccounts, isUpdate, userId, bio } = req.body;
             let hashedPassword = null;
 
             if (password) {
@@ -47,7 +47,8 @@ const usersController = {
                         photoUrl,
                         socialMediaJson,
                         hashedPassword,
-                        userId
+                        userId,
+                        bio
                     );
                     await client.query('COMMIT');
                     res.status(200).json({ user: updatedUser });
@@ -64,7 +65,8 @@ const usersController = {
                     hashedPassword,
                     name,
                     photoUrl,
-                    socialMediaJson
+                    socialMediaJson,
+                    bio
                 );
 
                 const token = jwt.sign(

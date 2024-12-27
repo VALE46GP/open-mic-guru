@@ -25,6 +25,7 @@ const userQueries = {
                 users.name,
                 users.image,
                 users.social_media_accounts,
+                users.bio,
                 CASE
                     WHEN EXISTS(
                             SELECT 1
@@ -49,25 +50,26 @@ const userQueries = {
         return result.rows;
     },
 
-    async createUser(email, hashedPassword, name, photoUrl, socialMediaJson) {
+    async createUser(email, hashedPassword, name, photoUrl, socialMediaJson, bio) {
         const result = await pool.query(
-            `INSERT INTO users (email, password, name, image, social_media_accounts)
-             VALUES ($1, $2, $3, $4, $5)
+            `INSERT INTO users (email, password, name, image, social_media_accounts, bio)
+             VALUES ($1, $2, $3, $4, $5, $6)
              RETURNING *`,
-            [email, hashedPassword, name, photoUrl, socialMediaJson]
+            [email, hashedPassword, name, photoUrl, socialMediaJson, bio]
         );
         return result.rows[0];
     },
 
-    async updateUser(client, email, name, photoUrl, socialMediaJson, hashedPassword, userId) {
+    async updateUser(client, email, name, photoUrl, socialMediaJson, hashedPassword, userId, bio) {
         let updateQuery = `
             UPDATE users
             SET email = $1,
                 name = $2,
                 image = $3,
-                social_media_accounts = $4::jsonb
+                social_media_accounts = $4::jsonb,
+                bio = $5
         `;
-        let queryParams = [email, name, photoUrl, socialMediaJson];
+        let queryParams = [email, name, photoUrl, socialMediaJson, bio];
 
         if (hashedPassword) {
             queryParams.push(hashedPassword);
@@ -91,7 +93,7 @@ const userQueries = {
 
     async getUserProfileById(userId) {
         const result = await pool.query(
-            'SELECT id, name, email, image, social_media_accounts FROM users WHERE id = $1',
+            'SELECT id, name, email, image, social_media_accounts, bio FROM users WHERE id = $1',
             [userId]
         );
         return result.rows[0];

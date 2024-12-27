@@ -21,6 +21,7 @@ function CreateUser({ initialData, onCancel }) {
     const [newPassword, setNewPassword] = useState('');
     const [passwordError, setPasswordError] = useState(null);
     const { login } = useAuth();
+    const [bio, setBio] = useState(initialData?.bio || '');
 
     const defaultImageUrl = 'https://open-mic-guru.s3.us-west-1.amazonaws.com/users/user-default.jpg';
 
@@ -126,7 +127,8 @@ function CreateUser({ initialData, onCancel }) {
             socialMediaAccounts: socialMediaAccounts,
             isUpdate: !!initialData,
             userId: initialData?.id,
-            password: initialData ? newPassword : registerPassword
+            password: initialData ? newPassword : registerPassword,
+            bio,
         };
 
         try {
@@ -276,6 +278,17 @@ function CreateUser({ initialData, onCancel }) {
                             value={registerName}
                             onChange={handleInputChange(setRegisterName)}
                             className='create-user__input'
+                        />
+                    </div>
+                    <div className='create-user__input-group'>
+                        <label htmlFor='bio' className='create-user__label'>Bio</label>
+                        <textarea
+                            id='bio'
+                            className='create-user__input create-user__input--textarea'
+                            value={bio}
+                            onChange={handleInputChange(setBio)}
+                            placeholder='Tell us about yourself...'
+                            rows={4}
                         />
                     </div>
                 </form>
