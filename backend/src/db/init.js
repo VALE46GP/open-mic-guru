@@ -3,7 +3,11 @@ const tables = require('./schema');
 const { logger } = require('../../tests/utils/logger');
 
 async function initializeDatabase(isTest = false) {
-    const client = await pool.connect();
+    // Use test pool if isTest is true
+    const dbPool = isTest ? 
+        require('../../tests/helpers/testDb') :
+        pool;
+    const client = await dbPool.connect();
     try {
         await client.query('BEGIN');
         
@@ -36,7 +40,8 @@ async function initializeDatabase(isTest = false) {
 
 // Run if called directly (not imported)
 if (require.main === module) {
-    initializeDatabase()
+    const isTest = process.argv.includes('--test');
+    initializeDatabase(isTest)
         .then(() => process.exit(0))
         .catch(() => process.exit(1));
 }

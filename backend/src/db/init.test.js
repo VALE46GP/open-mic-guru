@@ -1,53 +1,55 @@
-const { mockDb } = require('../../tests/helpers/mockDb');
 const initializeDatabase = require('./init');
 const tables = require('./schema');
 
-// Mock the database module and its connect method
-jest.mock('../db', () => {
-  const mockClient = {
-    query: jest.fn().mockResolvedValue({ rows: [] }),
-    release: jest.fn()
-  };
-  return {
-    connect: jest.fn().mockResolvedValue(mockClient)
-  };
-});
+// Mock the database pools
+jest.mock('./index', () => ({
+    connect: jest.fn()
+}));
+
+jest.mock('../../tests/helpers/testDb', () => ({
+    connect: jest.fn()
+}));
 
 describe('Database Initialization', () => {
-  let mockClient;
-  
-  beforeEach(() => {
-    jest.clearAllMocks();
-    // Get reference to the mock client for each test
-    mockClient = require('../db').connect().then(client => client);
-  });
-
-  it('should create all required tables', async () => {
-    const client = await mockClient;
-    client.query.mockResolvedValue({ rows: [] });
-
-    await initializeDatabase(true);
-
-    // Verify BEGIN was called
-    expect(client.query).toHaveBeenCalledWith('BEGIN');
-
-    // Verify each table creation was called
-    const tableOrder = ['users', 'venues', 'events', 'lineup_slots', 'notification_preferences', 'notifications', 'links'];
+    let mockClient;
     
-    for (const tableName of tableOrder) {
-      expect(client.query).toHaveBeenCalledWith(tables[tableName]);
-    }
+    beforeEach(() => {
+        jest.clearAllMocks();
+        mockClient = {
+            query: jest.fn().mockResolvedValue({ rows: [] }),
+            release: jest.fn()
+        };
+        // Setup mock for both pools
+        require('./index').connect.mockResolvedValue(mockClient);
+        require('../../tests/helpers/testDb').connect.mockResolvedValue(mockClient);
+    });
 
-    // Verify COMMIT was called
-    expect(client.query).toHaveBeenCalledWith('COMMIT');
-    expect(client.release).toHaveBeenCalled();
-  });
+    it('should create all required tables', async () => {
+        const client = mockClient;
+        client.query.mockResolvedValue({ rows: [] });
 
-  it('should handle initialization errors', async () => {
-    const client = await mockClient;
-    client.query.mockRejectedValueOnce(new Error('Database error'));
+        await initializeDatabase(true);
 
-    await expect(initializeDatabase(true)).rejects.toThrow('Database error');
-    expect(client.release).toHaveBeenCalled();
-  });
+        // Verify BEGIN was called
+        expect(client.query).toHaveBeenCalledWith('BEGIN');
+
+        // Verify each table creation was called
+        const tableOrder = ['users', 'venues', 'events', 'lineup_slots', 'notification_preferences', 'notifications', 'links'];
+        
+        for (const tableName of tableOrder) {
+            expect(client.query).toHaveBeenCalledWith(tables[tableName]);
+        }
+
+        // Verify COMMIT was called
+        expect(client.query).toHaveBeenCalledWith('COMMIT');
+        expect(client.release).toHaveBeenCalled();
+    });
+
+    it('should handle initialization errors', async () => {
+        const client = mockClient;
+        client.query.mockRejectedValueOnce(new Error('Database error'));
+
+        await expect(initializeDatabase(true)).rejects.toThrow('Database error');
+        expect(client.release).toHaveBeenCalled();
+    });
 });
