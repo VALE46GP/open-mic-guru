@@ -19,6 +19,15 @@ async function getUpdateMessage(originalEvent, updatedFields, venueTimezone) {
     const changes = [];
 
     try {
+        // Check for event cancellation/reinstatement first
+        if (updatedFields.active !== undefined) {
+            if (updatedFields.active === false) {
+                return 'This event has been cancelled.';
+            } else if (updatedFields.active === true && !originalEvent.active) {
+                return 'This event has been reinstated.';
+            }
+        }
+
         // Handle start time changes
         if (updatedFields.start_time !== undefined && 
             new Date(updatedFields.start_time).getTime() !== new Date(originalEvent.start_time).getTime()) {
@@ -334,7 +343,7 @@ const eventsController = {
 
             // TODO: Improve notification message for when slot_time or setup_duration are changed.
             // Create Notifications
-            if (start_time !== undefined || end_time !== undefined || slot_duration !== undefined || setup_duration !== undefined) {
+            if (start_time !== undefined || end_time !== undefined || slot_duration !== undefined || setup_duration !== undefined || active === false) {
                 try {
                     // Only get venue info if venue has changed
                     let venueInfo;
@@ -354,6 +363,7 @@ const eventsController = {
                         end_time,
                         slot_duration,
                         setup_duration,
+                        active,
                         ...(venueInfo && venue_id !== originalEvent.venue_id ? {
                             venue_id,
                             venue_name: venueInfo.name
@@ -363,14 +373,18 @@ const eventsController = {
                     // Create notifications for each user
                     for (const performer of lineupUsers) {
                         try {
-                            const slotTime = calculateSlotStartTime(
-                                start_time || originalEvent.start_time,
-                                performer.slot_number,
-                                slot_duration || originalEvent.slot_duration,
-                                setup_duration || originalEvent.setup_duration
-                            );
-
-                            const message = `${updateMessage} Your new performance time is ${formatTimeToLocalString(slotTime, timezone)}.`;
+                            let message = updateMessage;
+                            
+                            // Only add performance time if event wasn't cancelled
+                            if (active !== false) {
+                                const slotTime = calculateSlotStartTime(
+                                    start_time || originalEvent.start_time,
+                                    performer.slot_number,
+                                    slot_duration || originalEvent.slot_duration,
+                                    setup_duration || originalEvent.setup_duration
+                                );
+                                message = `${updateMessage} Your new performance time is ${formatTimeToLocalString(slotTime, timezone)}.`;
+                            }
 
                             await createNotification(
                                 performer.user_id,
