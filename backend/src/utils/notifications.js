@@ -1,6 +1,16 @@
 const db = require('../db');
 const { logger } = require('../../tests/utils/logger');
 
+// Define notification types enum for consistency
+const NOTIFICATION_TYPES = {
+    EVENT_STATUS: 'event_status',     // Event cancelled/reinstated
+    EVENT_UPDATE: 'event_update',     // Event details changed
+    LINEUP_SIGNUP: 'lineup_signup',   // New signup to lineup
+    LINEUP_UNSIGN: 'lineup_unsign',   // Removal from lineup
+    SLOT_REMOVED: 'slot_removed',     // Slot was removed
+    SLOT_TIME_CHANGE: 'slot_time_change', // Performance time changed
+};
+
 async function createNotification(userId, type, message, eventId = null, lineupSlotId = null, req = null) {
     try {
         // Set timezone to UTC
@@ -20,16 +30,26 @@ async function createNotification(userId, type, message, eventId = null, lineupS
             return;
         }
 
+        // Determine notification type for preferences check
+        let notificationType;
+        if (type === NOTIFICATION_TYPES.EVENT_STATUS || type === NOTIFICATION_TYPES.EVENT_UPDATE) {
+            notificationType = 'event';
+        } else if (type.includes('lineup') || type.includes('slot')) {
+            notificationType = 'lineup';
+        } else {
+            notificationType = 'other';
+        }
+
         // Check if this type of notification is enabled
-        if (type.includes('event') && !prefs.notify_event_updates) {
+        if (notificationType === 'event' && !prefs.notify_event_updates) {
             logger.log('Event notifications disabled for user:', userId);
             return;
         }
-        if (type.includes('lineup') && !prefs.notify_signup_notifications) {
+        if (notificationType === 'lineup' && !prefs.notify_signup_notifications) {
             logger.log('Lineup notifications disabled for user:', userId);
             return;
         }
-        if (!type.includes('event') && !type.includes('lineup') && !prefs.notify_other) {
+        if (notificationType === 'other' && !prefs.notify_other) {
             logger.log('Other notifications disabled for user:', userId);
             return;
         }
@@ -81,5 +101,6 @@ async function createNotification(userId, type, message, eventId = null, lineupS
 }
 
 module.exports = {
-    createNotification
+    createNotification,
+    NOTIFICATION_TYPES
 };

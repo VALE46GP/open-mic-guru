@@ -1,7 +1,7 @@
 const AWS = require('aws-sdk');
 const { eventQueries } = require('../db/queries/events');
 const { calculateSlotStartTime, formatTimeToLocalString, formatTimeInTimezone, formatDateInTimezone } = require('../utils/timeCalculations');
-const { createNotification } = require('../utils/notifications');
+const { createNotification, NOTIFICATION_TYPES } = require('../utils/notifications');
 const { createApiResponse, createErrorResponse } = require('../utils/apiResponse');
 const { logger } = require('../../tests/utils/logger');
 const db = require('../db')
@@ -388,7 +388,9 @@ const eventsController = {
 
                             await createNotification(
                                 performer.user_id,
-                                'event_update',
+                                active === false || (active === true && !originalEvent.active) 
+                                    ? NOTIFICATION_TYPES.EVENT_STATUS 
+                                    : NOTIFICATION_TYPES.EVENT_UPDATE,
                                 message,
                                 eventId,
                                 null,
