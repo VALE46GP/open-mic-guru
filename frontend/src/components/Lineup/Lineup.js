@@ -151,7 +151,9 @@ function Lineup({
                     currentUserId,
                     currentNonUser,
                     userName,
-                    isEventActive
+                    isEventActive,
+                    initialSignupStatus,
+                    eventId
                 }) {
     const [showModal, setShowModal] = useState(false);
     const [currentSlot, setCurrentSlot] = useState(null);
@@ -159,7 +161,7 @@ function Lineup({
     const [isEditing, setIsEditing] = useState(false);
     const [editedSlots, setEditedSlots] = useState(slots);
     const [newSlotsCount, setNewSlotsCount] = useState(0);
-    const [isSignupOpen, setIsSignupOpen] = useState(true);
+    const [isSignupOpen, setIsSignupOpen] = useState(initialSignupStatus ?? true);
     const { lastMessage } = useWebSocketContext();
 
     useEffect(() => {
@@ -167,36 +169,40 @@ function Lineup({
     }, [slots]);
 
     useEffect(() => {
-        const fetchSignupStatus = async () => {
-            try {
-                const response = await fetch(`/api/lineup_slots/${slots[0].event_id}/status`);
-                const data = await response.json();
-                setIsSignupOpen(data.is_signup_open);
-            } catch (err) {
-                console.error('Error fetching signup status:', err);
-            }
-        };
-
-        if (slots.length > 0) {
-            fetchSignupStatus();
-        }
-    }, [slots]);
+        setIsSignupOpen(initialSignupStatus ?? true);
+    }, [initialSignupStatus]);
 
     useEffect(() => {
         if (!lastMessage) return;
 
         try {
             const update = JSON.parse(lastMessage.data);
-            
             if (update.type === 'LINEUP_UPDATE') {
-                if (update.action === 'SIGNUP_STATUS' && update.eventId === slots[0]?.event_id) {
+                if (update.action === 'SIGNUP_STATUS' && update.eventId === parseInt(eventId)) {
                     setIsSignupOpen(update.data.is_signup_open);
                 }
             }
         } catch (err) {
             console.error('Error processing WebSocket message:', err);
         }
-    }, [lastMessage, slots]);
+    }, [lastMessage, eventId]);
+
+    useEffect(() => {
+        const fetchSignupStatus = async () => {
+            try {
+                // Only fetch if we have slots and an event ID
+                if (slots.length > 0 && slots[0].event_id) {
+                    const response = await fetch(`/api/lineup_slots/${slots[0].event_id}/status`);
+                    const data = await response.json();
+                    setIsSignupOpen(data.is_signup_open);
+                }
+            } catch (err) {
+                console.error('Error fetching signup status:', err);
+            }
+        };
+
+        fetchSignupStatus();
+    }, [slots]);
 
     const handleSlotClick = (slot) => {
         const isOwnSlot = currentUserId
@@ -379,7 +385,7 @@ function Lineup({
 
     const handleSignupToggle = async () => {
         try {
-            const response = await fetch(`/api/lineup_slots/${slots[0].event_id}/toggle-signup`, {
+            const response = await fetch(`/api/lineup_slots/${eventId}/toggle-signup`, {
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json'
@@ -388,6 +394,7 @@ function Lineup({
             });
 
             if (response.ok) {
+                const data = await response.json();
                 setIsSignupOpen(!isSignupOpen);
             }
         } catch (err) {
@@ -403,7 +410,7 @@ function Lineup({
                     <label>
                         Allow Signups
                         <Switch
-                            checked={isSignupOpen}
+                            checked={Boolean(isSignupOpen)}
                             onChange={handleSignupToggle}
                             disabled={!isEventActive}
                         />

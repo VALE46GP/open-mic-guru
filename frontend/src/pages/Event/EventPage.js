@@ -349,6 +349,8 @@ function EventPage() {
                 currentNonUser={eventDetails?.currentNonUser}
                 userName={user?.name}
                 isEventActive={eventDetails?.event?.active}
+                initialSignupStatus={eventDetails?.event?.is_signup_open}
+                eventId={eventDetails?.event?.id}
             />
 
             {/* {showDeleteConfirmModal && (

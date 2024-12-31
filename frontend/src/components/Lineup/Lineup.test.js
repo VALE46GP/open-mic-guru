@@ -1,10 +1,10 @@
 import React from 'react';
-import { render, screen, fireEvent, waitFor, cleanup } from '@testing-library/react';
+import { screen, fireEvent, cleanup } from '@testing-library/react';
 import { act } from 'react-dom/test-utils';
-import { MemoryRouter } from 'react-router-dom';
 import Lineup from './Lineup';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 import BorderBox from '../shared/BorderBox/BorderBox';
+import { renderWithProviders } from '../../testUtils/testUtils';
 
 // Mock components
 jest.mock('../shared/BorderBox/BorderBox', () => {
@@ -80,25 +80,23 @@ const renderLineup = (props = {}) => {
         currentNonUser: null,
         userName: null,
         isEventActive: true,
+        initialSignupStatus: true,
+        eventId: '123',
         ...props
     };
 
-    return render(
-        <MemoryRouter>
-            <Lineup {...defaultProps} />
-        </MemoryRouter>
+    return renderWithProviders(
+        <Lineup {...defaultProps} />
     );
 };
 
 describe('Lineup Component', () => {
     beforeEach(() => {
         jest.clearAllMocks();
+        global.fetch.mockClear();
     });
 
-    afterEach(() => {
-        jest.clearAllMocks();
-        cleanup(); // Add this
-    });
+    afterEach(cleanup);
 
     it('renders lineup title and slots', () => {
         renderLineup();
@@ -238,5 +236,37 @@ describe('Lineup Component', () => {
         });
 
         expect(onSlotClick).toHaveBeenCalled();
+    });
+
+    it('allows host to toggle signup status', async () => {
+        global.fetch.mockImplementationOnce(() => 
+            Promise.resolve({
+                ok: true,
+                json: () => Promise.resolve({ success: true, is_signup_open: false })
+            })
+        );
+
+        // Mock localStorage
+        const mockToken = 'fake-jwt-token';
+        Storage.prototype.getItem = jest.fn(() => mockToken);
+
+        renderLineup({ isHost: true, eventId: '123' });
+
+        const toggleSwitch = screen.getByRole('checkbox');
+        expect(toggleSwitch).toBeInTheDocument();
+
+        await act(async () => {
+            fireEvent.click(toggleSwitch);
+        });
+
+        expect(global.fetch).toHaveBeenCalledWith(
+            '/api/lineup_slots/123/toggle-signup',
+            expect.objectContaining({
+                method: 'PUT',
+                headers: expect.objectContaining({
+                    'Authorization': `Bearer ${mockToken}`
+                })
+            })
+        );
     });
 });

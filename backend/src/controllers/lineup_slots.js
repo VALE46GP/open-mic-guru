@@ -290,9 +290,8 @@ const lineupSlotsController = {
             const { eventId } = req.params;
             const { is_signup_open } = req.body;
             
-            await lineupSlotsQueries.updateSignupStatus(eventId, is_signup_open);
+            await lineupSlotsQueries.updateSignupStatus(parseInt(eventId), is_signup_open);
             
-            // Broadcast the status change to all connected clients
             const lineupData = {
                 type: 'LINEUP_UPDATE',
                 eventId: parseInt(eventId),
@@ -301,7 +300,7 @@ const lineupSlotsController = {
             };
             
             req.app.locals.broadcastLineupUpdate(lineupData);
-            res.json({ success: true });
+            res.json({ success: true, is_signup_open });
         } catch (err) {
             logger.error(err);
             res.status(500).json({ error: 'Server error' });

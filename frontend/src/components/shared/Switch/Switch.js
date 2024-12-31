@@ -1,11 +1,11 @@
 import React from 'react';
 import './Switch.sass';
 
-const Switch = ({ checked, onChange, disabled }) => (
+const Switch = ({ checked = false, onChange, disabled }) => (
     <div className={`switch ${disabled ? 'switch--disabled' : ''}`}>
         <input
             type="checkbox"
-            checked={checked}
+            checked={Boolean(checked)}
             onChange={onChange}
             disabled={disabled}
             className="switch__input"
