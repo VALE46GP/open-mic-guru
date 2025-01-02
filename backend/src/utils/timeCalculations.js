@@ -19,20 +19,30 @@ function convertFromUTC(utcStr, utc_offset) {
 }
 
 function calculateSlotStartTime(eventStartTime, slotNumber, slotDuration, setupDuration) {
-    const startTime = DateTime.fromISO(eventStartTime);
+    try {
+        const startTime = DateTime.fromISO(eventStartTime, { zone: 'utc' });
+        
+        if (!startTime.isValid) {
+            console.error('Invalid start time:', eventStartTime);
+            return null;
+        }
 
-    const slotDurationMinutes = typeof slotDuration === 'object'
-        ? slotDuration.minutes
-        : Math.floor(slotDuration / 60);
+        const slotDurationMinutes = typeof slotDuration === 'object'
+            ? slotDuration.minutes
+            : Math.floor(slotDuration / 60);
 
-    const setupDurationMinutes = typeof setupDuration === 'object'
-        ? setupDuration.minutes
-        : Math.floor(setupDuration / 60);
+        const setupDurationMinutes = typeof setupDuration === 'object'
+            ? setupDuration.minutes
+            : Math.floor(setupDuration / 60);
 
-    const totalMinutesPerSlot = slotDurationMinutes + setupDurationMinutes;
-    const slotOffsetMinutes = (slotNumber - 1) * totalMinutesPerSlot;
+        const totalMinutesPerSlot = slotDurationMinutes + setupDurationMinutes;
+        const slotOffsetMinutes = (slotNumber - 1) * totalMinutesPerSlot;
 
-    return startTime.plus({ minutes: slotOffsetMinutes }).toJSDate();
+        return startTime.plus({ minutes: slotOffsetMinutes }).toISO();
+    } catch (error) {
+        console.error('Error calculating slot start time:', error);
+        return null;
+    }
 }
 
 function hasTimeRelatedChanges(originalEvent, updatedFields) {
@@ -86,13 +96,68 @@ function formatDateInTimezone(date, utc_offset) {
 }
 
 function formatTimeToLocalString(date, utc_offset) {
-    if (typeof utc_offset !== 'number') {
-        console.warn('No UTC offset provided for time formatting, using -420 (PDT)');
-        return DateTime.fromISO(date, { zone: 'UTC-7' }).toLocaleString(DateTime.DATETIME_MED);
-    }
+    if (!date) return 'Invalid DateTime';
+    
+    try {
+        if (typeof utc_offset !== 'number') {
+            console.warn('No UTC offset provided for time formatting, using -420 (PDT)');
+            utc_offset = -420;
+        }
 
-    const dt = DateTime.fromISO(date).setZone(`UTC${utc_offset >= 0 ? '+' : ''}${utc_offset / 60}`);
-    return `${dt.toFormat('MMM d')}, ${dt.toFormat('h:mm a')}`;
+        // Ensure we're working with UTC dates
+        const dt = DateTime.fromISO(date, { zone: 'utc' })
+            .setZone(`UTC${utc_offset >= 0 ? '+' : ''}${utc_offset / 60}`);
+
+        if (!dt.isValid) {
+            console.error('Invalid date:', date);
+            return 'Invalid DateTime';
+        }
+
+        return dt.toFormat('MMM d, yyyy h:mm a');
+    } catch (error) {
+        console.error('Error formatting time:', error, { date, utc_offset });
+        return 'Invalid DateTime';
+    }
+}
+
+function formatTimeComparison(date1, date2, utc_offset) {
+    if (!date1 || !date2) return 'Invalid DateTime';
+    
+    try {
+        const dt1 = DateTime.fromISO(date1, { zone: 'utc' })
+            .setZone(`UTC${utc_offset >= 0 ? '+' : ''}${utc_offset / 60}`);
+        const dt2 = DateTime.fromISO(date2, { zone: 'utc' })
+            .setZone(`UTC${utc_offset >= 0 ? '+' : ''}${utc_offset / 60}`);
+
+        if (!dt1.isValid || !dt2.isValid) {
+            return 'Invalid DateTime';
+        }
+
+        // Compare years
+        if (dt1.year !== dt2.year) {
+            return {
+                format: 'MMM d, yyyy h:mm a',
+                showFullDate: true
+            };
+        }
+
+        // Compare months and days
+        if (dt1.month !== dt2.month || dt1.day !== dt2.day) {
+            return {
+                format: 'MMM d h:mm a',
+                showFullDate: true
+            };
+        }
+
+        // If only time is different
+        return {
+            format: 'h:mm a',
+            showFullDate: false
+        };
+    } catch (error) {
+        console.error('Error comparing dates:', error);
+        return 'Invalid DateTime';
+    }
 }
 
 module.exports = {
@@ -102,5 +167,6 @@ module.exports = {
     hasTimeRelatedChanges,
     formatTimeToLocalString,
     formatTimeInTimezone,
-    formatDateInTimezone
+    formatDateInTimezone,
+    formatTimeComparison
 };
