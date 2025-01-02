@@ -10,30 +10,22 @@ function EventCard({ event, slotTime }) {
 
     useEffect(() => {
         async function formatTimes() {
-            if (event?.start_time) {
-                const venue = {
-                    latitude: event.venue_latitude,
-                    longitude: event.venue_longitude
-                };
-                const formatted = await formatEventTimeInVenueTimezone(
-                    event.start_time,
-                    venue,
-                    'MMM d, h:mm aa'
+            try {
+                const formattedStartTime = formatEventTimeInVenueTimezone(
+                    event.start_time, 
+                    { utc_offset: event.venue_utc_offset ?? -420 }
                 );
-                setFormattedEventTime(formatted);
-            }
+                setFormattedEventTime(formattedStartTime);
 
-            if (slotTime) {
-                const venue = {
-                    latitude: event.venue_latitude,
-                    longitude: event.venue_longitude
-                };
-                const formatted = await formatEventTimeInVenueTimezone(
-                    slotTime,
-                    venue,
-                    'h:mm aa'
-                );
-                setFormattedSlotTime(formatted);
+                if (slotTime) {
+                    const formattedSlotTime = formatEventTimeInVenueTimezone(
+                        slotTime,
+                        { utc_offset: event.venue_utc_offset ?? -420 }
+                    );
+                    setFormattedSlotTime(formattedSlotTime);
+                }
+            } catch (error) {
+                console.error('Error formatting times:', error);
             }
         }
 

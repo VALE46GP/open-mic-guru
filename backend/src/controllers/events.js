@@ -15,7 +15,7 @@ AWS.config.update({
 
 const s3 = new AWS.S3();
 
-async function getUpdateMessage(originalEvent, updatedFields, venueTimezone) {
+async function getUpdateMessage(originalEvent, updatedFields, venueUtcOffset) {
     const changes = [];
 
     try {
@@ -34,11 +34,11 @@ async function getUpdateMessage(originalEvent, updatedFields, venueTimezone) {
             const originalDate = new Date(originalEvent.start_time);
             const updatedDate = new Date(updatedFields.start_time);
 
-            const originalFormatted = formatTimeInTimezone(originalDate, venueTimezone);
-            const updatedFormatted = formatTimeInTimezone(updatedDate, venueTimezone);
+            const originalFormatted = formatTimeInTimezone(originalDate, venueUtcOffset);
+            const updatedFormatted = formatTimeInTimezone(updatedDate, venueUtcOffset);
 
-            const originalDateStr = formatDateInTimezone(originalDate, venueTimezone);
-            const updatedDateStr = formatDateInTimezone(updatedDate, venueTimezone);
+            const originalDateStr = formatDateInTimezone(originalDate, venueUtcOffset);
+            const updatedDateStr = formatDateInTimezone(updatedDate, venueUtcOffset);
 
             if (originalDateStr !== updatedDateStr) {
                 changes.push(`Start time updated from ${originalFormatted} on ${originalDateStr} to ${updatedFormatted} on ${updatedDateStr}.`);
@@ -160,6 +160,7 @@ const eventsController = {
                     address: eventData.venue_address,
                     latitude: eventData.venue_latitude,
                     longitude: eventData.venue_longitude,
+                    utc_offset: eventData.venue_utc_offset
                 },
                 host: {
                     id: eventData.host_id,
@@ -352,7 +353,7 @@ const eventsController = {
                     } else {
                         venueInfo = await eventQueries.getVenueInfo(originalEvent.venue_id);
                     }
-                    const timezone = venueInfo?.timezone || 'UTC';
+                    const venueUtcOffset = venueInfo?.utc_offset ?? -420;
 
                     // Get all users in the lineup
                     const lineupUsers = await eventQueries.getLineupUsers(eventId);
@@ -368,7 +369,7 @@ const eventsController = {
                             venue_id,
                             venue_name: venueInfo.name
                         } : {})
-                    }, timezone);
+                    }, venueUtcOffset);
 
                     // Create notifications for each user
                     for (const performer of lineupUsers) {
@@ -383,7 +384,7 @@ const eventsController = {
                                     slot_duration || originalEvent.slot_duration,
                                     setup_duration || originalEvent.setup_duration
                                 );
-                                message = `${updateMessage} Your new performance time is ${formatTimeToLocalString(slotTime, timezone)}.`;
+                                message = `${updateMessage} Your new performance time is ${formatTimeToLocalString(slotTime, venueUtcOffset)}.`;
                             }
 
                             await createNotification(

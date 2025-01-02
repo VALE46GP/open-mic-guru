@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../hooks/useAuth';
-import { getTimezoneFromCoordinates, convertToUTC } from '../../utils/timeCalculations';
+import { convertToUTC, convertFromUTC, formatTimeToLocalString } from '../../utils/timeCalculations';
 import { useNavigate, useParams } from 'react-router-dom';
 import VenueAutocomplete from '../shared/VenueAutocomplete';
 import TextInput from '../shared/TextInput';
@@ -44,7 +44,7 @@ function CreateEvent() {
                 try {
                     const response = await fetch(`/api/events/${eventId}`);
                     const { data } = await response.json();
-                    
+
                     if (data.event) {
                         setEventData(data);
                         setNewEventName(data.event.name || '');
@@ -56,32 +56,23 @@ function CreateEvent() {
                             setImagePreview(data.event.image);
                         }
 
-                        if (data.event.start_time) {
-                            const date = new Date(data.event.start_time);
-                            const localDateString = date.getFullYear() + '-' +
-                                String(date.getMonth() + 1).padStart(2, '0') + '-' +
-                                String(date.getDate()).padStart(2, '0') + 'T' +
-                                String(date.getHours()).padStart(2, '0') + ':' +
-                                String(date.getMinutes()).padStart(2, '0');
-                            setStartTime(localDateString);
+                        // Convert UTC times using the venue's UTC offset
+                        if (data.event.start_time && data.venue?.utc_offset) {
+                            const localStart = convertFromUTC(data.event.start_time, data.venue.utc_offset);
+                            setStartTime(localStart.slice(0, -6));
                         }
 
-                        if (data.event.end_time) {
-                            const date = new Date(data.event.end_time);
-                            const localDateString = date.getFullYear() + '-' +
-                                String(date.getMonth() + 1).padStart(2, '0') + '-' +
-                                String(date.getDate()).padStart(2, '0') + 'T' +
-                                String(date.getHours()).padStart(2, '0') + ':' +
-                                String(date.getMinutes()).padStart(2, '0');
-                            setEndTime(localDateString);
+                        if (data.event.end_time && data.venue?.utc_offset) {
+                            const localEnd = convertFromUTC(data.event.end_time, data.venue.utc_offset);
+                            setEndTime(localEnd.slice(0, -6));
                         }
 
-                        setSlotDuration(data.event.slot_duration?.minutes 
-                            ? data.event.slot_duration.minutes.toString() 
+                        setSlotDuration(data.event.slot_duration?.minutes
+                            ? data.event.slot_duration.minutes.toString()
                             : '10');
-                        
-                        setSetupDuration(data.event.setup_duration?.minutes 
-                            ? data.event.setup_duration.minutes.toString() 
+
+                        setSetupDuration(data.event.setup_duration?.minutes
+                            ? data.event.setup_duration.minutes.toString()
                             : '5');
 
                         if (data.venue) {
@@ -90,6 +81,7 @@ function CreateEvent() {
                                 address: data.venue.address,
                                 latitude: data.venue.latitude,
                                 longitude: data.venue.longitude,
+                                utc_offset: data.venue.utc_offset,
                                 geometry: {
                                     location: {
                                         lat: () => data.venue.latitude,
@@ -124,29 +116,36 @@ function CreateEvent() {
         }
     }, []);
 
-    const handleVenueSelect = (place) => {
+    const handleVenueSelect = async (place) => {
         if (!place || !place.geometry) return;
 
         const latitude = place.geometry.location.lat();
         const longitude = place.geometry.location.lng();
         const formattedAddress = place.address_components?.map(ac => ac.short_name).join(', ') || place.address;
 
-        const processedVenue = {
-            ...place,
-            name: place.name || '',
-            address: formattedAddress,
-            latitude,
-            longitude,
-            timezone: place.timezone || 'America/Los_Angeles',
-            geometry: {
-                location: {
-                    lat: () => latitude,
-                    lng: () => longitude
+        try {
+            const processedVenue = {
+                ...place,
+                name: place.name || '',
+                address: formattedAddress,
+                latitude,
+                longitude,
+                utc_offset: place.utc_offset,
+                geometry: {
+                    location: {
+                        lat: () => latitude,
+                        lng: () => longitude
+                    }
                 }
-            }
-        };
+            };
 
-        setSelectedVenue(processedVenue);
+            console.log('Final processed venue:', processedVenue);
+            setSelectedVenue(processedVenue);
+            
+        } catch (error) {
+            console.error('Error in handleVenueSelect:', error);
+            alert('Error processing venue information. Please try again.');
+        }
     };
 
     // TODO: test image updates
@@ -217,21 +216,27 @@ function CreateEvent() {
             alert("Please select a location from the dropdown.");
             return;
         }
+        if (typeof selectedVenue.utc_offset !== 'number') {
+            alert("Venue UTC offset not available. Please try again.");
+            return;
+        }
         if (new Date(startTime) >= new Date(endTime)) {
             alert("Start time must be before end time.");
             return;
         }
 
         try {
-            const utcStartTime = convertToUTC(startTime, selectedVenue?.timezone);
-            const utcEndTime = convertToUTC(endTime, selectedVenue?.timezone);
+            // Convert times to UTC using the venue's UTC offset
+            const utcStartTime = convertToUTC(startTime, selectedVenue.utc_offset);
+            const utcEndTime = convertToUTC(endTime, selectedVenue.utc_offset);
 
-            let venueId = await checkOrCreateVenue(selectedVenue);
-            
+            let venueId = await checkOrCreateVenue({
+                ...selectedVenue
+            });
+
             // Process image before creating the payload
             let imageUrl;
             if (eventImage instanceof File) {
-                // Only process new images
                 try {
                     imageUrl = await processImage(eventImage);
                 } catch (error) {
@@ -240,7 +245,6 @@ function CreateEvent() {
                     return;
                 }
             } else if (isEditMode && !eventImage) {
-                // If editing and no new image was selected, use the existing preview URL
                 imageUrl = imagePreview;
             }
 
@@ -256,7 +260,7 @@ function CreateEvent() {
                 setup_duration: setupDuration * 60,
                 additional_info: additionalInfo,
                 host_id: getUserId(),
-                ...(imageUrl && { image: imageUrl }), // Only include image if we have a URL
+                ...(imageUrl && { image: imageUrl }),
                 types: eventTypes,
                 active: pendingStatusChange ? !isEventActive : isEventActive
             };
@@ -292,7 +296,7 @@ function CreateEvent() {
             address: address,
             latitude: selectedVenue.geometry.location.lat(),
             longitude: selectedVenue.geometry.location.lng(),
-            timezone: selectedVenue.timezone  // Use the timezone from the place object
+            utc_offset: selectedVenue.utc_offset
         };
 
         try {

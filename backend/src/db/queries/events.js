@@ -1,4 +1,5 @@
 const db = require('../index');
+const { convertToUTC } = require('../../utils/timeCalculations');
 
 const eventQueries = {
     async getAllEvents() {
@@ -18,6 +19,7 @@ const eventQueries = {
                             v.address   AS venue_address,
                             v.latitude  AS venue_latitude,
                             v.longitude AS venue_longitude,
+                            v.utc_offset AS venue_utc_offset,
                             e.host_id,
                             u.name      AS host_name,
                             ls.user_id  AS performer_id,
@@ -43,7 +45,7 @@ const eventQueries = {
                    e.slot_duration,
                    e.setup_duration,
                    e.additional_info,
-                   e.types AS event_types,
+                   e.types     AS event_types,
                    e.image     AS event_image,
                    e.active,
                    e.is_signup_open,
@@ -52,6 +54,7 @@ const eventQueries = {
                    v.address   AS venue_address,
                    v.latitude  AS venue_latitude,
                    v.longitude AS venue_longitude,
+                   v.utc_offset AS venue_utc_offset,
                    u.id        AS host_id,
                    u.name      AS host_name,
                    u.image     AS host_image
@@ -60,6 +63,7 @@ const eventQueries = {
                      JOIN users u ON e.host_id = u.id
             WHERE e.id = $1
         `, [eventId]);
+        console.log('getEventById: ', result.rows[0])
         return result.rows[0];
     },
 
@@ -94,6 +98,14 @@ const eventQueries = {
     },
 
     async createEvent(eventData) {
+        // First get venue utc_offset
+        const venueResult = await db.query(
+            'SELECT utc_offset FROM venues WHERE id = $1',
+            [eventData.venue_id]
+        );
+
+        const venue_utc_offset = venueResult.rows[0]?.utc_offset ?? -420;
+
         const result = await db.query(`
             INSERT INTO events (
                 venue_id, 

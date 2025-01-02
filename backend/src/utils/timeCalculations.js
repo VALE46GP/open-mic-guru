@@ -1,7 +1,25 @@
-const { format } = require('date-fns');
+// backend/src/utils/timeCalculations.js
+
+const { DateTime } = require('luxon');
+
+function convertToUTC(dateTimeStr, utc_offset) {
+    if (typeof utc_offset !== 'number') {
+        console.warn('No UTC offset provided for conversion to UTC, using -420 (PDT)');
+        return DateTime.fromISO(dateTimeStr, { zone: 'UTC-7' }).toUTC().toISO();
+    }
+    return DateTime.fromISO(dateTimeStr, { zone: `UTC${utc_offset >= 0 ? '+' : ''}${utc_offset / 60}` }).toUTC().toISO();
+}
+
+function convertFromUTC(utcStr, utc_offset) {
+    if (typeof utc_offset !== 'number') {
+        console.warn('No UTC offset provided for conversion from UTC, using -420 (PDT)');
+        return DateTime.fromISO(utcStr, { zone: 'UTC-7' }).toISO();
+    }
+    return DateTime.fromISO(utcStr).setZone(`UTC${utc_offset >= 0 ? '+' : ''}${utc_offset / 60}`).toISO();
+}
 
 function calculateSlotStartTime(eventStartTime, slotNumber, slotDuration, setupDuration) {
-    const startTime = new Date(eventStartTime);
+    const startTime = DateTime.fromISO(eventStartTime);
 
     const slotDurationMinutes = typeof slotDuration === 'object'
         ? slotDuration.minutes
@@ -14,14 +32,15 @@ function calculateSlotStartTime(eventStartTime, slotNumber, slotDuration, setupD
     const totalMinutesPerSlot = slotDurationMinutes + setupDurationMinutes;
     const slotOffsetMinutes = (slotNumber - 1) * totalMinutesPerSlot;
 
-    return new Date(startTime.getTime() + slotOffsetMinutes * 60000);
+    return startTime.plus({ minutes: slotOffsetMinutes }).toJSDate();
 }
 
 function hasTimeRelatedChanges(originalEvent, updatedFields) {
     if (!updatedFields) return false;
 
     const startTimeChanged = updatedFields.start_time !== undefined &&
-        new Date(updatedFields.start_time).getTime() !== new Date(originalEvent.start_time).getTime();
+        DateTime.fromISO(updatedFields.start_time).toMillis() !==
+        DateTime.fromISO(originalEvent.start_time).toMillis();
 
     const slotDurationChanged = updatedFields.slot_duration !== undefined &&
         (typeof updatedFields.slot_duration === 'object'
@@ -36,34 +55,49 @@ function hasTimeRelatedChanges(originalEvent, updatedFields) {
     return startTimeChanged || slotDurationChanged || setupDurationChanged;
 }
 
-function formatTimeInTimezone(date, timezone) {
-    const formattedTime = new Date(date).toLocaleString('en-US', {
-        timeZone: timezone,
-        hour: 'numeric',
-        minute: new Date(date).getUTCMinutes() === 0 ? undefined : '2-digit',
-        hour12: true
-    }).replace(':00', '');
+function formatTimeInTimezone(date, utc_offset) {
+    if (typeof utc_offset !== 'number') {
+        console.warn('No UTC offset provided for time formatting, using -420 (PDT)');
+        return DateTime.fromISO(date, { zone: 'UTC-7' }).toLocaleString(DateTime.TIME_SIMPLE);
+    }
 
-    return formattedTime;
+    return DateTime.fromISO(date)
+        .setZone(`UTC${utc_offset >= 0 ? '+' : ''}${utc_offset / 60}`)
+        .toLocaleString({
+            hour: 'numeric',
+            minute: '2-digit',
+            hour12: true
+        })
+        .replace(':00', '');
 }
 
-function formatDateInTimezone(date, timezone) {
-    return new Date(date).toLocaleDateString('en-US', {
-        timeZone: timezone,
-        month: 'short',
-        day: 'numeric'
-    });
+function formatDateInTimezone(date, utc_offset) {
+    if (typeof utc_offset !== 'number') {
+        console.warn('No UTC offset provided for date formatting, using -420 (PDT)');
+        return DateTime.fromISO(date, { zone: 'UTC-7' }).toLocaleString({ month: 'short', day: 'numeric' });
+    }
+
+    return DateTime.fromISO(date)
+        .setZone(`UTC${utc_offset >= 0 ? '+' : ''}${utc_offset / 60}`)
+        .toLocaleString({
+            month: 'short',
+            day: 'numeric'
+        });
 }
 
-function formatTimeToLocalString(date, timezone) {
-    if (!timezone) return format(new Date(date), 'MMM d, yyyy h:mm aa');
-    
-    const time = formatTimeInTimezone(date, timezone);
-    const dateStr = formatDateInTimezone(date, timezone);
-    return `${dateStr}, ${time}`;
+function formatTimeToLocalString(date, utc_offset) {
+    if (typeof utc_offset !== 'number') {
+        console.warn('No UTC offset provided for time formatting, using -420 (PDT)');
+        return DateTime.fromISO(date, { zone: 'UTC-7' }).toLocaleString(DateTime.DATETIME_MED);
+    }
+
+    const dt = DateTime.fromISO(date).setZone(`UTC${utc_offset >= 0 ? '+' : ''}${utc_offset / 60}`);
+    return `${dt.toFormat('MMM d')}, ${dt.toFormat('h:mm a')}`;
 }
 
 module.exports = {
+    convertToUTC,
+    convertFromUTC,
     calculateSlotStartTime,
     hasTimeRelatedChanges,
     formatTimeToLocalString,
