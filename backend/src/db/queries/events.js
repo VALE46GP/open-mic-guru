@@ -137,10 +137,23 @@ const eventQueries = {
     },
 
     async getOriginalEvent(eventId) {
-        const result = await db.query(
-            'SELECT name, venue_id, start_time, end_time, slot_duration, setup_duration, types, active FROM events WHERE id = $1',
+        const result = await db.query(`
+            SELECT 
+                name, 
+                venue_id, 
+                start_time,
+                end_time,
+                slot_duration,
+                setup_duration,
+                types,
+                active,
+                EXTRACT(EPOCH FROM slot_duration)::integer AS slot_duration_seconds,
+                EXTRACT(EPOCH FROM setup_duration)::integer AS setup_duration_seconds
+            FROM events 
+            WHERE id = $1`,
             [eventId]
         );
+        console.log('Original event data:', result.rows[0]);
         return result.rows[0];
     },
 
@@ -201,7 +214,7 @@ const eventQueries = {
 
     async getVenueInfo(venueId) {
         const result = await db.query(`
-            SELECT v.id, v.name, v.latitude, v.longitude, v.timezone, v.address
+            SELECT v.id, v.name, v.utc_offset, v.latitude, v.longitude, v.address
             FROM venues v
             WHERE v.id = $1`,
             [venueId]

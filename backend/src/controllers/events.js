@@ -19,6 +19,12 @@ async function getUpdateMessage(originalEvent, updatedFields, venueUtcOffset) {
     const changes = [];
 
     try {
+        console.log('Getting update message with fields:', {
+            originalEvent,
+            updatedFields,
+            venueUtcOffset
+        });
+
         // Check for event cancellation/reinstatement first
         if (updatedFields.active !== undefined) {
             if (updatedFields.active === false) {
@@ -345,18 +351,29 @@ const eventsController = {
             // TODO: Improve notification message for when slot_time or setup_duration are changed.
             // Create Notifications
             if (start_time !== undefined || end_time !== undefined || slot_duration !== undefined || setup_duration !== undefined || active === false) {
+                console.log('Time-related changes detected, preparing notifications...');
                 try {
-                    // Only get venue info if venue has changed
+                    // Get venue info with UTC offset
                     let venueInfo;
                     if (venue_id && venue_id !== originalEvent.venue_id) {
                         venueInfo = await eventQueries.getVenueInfo(venue_id);
                     } else {
                         venueInfo = await eventQueries.getVenueInfo(originalEvent.venue_id);
                     }
-                    const venueUtcOffset = venueInfo?.utc_offset ?? -420;
+
+                    console.log('Venue info:', venueInfo);
+                    console.log('Original Event:', originalEvent);
+
+                    if (!venueInfo) {
+                        console.error('Venue info not found');
+                        return res.status(404).json(createErrorResponse('Venue not found'));
+                    }
+
+                    const venueUtcOffset = venueInfo.utc_offset ?? -420; // Default to PDT if not found
 
                     // Get all users in the lineup
                     const lineupUsers = await eventQueries.getLineupUsers(eventId);
+                    console.log('Lineup users found:', lineupUsers);
 
                     // Get the update message
                     const updateMessage = await getUpdateMessage(originalEvent, {
