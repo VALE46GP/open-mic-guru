@@ -142,7 +142,7 @@ const lineupSlotsController = {
                     await createNotification(
                         slot.user_id,
                         'slot_removed',
-                        `Your slot in "${slot.event_name}" has been removed${isDeletedByHost ? ' by the host' : ''}`,
+                        `Your slot has been removed${isDeletedByHost ? ' by the host' : ''}`,
                         slot.event_id,
                         slotId,
                         req
@@ -216,32 +216,54 @@ const lineupSlotsController = {
 
             const event = await lineupSlotsQueries.getEventDetailsForReorder(slots[0].slot_id);
             
+            if (!event || !event.start_time) {
+                return res.status(400).json({ error: 'Invalid event data' });
+            }
+
+            // Get venue UTC offset
+            const venueInfo = await lineupSlotsQueries.getVenueUtcOffset(event.id);
+            const venueUtcOffset = venueInfo?.utc_offset ?? -420; // Default to PDT if not found
+
             await client.query('BEGIN');
 
             try {
                 for (const slot of slots) {
                     const oldSlot = await lineupSlotsQueries.getOldSlotDetails(slot.slot_id);
 
-                    if (oldSlot.slot_number !== slot.slot_number && oldSlot.user_id) {
+                    if (oldSlot?.slot_number !== slot.slot_number && oldSlot?.user_id) {
+                        console.log('Calculating times for slot change:', {
+                            startTime: event.start_time,
+                            oldSlotNumber: oldSlot.slot_number,
+                            newSlotNumber: slot.slot_number,
+                            slotDuration: event.slot_duration,
+                            setupDuration: event.setup_duration
+                        });
+
                         const oldStartTime = calculateSlotStartTime(
-                            event.start_time,
+                            new Date(event.start_time),
                             oldSlot.slot_number,
                             event.slot_duration,
                             event.setup_duration
                         );
 
                         const newStartTime = calculateSlotStartTime(
-                            event.start_time,
+                            new Date(event.start_time),
                             slot.slot_number,
                             event.slot_duration,
                             event.setup_duration
                         );
 
-                        if (oldStartTime.getTime() !== newStartTime.getTime()) {
+                        console.log('Calculated times:', {
+                            oldStartTime,
+                            newStartTime
+                        });
+
+                        if (oldStartTime && newStartTime && oldStartTime.getTime() !== newStartTime.getTime()) {
+                            console.log('Creating notification for time change');
                             await createNotification(
                                 oldSlot.user_id,
                                 'slot_time_change',
-                                `Your slot time for "${event.name}" has changed from ${formatTimeToLocalString(oldStartTime)} to ${formatTimeToLocalString(newStartTime)}`,
+                                `Your slot time has changed from ${formatTimeToLocalString(oldStartTime, venueUtcOffset)} to ${formatTimeToLocalString(newStartTime, venueUtcOffset)}`,
                                 event.id,
                                 slot.slot_id
                             );

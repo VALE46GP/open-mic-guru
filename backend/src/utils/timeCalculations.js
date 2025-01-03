@@ -18,27 +18,24 @@ function convertFromUTC(utcStr, utc_offset) {
     return DateTime.fromISO(utcStr).setZone(`UTC${utc_offset >= 0 ? '+' : ''}${utc_offset / 60}`).toISO();
 }
 
-function calculateSlotStartTime(eventStartTime, slotNumber, slotDuration, setupDuration) {
+function calculateSlotStartTime(startTime, slotNumber, slotDuration, setupDuration) {
+    if (!startTime || !slotNumber || !slotDuration || !setupDuration) {
+        console.error('Invalid parameters:', { startTime, slotNumber, slotDuration, setupDuration });
+        return null;
+    }
+
     try {
-        const startTime = DateTime.fromISO(eventStartTime, { zone: 'utc' });
-        
-        if (!startTime.isValid) {
-            console.error('Invalid start time:', eventStartTime);
+        const baseTime = new Date(startTime);
+        if (isNaN(baseTime.getTime())) {
+            console.error('Invalid start time:', startTime);
             return null;
         }
 
-        const slotDurationMinutes = typeof slotDuration === 'object'
-            ? slotDuration.minutes
-            : Math.floor(slotDuration / 60);
+        // Convert durations from seconds to milliseconds
+        const totalDurationPerSlot = (slotDuration + setupDuration) * 1000;
+        const offsetMilliseconds = (slotNumber - 1) * totalDurationPerSlot;
 
-        const setupDurationMinutes = typeof setupDuration === 'object'
-            ? setupDuration.minutes
-            : Math.floor(setupDuration / 60);
-
-        const totalMinutesPerSlot = slotDurationMinutes + setupDurationMinutes;
-        const slotOffsetMinutes = (slotNumber - 1) * totalMinutesPerSlot;
-
-        return startTime.plus({ minutes: slotOffsetMinutes }).toISO();
+        return new Date(baseTime.getTime() + offsetMilliseconds);
     } catch (error) {
         console.error('Error calculating slot start time:', error);
         return null;
@@ -104,8 +101,11 @@ function formatTimeToLocalString(date, utc_offset) {
             utc_offset = -420;
         }
 
-        // Ensure we're working with UTC dates
-        const dt = DateTime.fromISO(date, { zone: 'utc' })
+        // Handle both Date objects and ISO strings
+        const dateToFormat = date instanceof Date ? date.toISOString() : date;
+
+        // Convert to DateTime object with UTC timezone first
+        const dt = DateTime.fromISO(dateToFormat, { zone: 'utc' })
             .setZone(`UTC${utc_offset >= 0 ? '+' : ''}${utc_offset / 60}`);
 
         if (!dt.isValid) {

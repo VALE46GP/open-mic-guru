@@ -137,10 +137,17 @@ const lineupSlotsQueries = {
     },
 
     async getEventDetailsForReorder(slotId) {
-        const result = await db.query(
-            'SELECT e.* FROM events e JOIN lineup_slots ls ON e.id = ls.event_id WHERE ls.id = $1',
-            [slotId]
-        );
+        const result = await db.query(`
+            SELECT 
+                e.id,
+                e.name,
+                e.start_time,
+                EXTRACT(EPOCH FROM e.slot_duration)::integer as slot_duration,
+                EXTRACT(EPOCH FROM e.setup_duration)::integer as setup_duration
+            FROM events e 
+            JOIN lineup_slots ls ON e.id = ls.event_id 
+            WHERE ls.id = $1
+        `, [slotId]);
         return result.rows[0];
     },
 
@@ -157,6 +164,16 @@ const lineupSlotsQueries = {
             'UPDATE events SET is_signup_open = $1 WHERE id = $2',
             [isSignupOpen, eventId]
         );
+    },
+
+    async getVenueUtcOffset(eventId) {
+        const result = await db.query(`
+            SELECT v.utc_offset
+            FROM events e
+            JOIN venues v ON e.venue_id = v.id
+            WHERE e.id = $1
+        `, [eventId]);
+        return result.rows[0];
     }
 };
 
