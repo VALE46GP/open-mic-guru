@@ -188,6 +188,7 @@ const eventQueries = {
         const result = await db.query(`
             SELECT 
                 ls.user_id,
+                ls.id as lineup_slot_id,
                 ls.slot_number,
                 u.name as user_name
             FROM lineup_slots ls

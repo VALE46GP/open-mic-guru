@@ -119,3 +119,43 @@ export function formatTimeToLocalString(date, utc_offset) {
     const dt = DateTime.fromISO(date).setZone(`UTC${utc_offset >= 0 ? '+' : ''}${utc_offset / 60}`);
     return `${dt.toFormat('MMM d')}, ${dt.toFormat('h:mm a')}`;
 }
+
+export function formatTimeComparison(date1, date2, utc_offset) {
+    if (!date1 || !date2) return 'Invalid DateTime';
+    
+    try {
+        const dt1 = DateTime.fromISO(date1, { zone: 'utc' })
+            .setZone(`UTC${utc_offset >= 0 ? '+' : ''}${utc_offset / 60}`);
+        const dt2 = DateTime.fromISO(date2, { zone: 'utc' })
+            .setZone(`UTC${utc_offset >= 0 ? '+' : ''}${utc_offset / 60}`);
+
+        if (!dt1.isValid || !dt2.isValid) {
+            return 'Invalid DateTime';
+        }
+
+        // Compare years
+        if (dt1.year !== dt2.year) {
+            return {
+                format: 'MMM d, yyyy h:mm a',
+                showFullDate: true
+            };
+        }
+
+        // Compare months and days
+        if (dt1.month !== dt2.month || dt1.day !== dt2.day) {
+            return {
+                format: 'MMM d h:mm a',
+                showFullDate: true
+            };
+        }
+
+        // If only time is different
+        return {
+            format: 'h:mm a',
+            showFullDate: false
+        };
+    } catch (error) {
+        console.error('Error comparing dates:', error);
+        return 'Invalid DateTime';
+    }
+}

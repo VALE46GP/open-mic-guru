@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { formatEventTimeInVenueTimezone, calculateSlotStartTime } from '../../utils/timeCalculations';
+import { formatEventTimeInVenueTimezone, calculateSlotStartTime, formatTimeComparison } from '../../utils/timeCalculations';
 import LocationMap from '../../components/shared/LocationMap';
 import BorderBox from '../../components/shared/BorderBox/BorderBox';
 import './EventPage.sass';
@@ -248,25 +248,26 @@ function EventPage() {
     const formatEventTime = async (dateString) => {
         if (!eventDetails?.venue) return '';
         
-        console.log('Full venue details:', eventDetails.venue);
-        
         const venue = {
             latitude: eventDetails.venue.latitude,
             longitude: eventDetails.venue.longitude,
             utc_offset: eventDetails.venue.utc_offset
         };
         
-        console.log('Formatting time with:', {
-            dateString,
-            venue,
-            eventDetails: eventDetails.venue
-        });
+        // If we're formatting the end time, compare it with start time
+        if (dateString === eventDetails.event.end_time) {
+            const comparison = formatTimeComparison(
+                eventDetails.event.start_time,
+                dateString,
+                venue.utc_offset
+            );
+            const format = typeof comparison === 'object' ? comparison.format : 'MMM d, yyyy h:mm a';
+            
+            return formatEventTimeInVenueTimezone(dateString, venue, format);
+        }
         
-        return formatEventTimeInVenueTimezone(
-            dateString,
-            venue,
-            'MMM d, yyyy h:mm a'
-        );
+        // For start time, always show full date
+        return formatEventTimeInVenueTimezone(dateString, venue, 'MMM d, yyyy h:mm a');
     };
 
     // const toggleDeleteConfirmModal = () => {

@@ -416,7 +416,7 @@ const eventsController = {
                                         : NOTIFICATION_TYPES.EVENT_UPDATE,
                                     message,
                                     eventId,
-                                    null,
+                                    performer.lineup_slot_id,
                                     req
                                 );
                             }

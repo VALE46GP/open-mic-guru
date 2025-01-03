@@ -250,7 +250,7 @@ function NotificationsPage() {
                                         <div className="notifications__event-card">
                                             <EventCard 
                                                 event={data.event} 
-                                                slotTime={data.event.is_performer ? data.event.performer_slot_time : null}
+                                                slotTime={data.notifications[0]?.performer_slot_time}
                                             />
                                         </div>
                                     </div>

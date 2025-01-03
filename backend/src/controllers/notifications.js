@@ -12,23 +12,7 @@ const notificationsController = {
             const unreadOnly = req.query.unread === 'true';
 
             const notifications = await notificationQueries.getUserNotifications(userId, limit, offset, unreadOnly);
-            const processedNotifications = notifications.map(notification => {
-                if (notification.is_performer && notification.slot_number) {
-                    const slotTime = calculateSlotStartTime(
-                        notification.event_start_time,
-                        notification.slot_number,
-                        notification.slot_duration,
-                        notification.setup_duration
-                    );
-                    return {
-                        ...notification,
-                        performer_slot_time: slotTime
-                    };
-                }
-                return notification;
-            });
-
-            res.json(processedNotifications);
+            res.json(notifications);
         } catch (err) {
             logger.error('Error fetching notifications:', err);
             res.status(500).json({ error: 'Server error' });

@@ -24,7 +24,14 @@ const notificationQueries = {
                 CASE 
                     WHEN ls.user_id = n.user_id THEN true 
                     ELSE false 
-                END as is_performer
+                END as is_performer,
+                CASE
+                    WHEN ls.user_id = n.user_id THEN
+                        e.start_time + 
+                        (INTERVAL '1 minute' * (ls.slot_number - 1) * 
+                        (EXTRACT(EPOCH FROM e.slot_duration + e.setup_duration) / 60))
+                    ELSE NULL
+                END as performer_slot_time
             FROM notifications n
             LEFT JOIN events e ON n.event_id = e.id
             LEFT JOIN venues v ON e.venue_id = v.id
@@ -32,7 +39,6 @@ const notificationQueries = {
             LEFT JOIN lineup_slots ls ON (
                 e.id = ls.event_id 
                 AND ls.user_id = n.user_id
-                AND n.lineup_slot_id = ls.id
             )
             WHERE n.user_id = $1
             ${unreadOnly ? 'AND n.is_read = FALSE' : ''}
