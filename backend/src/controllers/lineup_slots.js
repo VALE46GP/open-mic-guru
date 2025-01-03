@@ -1,6 +1,6 @@
 const { lineupSlotsQueries } = require('../db/queries/lineup_slots');
 const { createNotification } = require('../utils/notifications');
-const { calculateSlotStartTime, formatTimeToLocalString } = require('../utils/timeCalculations');
+const { calculateSlotStartTime, formatTimeToLocalString, formatTimeToLocalStringWithComparison } = require('../utils/timeCalculations');
 const { logger } = require('../../tests/utils/logger');
 const db = require('../db');
 
@@ -263,7 +263,15 @@ const lineupSlotsController = {
                             await createNotification(
                                 oldSlot.user_id,
                                 'slot_time_change',
-                                `Your slot time has changed from ${formatTimeToLocalString(oldStartTime, venueUtcOffset)} to ${formatTimeToLocalString(newStartTime, venueUtcOffset)}`,
+                                `Your slot time has changed from ${formatTimeToLocalStringWithComparison(
+                                    oldStartTime.toISOString(),
+                                    newStartTime.toISOString(),
+                                    venueUtcOffset
+                                )} to ${formatTimeToLocalStringWithComparison(
+                                    newStartTime.toISOString(),
+                                    oldStartTime.toISOString(),
+                                    venueUtcOffset
+                                )}`,
                                 event.id,
                                 slot.slot_id
                             );

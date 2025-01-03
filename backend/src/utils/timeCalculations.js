@@ -160,6 +160,36 @@ function formatTimeComparison(date1, date2, utc_offset) {
     }
 }
 
+function formatTimeToLocalStringWithComparison(date, referenceDate, utc_offset) {
+    if (!date || !referenceDate) return 'Invalid DateTime';
+    
+    try {
+        if (typeof utc_offset !== 'number') {
+            console.warn('No UTC offset provided for time formatting, using -420 (PDT)');
+            utc_offset = -420;
+        }
+
+        const comparison = formatTimeComparison(referenceDate, date, utc_offset);
+        if (typeof comparison !== 'object') {
+            return 'Invalid DateTime';
+        }
+
+        // Convert to DateTime object with UTC timezone first
+        const dt = DateTime.fromISO(date, { zone: 'utc' })
+            .setZone(`UTC${utc_offset >= 0 ? '+' : ''}${utc_offset / 60}`);
+
+        if (!dt.isValid) {
+            console.error('Invalid date:', date);
+            return 'Invalid DateTime';
+        }
+
+        return dt.toFormat(comparison.format);
+    } catch (error) {
+        console.error('Error formatting time:', error, { date, referenceDate, utc_offset });
+        return 'Invalid DateTime';
+    }
+}
+
 module.exports = {
     convertToUTC,
     convertFromUTC,
@@ -168,5 +198,6 @@ module.exports = {
     formatTimeToLocalString,
     formatTimeInTimezone,
     formatDateInTimezone,
-    formatTimeComparison
+    formatTimeComparison,
+    formatTimeToLocalStringWithComparison
 };

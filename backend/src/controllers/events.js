@@ -1,6 +1,6 @@
 const AWS = require('aws-sdk');
 const { eventQueries } = require('../db/queries/events');
-const { calculateSlotStartTime, formatTimeToLocalString, formatTimeInTimezone, formatDateInTimezone, formatTimeComparison } = require('../utils/timeCalculations');
+const { calculateSlotStartTime, formatTimeToLocalString, formatTimeInTimezone, formatDateInTimezone, formatTimeComparison, formatTimeToLocalStringWithComparison } = require('../utils/timeCalculations');
 const { createNotification, NOTIFICATION_TYPES } = require('../utils/notifications');
 const { createApiResponse, createErrorResponse } = require('../utils/apiResponse');
 const { logger } = require('../../tests/utils/logger');
@@ -47,15 +47,17 @@ async function getUpdateMessage(originalEvent, updatedFields, venueUtcOffset) {
 
             if (originalDate.isValid && updatedDate.isValid) {
                 if (originalDate.toMillis() !== updatedDate.toMillis()) {
-                    const formatConfig = formatTimeComparison(originalDate.toISO(), updatedDate.toISO(), venueUtcOffset);
+                    const originalFormatted = formatTimeToLocalStringWithComparison(
+                        originalDate.toISO(),
+                        updatedDate.toISO(),
+                        venueUtcOffset
+                    );
                     
-                    const originalFormatted = DateTime.fromISO(originalDate.toISO())
-                        .setZone(`UTC${venueUtcOffset >= 0 ? '+' : ''}${venueUtcOffset / 60}`)
-                        .toFormat(formatConfig.format);
-                        
-                    const updatedFormatted = DateTime.fromISO(updatedDate.toISO())
-                        .setZone(`UTC${venueUtcOffset >= 0 ? '+' : ''}${venueUtcOffset / 60}`)
-                        .toFormat(formatConfig.format);
+                    const updatedFormatted = formatTimeToLocalStringWithComparison(
+                        updatedDate.toISO(),
+                        originalDate.toISO(),
+                        venueUtcOffset
+                    );
 
                     changes.push(`• The event start time has been changed from ${originalFormatted} to ${updatedFormatted}`);
                 }
