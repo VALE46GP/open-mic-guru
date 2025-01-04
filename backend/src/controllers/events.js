@@ -20,14 +20,6 @@ async function getUpdateMessage(originalEvent, updatedFields, venueUtcOffset) {
     const changes = [];
 
     try {
-        console.log('Debug - getUpdateMessage inputs:', {
-            originalStartTime: originalEvent.start_time,
-            updatedStartTime: updatedFields.start_time,
-            venueUtcOffset,
-            originalEvent,
-            updatedFields
-        });
-
         // Check for event cancellation/reinstatement first
         if (updatedFields.active !== undefined) {
             if (updatedFields.active === false) {
@@ -351,7 +343,6 @@ const eventsController = {
             // TODO: Improve notification message for when slot_time or setup_duration are changed.
             // Create Notifications
             if (start_time !== undefined || end_time !== undefined || slot_duration !== undefined || setup_duration !== undefined || active === false) {
-                console.log('Time-related changes detected, preparing notifications...');
                 try {
                     // Get venue info with UTC offset
                     let venueInfo;
@@ -360,9 +351,6 @@ const eventsController = {
                     } else {
                         venueInfo = await eventQueries.getVenueInfo(originalEvent.venue_id);
                     }
-
-                    console.log('Venue info:', venueInfo);
-                    console.log('Original Event:', originalEvent);
 
                     if (!venueInfo) {
                         console.error('Venue info not found');
@@ -373,7 +361,6 @@ const eventsController = {
 
                     // Get all users in the lineup
                     const lineupUsers = await eventQueries.getLineupUsers(eventId);
-                    console.log('Lineup users found:', lineupUsers);
 
                     // Get the update message
                     const updateMessage = await getUpdateMessage(originalEvent, {

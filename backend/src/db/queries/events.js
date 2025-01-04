@@ -63,7 +63,6 @@ const eventQueries = {
                      JOIN users u ON e.host_id = u.id
             WHERE e.id = $1
         `, [eventId]);
-        console.log('getEventById: ', result.rows[0])
         return result.rows[0];
     },
 
@@ -153,7 +152,6 @@ const eventQueries = {
             WHERE id = $1`,
             [eventId]
         );
-        console.log('Original event data:', result.rows[0]);
         return result.rows[0];
     },
 
