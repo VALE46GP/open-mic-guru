@@ -23,10 +23,7 @@ const tables = {
                                               phone VARCHAR(20),
                                               url TEXT,
                                               additional_info TEXT,
-                                              timezone VARCHAR(50) DEFAULT 'America/Los_Angeles',
-                                              CONSTRAINT chk_location CHECK (
-                                                      address IS NOT NULL OR (latitude IS NOT NULL AND longitude IS NOT NULL)
-                                                  )
+                                              utc_offset INTEGER NOT NULL DEFAULT -420
         );
     `,
     events: `

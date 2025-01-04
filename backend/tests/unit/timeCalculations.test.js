@@ -5,8 +5,8 @@ describe('Time Calculations', () => {
         it('should calculate correct start time for first slot', () => {
             const eventStart = new Date('2024-03-01T19:00:00Z');
             const slotNumber = 1;
-            const slotDuration = { minutes: 10 };
-            const setupDuration = { minutes: 5 };
+            const slotDuration = 600; // 10 minutes in seconds
+            const setupDuration = 300; // 5 minutes in seconds
 
             const result = calculateSlotStartTime(eventStart, slotNumber, slotDuration, setupDuration);
             expect(result).toEqual(eventStart);
@@ -15,8 +15,8 @@ describe('Time Calculations', () => {
         it('should calculate correct start time for later slots', () => {
             const eventStart = new Date('2024-03-01T19:00:00Z');
             const slotNumber = 3;
-            const slotDuration = { minutes: 10 };
-            const setupDuration = { minutes: 5 };
+            const slotDuration = 600; // 10 minutes in seconds
+            const setupDuration = 300; // 5 minutes in seconds
 
             const result = calculateSlotStartTime(eventStart, slotNumber, slotDuration, setupDuration);
             const expected = new Date('2024-03-01T19:30:00Z');

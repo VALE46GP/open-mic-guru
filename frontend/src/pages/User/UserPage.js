@@ -21,7 +21,6 @@ function UserPage() {
             try {
                 const response = await fetch(`/api/users/${userId}`);
                 const data = await response.json();
-                console.log('User data received:', data);
                 setUserData(data);
             } catch (error) {
                 console.error('Error fetching user data:', error);

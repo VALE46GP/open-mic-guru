@@ -1,4 +1,5 @@
 const db = require('../index');
+const { convertToUTC } = require('../../utils/timeCalculations');
 
 const eventQueries = {
     async getAllEvents() {
@@ -18,6 +19,7 @@ const eventQueries = {
                             v.address   AS venue_address,
                             v.latitude  AS venue_latitude,
                             v.longitude AS venue_longitude,
+                            v.utc_offset AS venue_utc_offset,
                             e.host_id,
                             u.name      AS host_name,
                             ls.user_id  AS performer_id,
@@ -43,7 +45,7 @@ const eventQueries = {
                    e.slot_duration,
                    e.setup_duration,
                    e.additional_info,
-                   e.types AS event_types,
+                   e.types     AS event_types,
                    e.image     AS event_image,
                    e.active,
                    e.is_signup_open,
@@ -52,6 +54,7 @@ const eventQueries = {
                    v.address   AS venue_address,
                    v.latitude  AS venue_latitude,
                    v.longitude AS venue_longitude,
+                   v.utc_offset AS venue_utc_offset,
                    u.id        AS host_id,
                    u.name      AS host_name,
                    u.image     AS host_image
@@ -94,6 +97,14 @@ const eventQueries = {
     },
 
     async createEvent(eventData) {
+        // First get venue utc_offset
+        const venueResult = await db.query(
+            'SELECT utc_offset FROM venues WHERE id = $1',
+            [eventData.venue_id]
+        );
+
+        const venue_utc_offset = venueResult.rows[0]?.utc_offset ?? -420;
+
         const result = await db.query(`
             INSERT INTO events (
                 venue_id, 
@@ -125,8 +136,20 @@ const eventQueries = {
     },
 
     async getOriginalEvent(eventId) {
-        const result = await db.query(
-            'SELECT name, venue_id, start_time, end_time, slot_duration, setup_duration, types, active FROM events WHERE id = $1',
+        const result = await db.query(`
+            SELECT 
+                name, 
+                venue_id, 
+                start_time,
+                end_time,
+                slot_duration,
+                setup_duration,
+                types,
+                active,
+                EXTRACT(EPOCH FROM slot_duration)::integer AS slot_duration_seconds,
+                EXTRACT(EPOCH FROM setup_duration)::integer AS setup_duration_seconds
+            FROM events 
+            WHERE id = $1`,
             [eventId]
         );
         return result.rows[0];
@@ -137,25 +160,12 @@ const eventQueries = {
         await db.query("SET timezone TO 'UTC'");
 
         const query = `
-            WITH updated AS (
             UPDATE events
-            SET start_time = $1::timestamptz,
-                end_time = $2::timestamptz,
-                name = $3,
-                venue_id = $4,
-                slot_duration = $5 * interval '1 second',
-                setup_duration = $6 * interval '1 second',
-                types = $7,
-                active = $8,
-                image = $9
-            WHERE id = $10
-                RETURNING *
-                )
-            SELECT * FROM updated;
-        `;
+            SET ${updates.join(', ')}
+            WHERE id = $${values.length}
+            RETURNING *`;
 
         const result = await db.query(query, values);
-
         return result.rows[0];
     },
 
@@ -163,6 +173,7 @@ const eventQueries = {
         const result = await db.query(`
             SELECT 
                 ls.user_id,
+                ls.id as lineup_slot_id,
                 ls.slot_number,
                 u.name as user_name
             FROM lineup_slots ls
@@ -189,7 +200,7 @@ const eventQueries = {
 
     async getVenueInfo(venueId) {
         const result = await db.query(`
-            SELECT v.id, v.name, v.latitude, v.longitude, v.timezone, v.address
+            SELECT v.id, v.name, v.utc_offset, v.latitude, v.longitude, v.address
             FROM venues v
             WHERE v.id = $1`,
             [venueId]

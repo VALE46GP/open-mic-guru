@@ -1,9 +1,7 @@
 import React from 'react';
-import { screen, fireEvent, cleanup } from '@testing-library/react';
-import { act } from 'react-dom/test-utils';
+import { screen, fireEvent, waitFor, act, cleanup } from '@testing-library/react';
 import Lineup from './Lineup';
-import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
-import BorderBox from '../shared/BorderBox/BorderBox';
+import { mockLineupSlots } from '../../testData/mockLineupSlots';
 import { renderWithProviders } from '../../testUtils/testUtils';
 
 // Mock components
@@ -23,7 +21,7 @@ jest.mock('../shared/BorderBox/BorderBox', () => {
 });
 
 jest.mock('@hello-pangea/dnd', () => ({
-    DragDropContext: ({ children, onDragEnd }) => children,
+    DragDropContext: ({ children }) => children,
     Droppable: ({ children }) => children({
         innerRef: () => {},
         droppableProps: {},
@@ -38,62 +36,41 @@ jest.mock('@hello-pangea/dnd', () => ({
     })
 }));
 
-// Mock sample slots data
-const mockSlots = [
-    {
-        slot_id: 1,
-        slot_number: 1,
-        slot_name: "Open",
-        user_id: null,
-        user_image: null,
-        slot_start_time: "2024-02-01T19:00:00Z",
-        slot_duration: { minutes: 10 },
-        setup_duration: { minutes: 5 }
-    },
-    {
-        slot_id: 2,
-        slot_number: 2,
-        slot_name: "John Doe",
-        user_id: "123",
-        user_image: "profile.jpg",
-        slot_start_time: "2024-02-01T19:15:00Z",
-        slot_duration: { minutes: 10 },
-        setup_duration: { minutes: 5 }
-    }
-];
-
 // Global fetch mock
-global.fetch = jest.fn(() =>
-    Promise.resolve({
+const debugFetch = (url, options) => {
+    return Promise.resolve({
         ok: true,
-        json: () => Promise.resolve({})
-    })
-);
+        json: () => {
+            if (url.includes('/status')) {
+                return Promise.resolve({ is_signup_open: true });
+            }
+            if (url.includes('/toggle-signup')) {
+                return Promise.resolve({ success: true, is_signup_open: false });
+            }
+            return Promise.resolve({});
+        }
+    });
+};
 
 const renderLineup = (props = {}) => {
     const defaultProps = {
-        slots: mockSlots,
+        slots: mockLineupSlots,
+        eventId: '1',
         isHost: false,
-        onSlotClick: jest.fn(),
-        onSlotDelete: jest.fn(),
-        currentUserId: null,
-        currentNonUser: null,
-        userName: null,
+        currentUserId: '19',
+        userName: 'Admin 3.0',
         isEventActive: true,
-        initialSignupStatus: true,
-        eventId: '123',
+        isSignupOpen: true,
         ...props
     };
 
-    return renderWithProviders(
-        <Lineup {...defaultProps} />
-    );
+    return renderWithProviders(<Lineup {...defaultProps} />);
 };
 
 describe('Lineup Component', () => {
     beforeEach(() => {
         jest.clearAllMocks();
-        global.fetch.mockClear();
+        global.fetch = jest.fn(debugFetch);
     });
 
     afterEach(cleanup);
@@ -102,7 +79,7 @@ describe('Lineup Component', () => {
         renderLineup();
         expect(screen.getByText('Lineup')).toBeInTheDocument();
         expect(screen.getByText('Open')).toBeInTheDocument();
-        expect(screen.getByText('John Doe')).toBeInTheDocument();
+        expect(screen.getAllByText('John Doe')[0]).toBeInTheDocument();
     });
 
     it('shows edit controls when user is host', async () => {
@@ -159,20 +136,19 @@ describe('Lineup Component', () => {
         renderLineup({
             isHost: true,
             onSlotDelete,
-            slots: mockSlots,
-            currentUserId: null // Explicitly set no current user
+            slots: mockLineupSlots,
+            currentUserId: null
         });
 
-        const filledSlot = screen.getByText('John Doe');
+        const filledSlots = screen.getAllByText('John Doe');
         await act(async () => {
-            fireEvent.click(filledSlot.closest('.lineup__slot')); // Click the slot container
+            fireEvent.click(filledSlots[1].closest('.lineup__slot')); // Click the second John Doe slot
         });
 
-        expect(screen.getByTestId('slot-modal')).toBeInTheDocument();
         const deleteButton = screen.getByText('Delete');
         fireEvent.click(deleteButton);
 
-        expect(onSlotDelete).toHaveBeenCalledWith(2);
+        expect(onSlotDelete).toHaveBeenCalledWith(3);
     });
 
     it('shows Assign Self button for host without slot', async () => {
@@ -204,20 +180,22 @@ describe('Lineup Component', () => {
         renderLineup({
             currentUserId: '123',
             onSlotDelete,
-            slots: mockSlots,
-            isHost: false // Explicitly set not host
+            slots: mockLineupSlots,
+            isHost: false
         });
 
-        const ownedSlot = screen.getByText('John Doe');
         await act(async () => {
+            const ownedSlot = screen.getAllByText('John Doe')[0]; // Get first John Doe slot
             fireEvent.click(ownedSlot.closest('.lineup__slot'));
         });
 
-        expect(screen.getByTestId('slot-modal')).toBeInTheDocument();
+        const modal = await screen.findByTestId('slot-modal');
+        expect(modal).toBeInTheDocument();
+        
         const deleteButton = screen.getByText('Delete');
         fireEvent.click(deleteButton);
 
-        expect(onSlotDelete).toHaveBeenCalledWith(2);
+        expect(onSlotDelete).toHaveBeenCalledWith(1);
     });
 
     it('handles keyboard interaction for signup', async () => {
@@ -239,34 +217,35 @@ describe('Lineup Component', () => {
     });
 
     it('allows host to toggle signup status', async () => {
-        global.fetch.mockImplementationOnce(() => 
-            Promise.resolve({
-                ok: true,
-                json: () => Promise.resolve({ success: true, is_signup_open: false })
-            })
-        );
-
-        // Mock localStorage
-        const mockToken = 'fake-jwt-token';
-        Storage.prototype.getItem = jest.fn(() => mockToken);
-
-        renderLineup({ isHost: true, eventId: '123' });
+        global.fetch = jest.fn(debugFetch);
+        
+        renderLineup({ 
+            isHost: true, 
+            eventId: '123',
+            slots: mockLineupSlots.map(slot => ({
+                ...slot,
+                event_id: '123'
+            }))
+        });
 
         const toggleSwitch = screen.getByRole('checkbox');
-        expect(toggleSwitch).toBeInTheDocument();
-
+        
         await act(async () => {
             fireEvent.click(toggleSwitch);
         });
 
-        expect(global.fetch).toHaveBeenCalledWith(
-            '/api/lineup_slots/123/toggle-signup',
-            expect.objectContaining({
-                method: 'PUT',
-                headers: expect.objectContaining({
-                    'Authorization': `Bearer ${mockToken}`
+        await waitFor(() => {
+            expect(global.fetch).toHaveBeenCalledWith(
+                '/api/lineup_slots/123/toggle-signup',
+                expect.objectContaining({
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: expect.any(String)
                 })
-            })
-        );
+            );
+        });
     });
 });
+

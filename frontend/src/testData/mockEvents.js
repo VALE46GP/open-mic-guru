@@ -45,7 +45,7 @@ export const mockVenueForCreate = {
             lng: () => -74.0060
         }
     },
-    timezone: 'America/Los_Angeles',
+    utc_offset: -420,
     latitude: 40.7128,
     longitude: -74.0060,
     address_components: [

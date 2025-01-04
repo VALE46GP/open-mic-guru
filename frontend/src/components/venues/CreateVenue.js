@@ -21,17 +21,12 @@ function CreateVenue() {
     }, []);
 
     const handleCreateVenue = async () => {
-        const timezone = await getTimezoneFromCoordinates(
-            selectedVenue.geometry.location.lat(),
-            selectedVenue.geometry.location.lng()
-        );
-
         const venueData = {
             name: selectedVenue.name,
             address: selectedVenue.address,
             latitude: selectedVenue.geometry.location.lat(),
             longitude: selectedVenue.geometry.location.lng(),
-            timezone
+            utc_offset: selectedVenue.utc_offset_minutes ?? -420
         };
 
         try {

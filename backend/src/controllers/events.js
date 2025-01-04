@@ -1,10 +1,11 @@
 const AWS = require('aws-sdk');
 const { eventQueries } = require('../db/queries/events');
-const { calculateSlotStartTime, formatTimeToLocalString, formatTimeInTimezone, formatDateInTimezone } = require('../utils/timeCalculations');
+const { calculateSlotStartTime, formatTimeToLocalString, formatTimeInTimezone, formatDateInTimezone, formatTimeComparison, formatTimeToLocalStringWithComparison } = require('../utils/timeCalculations');
 const { createNotification, NOTIFICATION_TYPES } = require('../utils/notifications');
 const { createApiResponse, createErrorResponse } = require('../utils/apiResponse');
 const { logger } = require('../../tests/utils/logger');
 const db = require('../db')
+const { DateTime } = require('luxon');
 
 // Configure AWS SDK
 AWS.config.update({
@@ -15,7 +16,7 @@ AWS.config.update({
 
 const s3 = new AWS.S3();
 
-async function getUpdateMessage(originalEvent, updatedFields, venueTimezone) {
+async function getUpdateMessage(originalEvent, updatedFields, venueUtcOffset) {
     const changes = [];
 
     try {
@@ -29,69 +30,66 @@ async function getUpdateMessage(originalEvent, updatedFields, venueTimezone) {
         }
 
         // Handle start time changes
-        if (updatedFields.start_time !== undefined && 
-            new Date(updatedFields.start_time).getTime() !== new Date(originalEvent.start_time).getTime()) {
-            const originalDate = new Date(originalEvent.start_time);
-            const updatedDate = new Date(updatedFields.start_time);
+        if (updatedFields.start_time !== undefined) {
+            const originalDate = originalEvent.start_time instanceof Date 
+                ? DateTime.fromJSDate(originalEvent.start_time)
+                : DateTime.fromISO(originalEvent.start_time);
 
-            const originalFormatted = formatTimeInTimezone(originalDate, venueTimezone);
-            const updatedFormatted = formatTimeInTimezone(updatedDate, venueTimezone);
+            const updatedDate = DateTime.fromISO(updatedFields.start_time);
 
-            const originalDateStr = formatDateInTimezone(originalDate, venueTimezone);
-            const updatedDateStr = formatDateInTimezone(updatedDate, venueTimezone);
+            if (originalDate.isValid && updatedDate.isValid) {
+                if (originalDate.toMillis() !== updatedDate.toMillis()) {
+                    const originalFormatted = formatTimeToLocalStringWithComparison(
+                        originalDate.toISO(),
+                        updatedDate.toISO(),
+                        venueUtcOffset
+                    );
+                    
+                    const updatedFormatted = formatTimeToLocalStringWithComparison(
+                        updatedDate.toISO(),
+                        originalDate.toISO(),
+                        venueUtcOffset
+                    );
 
-            if (originalDateStr !== updatedDateStr) {
-                changes.push(`Start time updated from ${originalFormatted} on ${originalDateStr} to ${updatedFormatted} on ${updatedDateStr}.`);
-            } else {
-                changes.push(`Start time updated from ${originalFormatted} to ${updatedFormatted}.`);
+                    changes.push(`• The event start time has been changed from ${originalFormatted} to ${updatedFormatted}`);
+                }
             }
         }
 
         // Handle slot duration changes
         if (updatedFields.slot_duration !== undefined) {
-            const originalMinutes = typeof originalEvent.slot_duration === 'object' 
-                ? originalEvent.slot_duration.minutes 
-                : Math.floor(originalEvent.slot_duration / 60);
-            
-            const updatedMinutes = typeof updatedFields.slot_duration === 'object'
-                ? updatedFields.slot_duration.minutes
+            const originalDuration = originalEvent.slot_duration.minutes;
+            const newDuration = typeof updatedFields.slot_duration === 'object' 
+                ? updatedFields.slot_duration.minutes 
                 : Math.floor(updatedFields.slot_duration / 60);
 
-            if (originalMinutes !== updatedMinutes) {
-                changes.push(`Slot duration changed from ${originalMinutes} minutes to ${updatedMinutes} minutes.`);
+            if (originalDuration !== newDuration) {
+                changes.push(`• Performance time slots have been changed from ${originalDuration} minutes to ${newDuration} minutes`);
             }
         }
 
         // Handle setup duration changes
         if (updatedFields.setup_duration !== undefined) {
-            const originalMinutes = typeof originalEvent.setup_duration === 'object'
-                ? originalEvent.setup_duration.minutes
-                : Math.floor(originalEvent.setup_duration / 60);
-            
-            const updatedMinutes = typeof updatedFields.setup_duration === 'object'
+            const originalSetup = originalEvent.setup_duration.minutes;
+            const newSetup = typeof updatedFields.setup_duration === 'object'
                 ? updatedFields.setup_duration.minutes
                 : Math.floor(updatedFields.setup_duration / 60);
 
-            if (originalMinutes !== updatedMinutes) {
-                changes.push(`Setup duration changed from ${originalMinutes} minutes to ${updatedMinutes} minutes.`);
+            if (originalSetup !== newSetup) {
+                changes.push(`• Setup time between performances has been changed from ${originalSetup} minutes to ${newSetup} minutes`);
             }
         }
 
-        // Handle venue changes - only if venue_id actually changed
-        if (updatedFields.venue_id !== undefined && 
-            updatedFields.venue_id !== originalEvent.venue_id && 
-            updatedFields.venue_name) {
-            changes.push(`Location changed to ${updatedFields.venue_name}.`);
+        // Only add venue change message if venue actually changed
+        if (updatedFields.venue_id && updatedFields.venue_name && updatedFields.venue_id !== originalEvent.venue_id) {
+            changes.push(`• Location changed to ${updatedFields.venue_name}`);
         }
 
-        if (changes.length === 0) {
-            return 'Event details have been updated.';
-        }
-
-        return changes.join('. ');
+        console.log('Debug - Final changes array:', changes);
+        return changes.length > 0 ? changes.join('\n') + '\n\nYour new performance time is ' : '';
     } catch (error) {
-        console.error('Error formatting update message:', error);
-        return 'Event details have been updated.';
+        console.error('Error generating update message:', error);
+        return 'Event details have been updated';
     }
 }
 
@@ -160,6 +158,7 @@ const eventsController = {
                     address: eventData.venue_address,
                     latitude: eventData.venue_latitude,
                     longitude: eventData.venue_longitude,
+                    utc_offset: eventData.venue_utc_offset
                 },
                 host: {
                     id: eventData.host_id,
@@ -345,14 +344,20 @@ const eventsController = {
             // Create Notifications
             if (start_time !== undefined || end_time !== undefined || slot_duration !== undefined || setup_duration !== undefined || active === false) {
                 try {
-                    // Only get venue info if venue has changed
+                    // Get venue info with UTC offset
                     let venueInfo;
                     if (venue_id && venue_id !== originalEvent.venue_id) {
                         venueInfo = await eventQueries.getVenueInfo(venue_id);
                     } else {
                         venueInfo = await eventQueries.getVenueInfo(originalEvent.venue_id);
                     }
-                    const timezone = venueInfo?.timezone || 'UTC';
+
+                    if (!venueInfo) {
+                        console.error('Venue info not found');
+                        return res.status(404).json(createErrorResponse('Venue not found'));
+                    }
+
+                    const venueUtcOffset = venueInfo.utc_offset ?? -420; // Default to PDT if not found
 
                     // Get all users in the lineup
                     const lineupUsers = await eventQueries.getLineupUsers(eventId);
@@ -364,17 +369,15 @@ const eventsController = {
                         slot_duration,
                         setup_duration,
                         active,
-                        ...(venueInfo && venue_id !== originalEvent.venue_id ? {
+                        ...(venue_id !== originalEvent.venue_id && venueInfo ? {
                             venue_id,
                             venue_name: venueInfo.name
                         } : {})
-                    }, timezone);
+                    }, venueUtcOffset);
 
                     // Create notifications for each user
                     for (const performer of lineupUsers) {
                         try {
-                            let message = updateMessage;
-                            
                             // Only add performance time if event wasn't cancelled
                             if (active !== false) {
                                 const slotTime = calculateSlotStartTime(
@@ -383,19 +386,29 @@ const eventsController = {
                                     slot_duration || originalEvent.slot_duration,
                                     setup_duration || originalEvent.setup_duration
                                 );
-                                message = `${updateMessage} Your new performance time is ${formatTimeToLocalString(slotTime, timezone)}.`;
-                            }
+                                
+                                // First get the base update message
+                                let message = updateMessage;
+                                
+                                // Then append the performer's specific time if there is a base message
+                                if (message) {
+                                    message += formatTimeToLocalString(slotTime, venueUtcOffset) + '.';
+                                } else {
+                                    // If no base message (shouldn't happen), just show the time update
+                                    message = `Your new performance time is ${formatTimeToLocalString(slotTime, venueUtcOffset)}.`;
+                                }
 
-                            await createNotification(
-                                performer.user_id,
-                                active === false || (active === true && !originalEvent.active) 
-                                    ? NOTIFICATION_TYPES.EVENT_STATUS 
-                                    : NOTIFICATION_TYPES.EVENT_UPDATE,
-                                message,
-                                eventId,
-                                null,
-                                req
-                            );
+                                await createNotification(
+                                    performer.user_id,
+                                    active === false || (active === true && !originalEvent.active) 
+                                        ? NOTIFICATION_TYPES.EVENT_STATUS 
+                                        : NOTIFICATION_TYPES.EVENT_UPDATE,
+                                    message,
+                                    eventId,
+                                    performer.lineup_slot_id,
+                                    req
+                                );
+                            }
                         } catch (err) {
                             console.error('Error creating notification for performer:', performer.user_id, err);
                         }
@@ -531,4 +544,5 @@ const eventsController = {
     }
 };
 
+module.exports = eventsController;
 module.exports = eventsController;

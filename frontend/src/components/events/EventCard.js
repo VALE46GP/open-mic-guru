@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { formatEventTimeInVenueTimezone } from '../../utils/timeCalculations';
+import { formatEventTimeInVenueTimezone, formatTimeComparison } from '../../utils/timeCalculations';
 import BorderBox from '../shared/BorderBox/BorderBox';
 import { Link } from 'react-router-dom';
 import './EventCard.sass';
@@ -10,30 +10,26 @@ function EventCard({ event, slotTime }) {
 
     useEffect(() => {
         async function formatTimes() {
-            if (event?.start_time) {
-                const venue = {
-                    latitude: event.venue_latitude,
-                    longitude: event.venue_longitude
-                };
-                const formatted = await formatEventTimeInVenueTimezone(
-                    event.start_time,
-                    venue,
-                    'MMM d, h:mm aa'
+            try {
+                const formattedStartTime = formatEventTimeInVenueTimezone(
+                    event.start_time, 
+                    { utc_offset: event.venue_utc_offset ?? -420 }
                 );
-                setFormattedEventTime(formatted);
-            }
+                setFormattedEventTime(formattedStartTime);
 
-            if (slotTime) {
-                const venue = {
-                    latitude: event.venue_latitude,
-                    longitude: event.venue_longitude
-                };
-                const formatted = await formatEventTimeInVenueTimezone(
-                    slotTime,
-                    venue,
-                    'h:mm aa'
-                );
-                setFormattedSlotTime(formatted);
+                if (slotTime) {
+                    const comparison = formatTimeComparison(event.start_time, slotTime, event.venue_utc_offset ?? -420);
+                    const format = typeof comparison === 'object' ? comparison.format : 'MMM d, yyyy h:mm a';
+                    
+                    const formattedSlotTime = formatEventTimeInVenueTimezone(
+                        slotTime,
+                        { utc_offset: event.venue_utc_offset ?? -420 },
+                        format
+                    );
+                    setFormattedSlotTime(formattedSlotTime);
+                }
+            } catch (error) {
+                console.error('Error formatting times:', error);
             }
         }
 
@@ -87,9 +83,12 @@ function EventCard({ event, slotTime }) {
                                 Hosted by: {event.host_name}
                             </span>
                             {slotTime && (
-                                <span className="event-card__slot-time">
-                                    {formattedSlotTime}
-                                </span>
+                                <div>
+                                    <span className="event-card__meta-item">Slot Time: </span>
+                                    <span className="event-card__slot-time">
+                                        {formattedSlotTime}
+                                    </span>
+                                </div>
                             )}
                         </div>
                     </div>

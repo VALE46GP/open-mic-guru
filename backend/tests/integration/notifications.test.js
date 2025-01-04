@@ -41,7 +41,8 @@ describe('Notifications Controller', () => {
                     created_at: new Date(),
                     event_name: 'Test Event',
                     event_start_time: new Date(),
-                    slot_number: 1
+                    slot_number: 1,
+                    venue_utc_offset: -420
                 }
             ];
 

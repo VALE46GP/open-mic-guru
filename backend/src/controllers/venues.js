@@ -4,7 +4,7 @@ const { createApiResponse, createErrorResponse } = require('../utils/apiResponse
 
 const venuesController = {
     async checkOrCreateVenue(req, res) {
-        const { name, address, latitude, longitude, timezone } = req.body;
+        const { name, address, latitude, longitude, utc_offset } = req.body;
 
         try {
             let venue = await venueQueries.getVenueByNameAndAddress(name, address);
@@ -17,9 +17,9 @@ const venuesController = {
                     address,
                     latitude,
                     longitude,
-                    timezone: timezone || 'America/Los_Angeles' // Default timezone if none provided
+                    utc_offset: utc_offset || -420 // Default to PDT if not provided
                 });
-                res.status(201).json({ venueId: newVenue.id });
+                res.json({ venueId: newVenue.id });
             }
         } catch (err) {
             logger.error('Venue creation error:', err);

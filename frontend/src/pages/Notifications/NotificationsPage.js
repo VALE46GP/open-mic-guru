@@ -6,22 +6,20 @@ import { formatEventTimeInVenueTimezone } from '../../utils/timeCalculations';
 import { BsChevronDown, BsChevronRight } from 'react-icons/bs';
 import { Modal, Button } from 'react-bootstrap';
 import { FaTrash } from 'react-icons/fa';
+import { DateTime } from 'luxon';
 
 function NotificationMessage({ notification, venue, isRead, isLocallyViewed }) {
     const [formattedTime, setFormattedTime] = useState('');
 
     useEffect(() => {
-        async function formatTime() {
-            if (notification.created_at) {
-                const formatted = formatEventTimeInVenueTimezone(
-                    notification.created_at,
-                    { timezone: venue?.timezone }
-                );
-                setFormattedTime(formatted);
-            }
+        if (notification.created_at) {
+            // Show created_at in user's local timezone
+            const localTime = DateTime.fromISO(notification.created_at, { zone: 'utc' })
+                .toLocal()
+                .toFormat('MMM d, yyyy h:mm a');
+            setFormattedTime(localTime);
         }
-        formatTime();
-    }, [notification, venue]);
+    }, [notification]);
 
     return (
         <div
@@ -252,7 +250,7 @@ function NotificationsPage() {
                                         <div className="notifications__event-card">
                                             <EventCard 
                                                 event={data.event} 
-                                                slotTime={data.event.is_performer ? data.event.performer_slot_time : null}
+                                                slotTime={data.notifications[0]?.performer_slot_time}
                                             />
                                         </div>
                                     </div>

@@ -1,29 +1,70 @@
-function getTimezoneFromOffset(offsetMinutes) {
-    // Get current date to handle DST correctly
-    const date = new Date();
+// frontend/src/utils/timeCalculations.js
 
-    // Convert offset to hours
-    const offsetHours = offsetMinutes / 60;
+import { DateTime } from 'luxon';
 
-    // Common timezone mappings for US/Pacific coast
-    // We'll use America/Los_Angeles as default since that's what we were using before
-    if (offsetHours === -7 || offsetHours === -8) {
-        return 'America/Los_Angeles';
+export function convertToUTC(dateTimeStr, utc_offset) {
+    if (typeof utc_offset !== 'number') {
+        console.warn('No UTC offset provided for conversion to UTC, using local timezone');
+        return DateTime.fromISO(dateTimeStr).toUTC().toISO();
+    }
+    return DateTime.fromISO(dateTimeStr, { zone: `UTC${utc_offset >= 0 ? '+' : ''}${utc_offset / 60}` }).toUTC().toISO();
+}
+
+export function convertFromUTC(utcStr, utc_offset) {
+    if (typeof utc_offset !== 'number') {
+        console.warn('No UTC offset provided for conversion from UTC, using local timezone');
+        return DateTime.fromISO(utcStr).toLocal().toISO();
+    }
+    return DateTime.fromISO(utcStr).setZone(`UTC${utc_offset >= 0 ? '+' : ''}${utc_offset / 60}`).toISO();
+}
+
+export async function getTimezoneOffsetFromCoordinates(latitude, longitude) {
+    try {
+        const timestamp = Math.floor(Date.now() / 1000);
+        const response = await fetch(
+            `https://maps.googleapis.com/maps/api/timezone/json?location=${latitude},${longitude}&timestamp=${timestamp}&key=${process.env.REACT_APP_GOOGLE_MAPS_API_KEY}`
+        );
+        const data = await response.json();
+        
+        if (data.status === 'OK') {
+            // Convert total offset (rawOffset + dstOffset) to minutes
+            const totalOffset = (data.rawOffset + data.dstOffset) / 60;
+            return totalOffset;
+        }
+        
+        console.warn('Timezone API error, falling back to default:', data);
+        return -420; // Default to PDT (-7 hours)
+    } catch (error) {
+        console.error('Error fetching timezone:', error);
+        return -420;
+    }
+}
+
+export function formatEventTimeInVenueTimezone(dateString, venue, format = 'MMM d, yyyy h:mm a') {
+    if (typeof venue?.utc_offset !== 'number') {
+        console.warn('No venue UTC offset provided, falling back to local timezone');
+        const dt = DateTime.fromISO(dateString, { zone: 'utc' });
+        return dt.toLocaleString(DateTime.DATETIME_MED);
     }
 
-    // For other offsets, we'll use a UTC timezone
-    // This is a simplification but works for our current needs
-    const absOffset = Math.abs(offsetHours);
-    const offsetStr =
-        (offsetHours <= 0 ? '+' : '-') + // Note: The sign is inverted for UTC timezone names
-        String(Math.floor(absOffset)).padStart(2, '0') +
-        ':' +
-        String((absOffset % 1) * 60).padStart(2, '0');
-
-    return `Etc/GMT${offsetStr}`;
+    try {
+        const dt = DateTime.fromISO(dateString, { zone: 'utc' });
+        const converted = dt.setZone(`UTC${venue.utc_offset >= 0 ? '+' : ''}${venue.utc_offset / 60}`);
+        
+        if (!converted.isValid) {
+            console.error('Invalid UTC offset:', venue.utc_offset);
+            return dt.toLocaleString(DateTime.DATETIME_MED);
+        }
+        
+        return converted.toFormat(format);
+    } catch (error) {
+        console.error('Error formatting time:', error);
+        return 'Invalid DateTime';
+    }
 }
-function calculateSlotStartTime(eventStartTime, slotNumber, slotDuration, setupDuration) {
-    const startTime = new Date(eventStartTime);
+
+export function calculateSlotStartTime(eventStartTime, slotNumber, slotDuration, setupDuration) {
+    const startTime = DateTime.fromISO(eventStartTime);
 
     const slotDurationMinutes = typeof slotDuration === 'object'
         ? slotDuration.minutes
@@ -36,56 +77,85 @@ function calculateSlotStartTime(eventStartTime, slotNumber, slotDuration, setupD
     const totalMinutesPerSlot = slotDurationMinutes + setupDurationMinutes;
     const slotOffsetMinutes = (slotNumber - 1) * totalMinutesPerSlot;
 
-    // Times from backend are in UTC, keep calculations in UTC
-    return new Date(startTime.getTime() + slotOffsetMinutes * 60000);
+    return startTime.plus({ minutes: slotOffsetMinutes }).toJSDate();
 }
 
-function formatEventTimeInVenueTimezone(utcTimeStr, venue) {
-    if (!venue?.timezone) {
-        return new Date(utcTimeStr).toLocaleString('en-US', {
-            month: 'short',
-            day: 'numeric',
+export function formatTimeInTimezone(date, utc_offset) {
+    if (typeof utc_offset !== 'number') {
+        console.warn('No UTC offset provided for time formatting, using local timezone');
+        return DateTime.fromISO(date).toLocaleString(DateTime.TIME_SIMPLE);
+    }
+
+    return DateTime.fromISO(date)
+        .setZone(`UTC${utc_offset >= 0 ? '+' : ''}${utc_offset / 60}`)
+        .toLocaleString({
             hour: 'numeric',
             minute: '2-digit',
             hour12: true
+        })
+        .replace(':00', '');
+}
+
+export function formatDateInTimezone(date, utc_offset) {
+    if (typeof utc_offset !== 'number') {
+        console.warn('No UTC offset provided for date formatting, using local timezone');
+        return DateTime.fromISO(date).toLocaleString({ month: 'short', day: 'numeric' });
+    }
+
+    return DateTime.fromISO(date)
+        .setZone(`UTC${utc_offset >= 0 ? '+' : ''}${utc_offset / 60}`)
+        .toLocaleString({
+            month: 'short',
+            day: 'numeric'
         });
-    }
-
-    const utcDate = new Date(utcTimeStr);
-    return utcDate.toLocaleString('en-US', {
-        timeZone: venue.timezone,
-        month: 'short',
-        day: 'numeric',
-        hour: 'numeric',
-        minute: utcDate.getUTCMinutes() === 0 ? undefined : '2-digit',
-        hour12: true
-    }).replace(':00', '');
 }
 
-function convertToUTC(localTime, timezone) {
-    if (!timezone) {
-        console.warn('No timezone provided, using America/Los_Angeles as default');
-        timezone = 'America/Los_Angeles';
+export function formatTimeToLocalString(date, utc_offset) {
+    if (typeof utc_offset !== 'number') {
+        console.warn('No UTC offset provided for time formatting, using local timezone');
+        return DateTime.fromISO(date).toLocaleString(DateTime.DATETIME_MED);
     }
 
-    // Parse the local time string
-    const [datePart, timePart] = localTime.split('T');
-    const [year, month, day] = datePart.split('-').map(Number);
-    const [hours, minutes] = timePart.split(':').map(Number);
-
-    // Create a timestamp that represents the local time in the venue's timezone
-    const localDate = new Date(Date.UTC(year, month - 1, day, hours, minutes));
-
-    // Add the timezone offset (8 hours for PST)
-    const offset = timezone === 'America/Los_Angeles' ? 8 : 0;
-    const utcTime = new Date(localDate.getTime() + (offset * 60 * 60 * 1000));
-
-    return utcTime.toISOString();
+    const dt = DateTime.fromISO(date).setZone(`UTC${utc_offset >= 0 ? '+' : ''}${utc_offset / 60}`);
+    return `${dt.toFormat('MMM d')}, ${dt.toFormat('h:mm a')}`;
 }
 
-export {
-    getTimezoneFromOffset,
-    calculateSlotStartTime,
-    formatEventTimeInVenueTimezone,
-    convertToUTC
-};
+export function formatTimeComparison(date1, date2, utc_offset) {
+    if (!date1 || !date2) return 'Invalid DateTime';
+    
+    try {
+        const dt1 = DateTime.fromISO(date1, { zone: 'utc' })
+            .setZone(`UTC${utc_offset >= 0 ? '+' : ''}${utc_offset / 60}`);
+        const dt2 = DateTime.fromISO(date2, { zone: 'utc' })
+            .setZone(`UTC${utc_offset >= 0 ? '+' : ''}${utc_offset / 60}`);
+
+        if (!dt1.isValid || !dt2.isValid) {
+            return 'Invalid DateTime';
+        }
+
+        // Compare years
+        if (dt1.year !== dt2.year) {
+            return {
+                format: 'MMM d, yyyy h:mm a',
+                showFullDate: true
+            };
+        }
+
+        // Compare months and days
+        if (dt1.month !== dt2.month || dt1.day !== dt2.day) {
+            return {
+                format: 'MMM d h:mm a',
+                showFullDate: true
+            };
+        }
+
+        // If only time is different
+        return {
+            format: 'h:mm a',
+            showFullDate: false
+        };
+    } catch (error) {
+        console.error('Error comparing dates:', error);
+        return 'Invalid DateTime';
+    }
+}

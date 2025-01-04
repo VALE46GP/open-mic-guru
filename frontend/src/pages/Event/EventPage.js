@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { formatEventTimeInVenueTimezone, calculateSlotStartTime } from '../../utils/timeCalculations';
+import { formatEventTimeInVenueTimezone, calculateSlotStartTime, formatTimeComparison } from '../../utils/timeCalculations';
 import LocationMap from '../../components/shared/LocationMap';
 import BorderBox from '../../components/shared/BorderBox/BorderBox';
 import './EventPage.sass';
@@ -130,8 +130,16 @@ function EventPage() {
         async function updateFormattedTimes() {
             if (!eventDetails?.event || !eventDetails?.venue) return;
             
+            console.log('Event times:', {
+                start: eventDetails.event.start_time,
+                end: eventDetails.event.end_time,
+                venue: eventDetails.venue
+            });
+            
             const start = await formatEventTime(eventDetails.event.start_time);
             const end = await formatEventTime(eventDetails.event.end_time);
+            
+            console.log('Formatted times:', { start, end });
             
             setFormattedStartTime(start);
             setFormattedEndTime(end);
@@ -241,10 +249,25 @@ function EventPage() {
         if (!eventDetails?.venue) return '';
         
         const venue = {
-            timezone: eventDetails.venue.timezone
+            latitude: eventDetails.venue.latitude,
+            longitude: eventDetails.venue.longitude,
+            utc_offset: eventDetails.venue.utc_offset
         };
         
-        return formatEventTimeInVenueTimezone(dateString, venue);
+        // If we're formatting the end time, compare it with start time
+        if (dateString === eventDetails.event.end_time) {
+            const comparison = formatTimeComparison(
+                eventDetails.event.start_time,
+                dateString,
+                venue.utc_offset
+            );
+            const format = typeof comparison === 'object' ? comparison.format : 'MMM d, yyyy h:mm a';
+            
+            return formatEventTimeInVenueTimezone(dateString, venue, format);
+        }
+        
+        // For start time, always show full date
+        return formatEventTimeInVenueTimezone(dateString, venue, 'MMM d, yyyy h:mm a');
     };
 
     // const toggleDeleteConfirmModal = () => {

@@ -1,25 +1,24 @@
 import React from 'react';
-import { render, screen } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import App from './App';
 import '@testing-library/jest-dom';
 
+// Properly mock console methods
+const originalConsole = { ...console };
+
 beforeEach(() => {
-    jest.spyOn(console, 'log').mockImplementation((message) => {
-        if (message.includes('Loading Google Maps API')) {
-            return;
-        }
-        console.log(message);
+    console.log = jest.fn((message) => {
+        if (message?.includes('Loading Google Maps API')) return;
+        originalConsole.log(message);
     });
 
-    jest.spyOn(console, 'error').mockImplementation((message) => {
+    console.error = jest.fn((message) => {
         if (
-            message.includes('Error fetching events') ||
-            message.includes('Error fetching notifications')
-        ) {
-            return;
-        }
-        console.error(message);
+            message?.includes('Error fetching events') ||
+            message?.includes('Error fetching notifications')
+        ) return;
+        originalConsole.error(message);
     });
 });
 
@@ -34,14 +33,18 @@ beforeAll(() => {
             return Promise.resolve({
                 ok: true,
                 json: () =>
-                    Promise.resolve([
-                        {
-                            event_id: 1,
-                            event_name: 'Event 1',
-                            venue_name: 'Venue 1',
-                            start_time: new Date().toISOString(),
+                    Promise.resolve({
+                        data: {
+                            events: [
+                                {
+                                    event_id: 1,
+                                    event_name: 'Event 1',
+                                    venue_name: 'Venue 1',
+                                    start_time: new Date().toISOString(),
+                                },
+                            ],
                         },
-                    ]),
+                    }),
             });
         }
 
@@ -68,59 +71,44 @@ afterAll(() => {
     global.fetch.mockClear();
 });
 
-describe('App Component', () => {
-    it('renders the app container', () => {
-        render(
-            <MemoryRouter>
-                <App />
-            </MemoryRouter>
-        );
+const renderWithRouter = async (initialEntry = '/') => {
+    const utils = render(
+        <MemoryRouter initialEntries={[initialEntry]}>
+            <App />
+        </MemoryRouter>
+    );
+    await waitFor(() => screen.getByTestId('app-container'));
+    return utils;
+};
 
+describe('App Component', () => {
+    it('renders the app container', async () => {
+        await renderWithRouter();
         const appContainer = screen.getByTestId('app-container');
         expect(appContainer).toBeInTheDocument();
     });
 
-    it('renders the navigation component', () => {
-        render(
-            <MemoryRouter>
-                <App />
-            </MemoryRouter>
-        );
-
+    it('renders the navigation component', async () => {
+        await renderWithRouter();
         const navElement = screen.getByRole('navigation');
         expect(navElement).toBeInTheDocument();
     });
 
-    it('renders the EventsPage by default ("/" route)', () => {
-        render(
-            <MemoryRouter initialEntries={['/']}>
-                <App />
-            </MemoryRouter>
-        );
-
-        const eventsTitle = screen.getByRole('heading', { name: /upcoming events/i });
+    it('renders the EventsPage by default ("/" route)', async () => {
+        await renderWithRouter('/');
+        const eventsTitle = await screen.findByRole('heading', { name: /upcoming events/i });
         expect(eventsTitle).toBeInTheDocument();
     });
 
-    it('renders the LoginPage on "/login" route', () => {
-        render(
-            <MemoryRouter initialEntries={['/login']}>
-                <App />
-            </MemoryRouter>
-        );
-
-        const loginHeading = screen.getByRole('heading', { name: /login existing user/i });
+    it('renders the LoginPage on "/login" route', async () => {
+        await renderWithRouter('/login');
+        const loginHeading = await screen.findByRole('heading', { name: /login existing user/i });
         expect(loginHeading).toBeInTheDocument();
     });
 
-    it('renders a Not Found page for an unknown route', () => {
-        render(
-            <MemoryRouter initialEntries={['/unknown-route']}>
-                <App />
-            </MemoryRouter>
-        );
-
-        const notFoundHeading = screen.getByRole('heading', { name: /page not found/i });
+    it('renders a Not Found page for an unknown route', async () => {
+        await renderWithRouter('/unknown-route');
+        const notFoundHeading = await screen.findByRole('heading', { name: /page not found/i });
         expect(notFoundHeading).toBeInTheDocument();
     });
 });
