@@ -20,52 +20,47 @@ jest.mock('../shared/VenueAutocomplete', () => ({ onPlaceSelected }) => (
     </button>
 ));
 
-const mockAuthFetch = jest.fn();
-
-jest.mock('../../hooks/useAuth', () => ({
-    useAuth: () => ({
-        getToken: () => 'mock-token',
-        getUserId: () => '1',
-        authenticatedFetch: (...args) => mockAuthFetch(...args)
-    })
-}));
-
 describe('CreateEvent', () => {
     beforeEach(() => {
         jest.useFakeTimers();
-        mockAuthFetch.mockImplementation(() => Promise.resolve({
-            ok: true,
-            json: () => Promise.resolve({ id: 1 })
-        }));
-        global.fetch = jest.fn(() => Promise.resolve({
-            ok: true,
-            json: () => Promise.resolve({ venueId: 1 })
-        }));
+        global.fetch = jest.fn((url, options) => {
+            if (url.includes('/venues/checkOrCreate')) {
+                return Promise.resolve({
+                    ok: true,
+                    json: () => Promise.resolve({ venueId: 1 })
+                });
+            }
+            if (url.includes('/events')) {
+                return Promise.resolve({
+                    ok: true,
+                    json: () => Promise.resolve({ id: 1 })
+                });
+            }
+            return Promise.reject(new Error('Unhandled request'));
+        });
         mockNavigate.mockClear();
-        mockAuthFetch.mockClear();
     });
 
     afterEach(() => {
-        jest.runOnlyPendingTimers();
         jest.useRealTimers();
+        jest.clearAllMocks();
     });
 
     it('creates event successfully', async () => {
-        await act(async () => {
-            render(
-                <MemoryRouter>
-                    <AuthProvider>
-                        <CreateEvent />
-                    </AuthProvider>
-                </MemoryRouter>
-            );
-        });
+        render(
+            <MemoryRouter>
+                <AuthProvider>
+                    <CreateEvent />
+                </AuthProvider>
+            </MemoryRouter>
+        );
 
+        // Select venue
         await act(async () => {
             fireEvent.click(screen.getByTestId('mock-venue-select'));
-            await jest.runAllTimers();
         });
 
+        // Fill form fields
         await act(async () => {
             fireEvent.change(screen.getByLabelText(/event name/i), {
                 target: { value: 'Test Event' }
@@ -76,16 +71,35 @@ describe('CreateEvent', () => {
             fireEvent.change(screen.getByLabelText(/end time/i), {
                 target: { value: '2024-12-25T21:00' }
             });
+            fireEvent.change(screen.getByLabelText(/slot duration/i), {
+                target: { value: '10' }
+            });
+            fireEvent.change(screen.getByLabelText(/setup duration/i), {
+                target: { value: '5' }
+            });
         });
 
+        // Select event type
+        const musicCheckbox = screen.getByLabelText(/music/i);
+        await act(async () => {
+            fireEvent.click(musicCheckbox);
+        });
+
+        // Submit form
         await act(async () => {
             fireEvent.click(screen.getByText(/submit/i));
-            await Promise.resolve();
-            await jest.runAllTimers();
         });
 
         await waitFor(() => {
-            expect(mockAuthFetch).toHaveBeenCalled();
+            expect(global.fetch).toHaveBeenCalledWith(
+                expect.stringContaining('/events'),
+                expect.objectContaining({
+                    method: 'POST',
+                    headers: expect.objectContaining({
+                        'Content-Type': 'application/json'
+                    })
+                })
+            );
             expect(mockNavigate).toHaveBeenCalledWith('/events/1');
         });
     });

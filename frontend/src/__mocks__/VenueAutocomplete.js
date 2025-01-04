@@ -1,11 +1,38 @@
 import React from 'react';
+import { mockPlaceData } from '../testData/mockVenues';
 
-const VenueAutocomplete = ({ onPlaceSelected }) => (
-    <input
-        data-testid="mock-venue-autocomplete"
-        placeholder="Search venue"
-        onChange={() => onPlaceSelected({ lat: 40.7128, lng: -74.0060 })}
-    />
-);
+const VenueAutocomplete = ({ 
+    onPlaceSelected, 
+    initialValue = '', 
+    placeholder = 'Search venue',
+    onClear 
+}) => {
+    const handleChange = (e) => {
+        onPlaceSelected(mockPlaceData);
+    };
+
+    const handleClear = () => {
+        if (onClear) onClear();
+    };
+
+    return (
+        <div>
+            <input
+                data-testid="mock-venue-autocomplete"
+                placeholder={placeholder}
+                defaultValue={initialValue}
+                onChange={handleChange}
+            />
+            {initialValue && (
+                <button
+                    aria-label="Clear location"
+                    onClick={handleClear}
+                >
+                    Clear
+                </button>
+            )}
+        </div>
+    );
+};
 
 export default VenueAutocomplete;

@@ -130,7 +130,8 @@ function CreateEvent() {
                 address: formattedAddress,
                 latitude,
                 longitude,
-                utc_offset: place.utc_offset,
+                // Use utc_offset_minutes if available, otherwise default to -420 (PDT)
+                utc_offset: place.utc_offset_minutes !== undefined ? place.utc_offset_minutes : -420,
                 geometry: {
                     location: {
                         lat: () => latitude,
