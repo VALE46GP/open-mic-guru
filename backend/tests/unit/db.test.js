@@ -17,15 +17,20 @@ describe('Database Connection', () => {
     it('should have correct database configuration', () => {
         const { user, host, database, port } = pool.options;
         expect({ user, host, database, port }).toEqual({
-            user: 'postgres',
-            host: 'localhost',
-            database: 'open_mic_guru_test',
-            port: '5432'
+            user: process.env.POSTGRES_USER || 'postgres',
+            host: process.env.POSTGRES_HOST || 'localhost',
+            database: process.env.POSTGRES_TEST_DB || 'open_mic_guru_test',
+            port: process.env.POSTGRES_PORT || '5432'
         });
     });
 
     it('should connect to test database', async () => {
-        const result = await pool.query('SELECT NOW()');
-        expect(result.rows).toBeDefined();
+        const client = await pool.connect();
+        try {
+            const result = await client.query('SELECT NOW()');
+            expect(result.rows).toBeDefined();
+        } finally {
+            await client.release();
+        }
     });
 });

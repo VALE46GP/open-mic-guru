@@ -94,9 +94,11 @@ function UserPage() {
                     </div>
                     <div className="user-page__user-info">
                         <h1>{userData.user.name}</h1>
-                        <div className="user-page__bio-section">
-                            <p>{userData.user.bio || "This user hasn't written a bio yet."}</p>
-                        </div>
+                        {userData.user.bio && (
+                            <div className="user-page__bio-section">
+                                <p>{userData.user.bio || "This user hasn't written a bio yet."}</p>
+                            </div>
+                        )}
                     </div>
                 </div>
                 {isOwnProfile && (
