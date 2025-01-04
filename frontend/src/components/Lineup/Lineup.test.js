@@ -38,16 +38,13 @@ jest.mock('@hello-pangea/dnd', () => ({
 
 // Global fetch mock
 const debugFetch = (url, options) => {
-    console.log('Fetch called with:', { url, options });
     return Promise.resolve({
         ok: true,
         json: () => {
             if (url.includes('/status')) {
-                console.log('Returning status response');
                 return Promise.resolve({ is_signup_open: true });
             }
             if (url.includes('/toggle-signup')) {
-                console.log('Returning toggle response');
                 return Promise.resolve({ success: true, is_signup_open: false });
             }
             return Promise.resolve({});

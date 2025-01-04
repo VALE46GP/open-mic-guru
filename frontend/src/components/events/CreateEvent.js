@@ -140,7 +140,6 @@ function CreateEvent() {
                 }
             };
 
-            console.log('Final processed venue:', processedVenue);
             setSelectedVenue(processedVenue);
             
         } catch (error) {
