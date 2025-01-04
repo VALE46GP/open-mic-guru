@@ -37,6 +37,15 @@ app.delete('/events/:eventId', mockVerifyToken, eventsController.deleteEvent);
 app.put('/events/:eventId/extend', mockVerifyToken, eventsController.extendEvent);
 app.post('/events/upload', eventsController.getUploadUrl);
 
+// Add after line 17
+jest.mock('../utils/logger', () => ({
+    logger: {
+        debug: jest.fn(),
+        error: jest.fn(),
+        log: jest.fn()
+    }
+}));
+
 describe('Events Controller', () => {
     beforeEach(() => {
         resetMockDb();
@@ -107,12 +116,13 @@ describe('Events Controller', () => {
                 start_time: '2024-03-01T19:00:00Z',
                 end_time: '2024-03-01T22:00:00Z',
                 slot_duration: 600,
-                name: 'New Test Event'
+                name: 'New Test Event',
+                types: ['comedy']
             };
 
-            db.query.mockResolvedValueOnce({
-                rows: [{ ...newEvent, id: 1 }]
-            });
+            db.query
+                .mockResolvedValueOnce({ rows: [{ utc_offset: -420 }] }) // Mock venue query
+                .mockResolvedValueOnce({ rows: [{ ...newEvent, id: 1 }] }); // Mock event creation
 
             const response = await request(app)
                 .post('/events')

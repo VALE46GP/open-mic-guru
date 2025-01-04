@@ -195,7 +195,7 @@ const lineupSlotsController = {
 
     async reorderSlots(req, res) {
         const client = await db.connect();
-        
+
         try {
             const { slots } = req.body;
 
@@ -215,7 +215,7 @@ const lineupSlotsController = {
             }
 
             const event = await lineupSlotsQueries.getEventDetailsForReorder(slots[0].slot_id);
-            
+
             if (!event || !event.start_time) {
                 return res.status(400).json({ error: 'Invalid event data' });
             }
@@ -226,79 +226,83 @@ const lineupSlotsController = {
 
             await client.query('BEGIN');
 
-            try {
-                for (const slot of slots) {
-                    const oldSlot = await lineupSlotsQueries.getOldSlotDetails(slot.slot_id);
+            // Important: Remove the nested try-catch and handle errors at the top level
+            for (const slot of slots) {
+                const oldSlot = await lineupSlotsQueries.getOldSlotDetails(slot.slot_id);
 
-                    if (oldSlot?.slot_number !== slot.slot_number && oldSlot?.user_id) {
-                        console.log('Calculating times for slot change:', {
-                            startTime: event.start_time,
-                            oldSlotNumber: oldSlot.slot_number,
-                            newSlotNumber: slot.slot_number,
-                            slotDuration: event.slot_duration,
-                            setupDuration: event.setup_duration
-                        });
+                if (oldSlot?.slot_number !== slot.slot_number && oldSlot?.user_id) {
+                    const oldStartTime = calculateSlotStartTime(
+                        new Date(event.start_time),
+                        oldSlot.slot_number,
+                        event.slot_duration,
+                        event.setup_duration
+                    );
 
-                        const oldStartTime = calculateSlotStartTime(
-                            new Date(event.start_time),
-                            oldSlot.slot_number,
-                            event.slot_duration,
-                            event.setup_duration
+                    const newStartTime = calculateSlotStartTime(
+                        new Date(event.start_time),
+                        slot.slot_number,
+                        event.slot_duration,
+                        event.setup_duration
+                    );
+
+                    if (oldStartTime && newStartTime && oldStartTime.getTime() !== newStartTime.getTime()) {
+                        await createNotification(
+                            oldSlot.user_id,
+                            'slot_time_change',
+                            `Your slot time has changed from ${formatTimeToLocalStringWithComparison(
+                                oldStartTime.toISOString(),
+                                newStartTime.toISOString(),
+                                venueUtcOffset
+                            )} to ${formatTimeToLocalStringWithComparison(
+                                newStartTime.toISOString(),
+                                oldStartTime.toISOString(),
+                                venueUtcOffset
+                            )}`,
+                            event.id,
+                            slot.slot_id
                         );
-
-                        const newStartTime = calculateSlotStartTime(
-                            new Date(event.start_time),
-                            slot.slot_number,
-                            event.slot_duration,
-                            event.setup_duration
-                        );
-
-                        console.log('Calculated times:', {
-                            oldStartTime,
-                            newStartTime
-                        });
-
-                        if (oldStartTime && newStartTime && oldStartTime.getTime() !== newStartTime.getTime()) {
-                            console.log('Creating notification for time change');
-                            await createNotification(
-                                oldSlot.user_id,
-                                'slot_time_change',
-                                `Your slot time has changed from ${formatTimeToLocalStringWithComparison(
-                                    oldStartTime.toISOString(),
-                                    newStartTime.toISOString(),
-                                    venueUtcOffset
-                                )} to ${formatTimeToLocalStringWithComparison(
-                                    newStartTime.toISOString(),
-                                    oldStartTime.toISOString(),
-                                    venueUtcOffset
-                                )}`,
-                                event.id,
-                                slot.slot_id
-                            );
-                        }
                     }
-
-                    await lineupSlotsQueries.updateSlotNumber(slot.slot_id, slot.slot_number);
                 }
 
-                await client.query('COMMIT');
-
-                const lineupData = {
-                    type: 'LINEUP_UPDATE',
-                    eventId: event.id,
-                    action: 'REORDER',
-                    data: { slots }
-                };
-
-                req.app.locals.broadcastLineupUpdate(lineupData);
-                res.json({ message: 'Slots reordered successfully' });
-            } catch (err) {
-                await client.query('ROLLBACK');
-                throw err;
+                await lineupSlotsQueries.updateSlotNumber(slot.slot_id, slot.slot_number);
             }
+
+            await client.query('COMMIT');
+
+            const lineupData = {
+                type: 'LINEUP_UPDATE',
+                eventId: event.id,
+                action: 'REORDER',
+                data: { slots }
+            };
+
+            req.app.locals.broadcastLineupUpdate(lineupData);
+            res.json({ message: 'Slots reordered successfully' });
+
         } catch (err) {
+            console.log('CAUGHT ERROR IN REORDER SLOTS:', {
+                error: err,
+                message: err.message,
+                stack: err.stack,
+                errorType: err.constructor.name
+            });
+
+            await client.query('ROLLBACK').catch(rollbackErr => {
+                console.log('Rollback error:', rollbackErr);
+            });
+
             logger.error('Error reordering slots:', err);
-            res.status(500).json({ error: 'Server error', details: err.message });
+
+            console.log('DEBUG - Error in reorderSlots:', {
+                name: err.name,
+                message: err.message,
+                stack: err.stack
+            });
+
+            return res.status(500).json({
+                error: 'Server error',
+                details: err.message
+            });
         } finally {
             client.release();
         }

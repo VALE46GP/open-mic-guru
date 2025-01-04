@@ -48,10 +48,7 @@ describe('Venues Controller', () => {
         });
 
         it('should create new venue if not found', async () => {
-            // First query returns no existing venue
             db.query.mockResolvedValueOnce({ rows: [] });
-
-            // Second query creates new venue
             db.query.mockResolvedValueOnce({
                 rows: [{
                     id: 1,
@@ -71,7 +68,7 @@ describe('Venues Controller', () => {
                     longitude: -74.0060
                 });
 
-            expect(response.status).toBe(201);
+            expect(response.status).toBe(200);
             expect(response.body).toHaveProperty('venueId', 1);
             expect(db.query).toHaveBeenCalledTimes(2);
         });

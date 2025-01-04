@@ -162,25 +162,12 @@ const eventQueries = {
         await db.query("SET timezone TO 'UTC'");
 
         const query = `
-            WITH updated AS (
             UPDATE events
-            SET start_time = $1::timestamptz,
-                end_time = $2::timestamptz,
-                name = $3,
-                venue_id = $4,
-                slot_duration = $5 * interval '1 second',
-                setup_duration = $6 * interval '1 second',
-                types = $7,
-                active = $8,
-                image = $9
-            WHERE id = $10
-                RETURNING *
-                )
-            SELECT * FROM updated;
-        `;
+            SET ${updates.join(', ')}
+            WHERE id = $${values.length}
+            RETURNING *`;
 
         const result = await db.query(query, values);
-
         return result.rows[0];
     },
 
