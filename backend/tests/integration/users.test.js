@@ -4,15 +4,16 @@ const { mockDb, resetMockDb } = require('../helpers/mockDb');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 
-// Mock AWS SDK
-const mockGetSignedUrlPromise = jest.fn();
-jest.mock('aws-sdk', () => ({
-    config: {
-        update: jest.fn()
-    },
-    S3: jest.fn(() => ({
-        getSignedUrlPromise: mockGetSignedUrlPromise
-    }))
+// Add AWS SDK v3 mocks
+jest.mock('@aws-sdk/client-s3', () => ({
+    S3Client: jest.fn().mockImplementation(() => ({
+        send: jest.fn()
+    })),
+    PutObjectCommand: jest.fn()
+}));
+
+jest.mock('@aws-sdk/s3-request-presigner', () => ({
+    getSignedUrl: jest.fn().mockResolvedValue('https://test-signed-url.com')
 }));
 
 // Mock the database
@@ -220,7 +221,7 @@ describe('Users Controller', () => {
 
     describe('POST /users/upload', () => {
         it('should generate S3 upload URL', async () => {
-            mockGetSignedUrlPromise.mockResolvedValueOnce('https://test-signed-url.com');
+            const { getSignedUrl } = require('@aws-sdk/s3-request-presigner');
 
             const response = await request(app)
                 .post('/users/upload')
@@ -232,10 +233,13 @@ describe('Users Controller', () => {
 
             expect(response.status).toBe(200);
             expect(response.body).toHaveProperty('uploadURL', 'https://test-signed-url.com');
+            expect(getSignedUrl).toHaveBeenCalled();
         });
 
         it('should handle S3 errors', async () => {
-            mockGetSignedUrlPromise.mockRejectedValueOnce(new Error('S3 Error'));
+            const { getSignedUrl } = require('@aws-sdk/s3-request-presigner');
+            // Mock the getSignedUrl to reject for this test
+            getSignedUrl.mockRejectedValueOnce(new Error('S3 Error'));
 
             const response = await request(app)
                 .post('/users/upload')

@@ -3,17 +3,20 @@ const request = require('supertest');
 const express = require('express');
 const db = require('../../src/db');
 const eventsController = require('../../src/controllers/events');
-const AWS = require('aws-sdk');
 
 // Mock dependencies
 jest.mock('../../src/db', () => mockDb);
-jest.mock('aws-sdk', () => ({
-    config: {
-        update: jest.fn()
-    },
-    S3: jest.fn(() => ({
-        getSignedUrlPromise: jest.fn().mockResolvedValue('https://test-signed-url.com')
-    }))
+
+// Add new AWS SDK v3 mocks
+jest.mock('@aws-sdk/client-s3', () => ({
+    S3Client: jest.fn().mockImplementation(() => ({
+        send: jest.fn()
+    })),
+    PutObjectCommand: jest.fn()
+}));
+
+jest.mock('@aws-sdk/s3-request-presigner', () => ({
+    getSignedUrl: jest.fn().mockResolvedValue('https://test-signed-url.com')
 }));
 
 const mockBroadcastLineupUpdate = jest.fn();
