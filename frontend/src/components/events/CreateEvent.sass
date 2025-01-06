@@ -99,7 +99,13 @@
         flex-basis: 100%
         margin-bottom: .5rem
 
-        &--cancel
+        &--delete
+            margin-top: .5rem
+            flex-basis: unset
+            width: max-content
+
+        &--cancel,
+        &--delete
             background-color: #dc3545
             color: white
 
@@ -184,3 +190,9 @@
             &:focus-visible,
             &:hover
                 background-color: darken(#6c757d, 10%)
+
+    &__button--delete
+        background-color: #dc3545
+        color: white
+        &:hover
+            background-color: #c82333

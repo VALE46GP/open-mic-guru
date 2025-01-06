@@ -450,8 +450,45 @@ const eventsController = {
                 return res.status(403).json(createErrorResponse('Only the host can delete this event'));
             }
 
-            await eventQueries.deleteEvent(eventId);
-            res.status(204).send();
+            // Soft delete the event and get info about whether it was active
+            const updatedEvent = await eventQueries.softDeleteEvent(eventId);
+            const lineupUsers = await eventQueries.getLineupUsers(eventId);
+
+            // If the event was active before deletion, send cancellation notifications first
+            if (updatedEvent.was_active) {
+                for (const performer of lineupUsers) {
+                    try {
+                        await createNotification(
+                            performer.user_id,
+                            NOTIFICATION_TYPES.EVENT_STATUS,
+                            'This event has been cancelled.',
+                            eventId,
+                            performer.lineup_slot_id,
+                            req
+                        );
+                    } catch (err) {
+                        console.error('Error creating cancellation notification for performer:', performer.user_id, err);
+                    }
+                }
+            }
+
+            // Then send deletion notifications
+            for (const performer of lineupUsers) {
+                try {
+                    await createNotification(
+                        performer.user_id,
+                        NOTIFICATION_TYPES.EVENT_STATUS,
+                        'This event has been deleted.',
+                        eventId,
+                        performer.lineup_slot_id,
+                        req
+                    );
+                } catch (err) {
+                    console.error('Error creating deletion notification for performer:', performer.user_id, err);
+                }
+            }
+
+            res.status(200).json(createApiResponse({ message: 'Event deleted successfully' }));
         } catch (err) {
             logger.error('Error while deleting event:', err);
             res.status(500).json(createErrorResponse('Server error'));
@@ -544,5 +581,4 @@ const eventsController = {
     }
 };
 
-module.exports = eventsController;
 module.exports = eventsController;

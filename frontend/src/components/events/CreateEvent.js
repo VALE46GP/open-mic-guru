@@ -323,6 +323,25 @@ function CreateEvent() {
         await handleSubmit();
     };
 
+    const handleDelete = async () => {
+        if (window.confirm('Are you sure you want to delete this event? This action cannot be undone.\nAlternatively, you can cancel the event so that it is still visible and editable.')) {
+            try {
+                const response = await authenticatedFetch(`/api/events/${eventId}`, {
+                    method: 'DELETE'
+                });
+
+                if (!response.ok) {
+                    throw new Error('Failed to delete event');
+                }
+
+                navigate('/events');
+            } catch (error) {
+                console.error('Error deleting event:', error);
+                alert('Failed to delete event. Please try again.');
+            }
+        }
+    };
+
     return (
         <div className="create-event">
             <h1 className="create-event__title">{isEditMode ? 'Edit Your Event' : 'Create a New Event'}</h1>
@@ -485,6 +504,14 @@ function CreateEvent() {
                         onClick={() => navigate(-1)}
                     >
                         Cancel
+                    </button>
+                )}
+                {isEditMode && (
+                    <button 
+                        className="create-event__status-button create-event__status-button--delete"
+                        onClick={handleDelete}
+                    >
+                        Delete Event
                     </button>
                 )}
             </div>

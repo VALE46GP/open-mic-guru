@@ -32,6 +32,7 @@ const eventQueries = {
                      JOIN venues v ON e.venue_id = v.id
                      LEFT JOIN users u ON e.host_id = u.id
                      LEFT JOIN lineup_slots ls ON e.id = ls.event_id
+            WHERE e.deleted = false
         `);
         return result.rows;
     },
@@ -205,6 +206,30 @@ const eventQueries = {
             WHERE v.id = $1`,
             [venueId]
         );
+        return result.rows[0];
+    },
+
+    async softDeleteEvent(eventId) {
+        // First check if the event is already cancelled
+        const eventCheck = await db.query(
+            'SELECT active FROM events WHERE id = $1',
+            [eventId]
+        );
+        
+        const wasActive = eventCheck.rows[0]?.active;
+
+        // Use a transaction to ensure both updates happen or neither does
+        const result = await db.query(`
+            WITH updated AS (
+                UPDATE events 
+                SET active = false,
+                    deleted = true
+                WHERE id = $1 
+                RETURNING *
+            )
+            SELECT *, $2::boolean as was_active FROM updated
+        `, [eventId, wasActive]);
+
         return result.rows[0];
     }
 };
