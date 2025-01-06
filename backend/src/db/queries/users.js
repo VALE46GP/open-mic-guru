@@ -157,6 +157,14 @@ const userQueries = {
 
     async deleteUser(client, userId) {
         return await client.query('DELETE FROM users WHERE id = $1', [userId]);
+    },
+
+    async getHostedEvents(userId) {
+        const result = await pool.query(
+            'SELECT id FROM events WHERE host_id = $1 AND deleted = false',
+            [userId]
+        );
+        return result.rows;
     }
 };
 

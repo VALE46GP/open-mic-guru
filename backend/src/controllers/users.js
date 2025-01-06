@@ -130,27 +130,56 @@ const usersController = {
 
     async deleteUser(req, res) {
         const { userId } = req.params;
-        const requesterId = req.user.id;
+        const requesterId = req.user.userId;
 
-        if (parseInt(userId) !== parseInt(requesterId)) {
-            return res.status(403).json({ error: 'You can only delete your own account' });
+        console.log('Delete request:', {
+            requestedUserId: userId,
+            requesterUserId: requesterId,
+            requestedType: typeof userId,
+            requesterType: typeof requesterId,
+            decoded: req.user
+        });
+
+        // Convert both IDs to integers before comparison
+        const parsedUserId = parseInt(userId);
+        const parsedRequesterId = parseInt(requesterId);
+
+        if (parsedUserId !== parsedRequesterId) {
+            return res.status(403).json({ 
+                error: 'You can only delete your own account',
+                requested: parsedUserId,
+                requester: parsedRequesterId
+            });
         }
 
         const client = await pool.connect();
         try {
             await client.query('BEGIN');
-            const user = await userQueries.checkUserExists(userId);
 
-            if (!user) {
-                return res.status(404).json({ error: 'User not found' });
+            const hostedEvents = await userQueries.getHostedEvents(parsedUserId);
+
+            const eventsController = require('./events');
+            for (const event of hostedEvents) {
+                const mockReq = {
+                    params: { eventId: event.id },
+                    user: { userId: parsedUserId },
+                    app: req.app
+                };
+                const mockRes = {
+                    status: () => mockRes,
+                    json: () => {}
+                };
+
+                await eventsController.deleteEvent(mockReq, mockRes);
             }
 
-            await userQueries.deleteUser(client, userId);
+            await userQueries.deleteUser(client, parsedUserId);
+            
             await client.query('COMMIT');
             res.status(204).send();
         } catch (err) {
             await client.query('ROLLBACK');
-            logger.error(err);
+            console.error('Error deleting user:', err);
             res.status(500).json({ error: 'Server error' });
         } finally {
             client.release();

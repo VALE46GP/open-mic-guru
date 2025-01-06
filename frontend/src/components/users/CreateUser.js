@@ -20,7 +20,7 @@ function CreateUser({ initialData, onCancel }) {
     const [oldPassword, setOldPassword] = useState('');
     const [newPassword, setNewPassword] = useState('');
     const [passwordError, setPasswordError] = useState(null);
-    const { login } = useAuth();
+    const { login, getToken, logout } = useAuth();
     const [bio, setBio] = useState(initialData?.bio || '');
 
     const defaultImageUrl = 'https://open-mic-guru.s3.us-west-1.amazonaws.com/users/user-default.jpg';
@@ -157,6 +157,32 @@ function CreateUser({ initialData, onCancel }) {
         } catch (error) {
             console.error('Registration/Update error:', error);
             setError(error.message || 'An unexpected error occurred.');
+        }
+    };
+
+    const handleDeleteAccount = async () => {
+        if (!window.confirm('Are you sure you want to delete your account? This action cannot be undone.')) {
+            return;
+        }
+
+        try {
+            const token = getToken();
+            
+            const response = await axios({
+                method: 'DELETE',
+                url: `/api/users/${initialData.id}`,
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+
+            if (response.status === 204) {
+                logout();
+                navigate('/');
+            }
+        } catch (error) {
+            console.error('Error deleting account:', error);
+            setError(error.response?.data?.error || 'Failed to delete account. Please try again.');
         }
     };
 
@@ -343,6 +369,15 @@ function CreateUser({ initialData, onCancel }) {
                         className='create-user__cancel-button'
                     >
                         Cancel
+                    </button>
+                )}
+                {initialData && (
+                    <button
+                        type="button"
+                        onClick={handleDeleteAccount}
+                        className='create-user__delete-button'
+                    >
+                        Delete Account
                     </button>
                 )}
             </div>
