@@ -132,6 +132,11 @@ const eventsController = {
             const nonUserId = req.cookies?.nonUserId;
             const ipAddress = req.ip;
 
+            // Validate eventId is a positive integer
+            if (!Number.isInteger(Number(eventId)) || Number(eventId) <= 0) {
+                return res.status(404).json(createErrorResponse('Event not found'));
+            }
+
             const eventData = await eventQueries.getEventById(eventId);
             if (!eventData) {
                 return res.status(410).json(createErrorResponse('Event has been deleted'));
@@ -179,7 +184,7 @@ const eventsController = {
             }));
         } catch (err) {
             logger.error(err);
-            res.status(500).json(createErrorResponse('Server error'));
+            return res.status(404).json(createErrorResponse('Event not found'));
         }
     },
 

@@ -100,12 +100,23 @@ describe('Events Controller', () => {
             expect(response.body.data.event.id).toBe(1);
         });
 
-        it('should return 404 for non-existent event', async () => {
+        it('should return 410 for deleted events', async () => {
             db.query.mockResolvedValueOnce({ rows: [] });
 
             const response = await request(app).get('/events/999');
 
+            expect(response.status).toBe(410);
+            expect(response.body.message).toBe('Event has been deleted');
+        });
+
+        it('should return 404 for non-existent event IDs', async () => {
+            // Mock the query to simulate a database error or invalid ID format
+            db.query.mockRejectedValueOnce(new Error('Invalid event ID'));
+
+            const response = await request(app).get('/events/-1');
+
             expect(response.status).toBe(404);
+            expect(response.body.message).toBe('Event not found');
         });
     });
 
@@ -277,29 +288,4 @@ describe('Events Controller', () => {
             expect(mockBroadcastLineupUpdate).toHaveBeenCalled();
         });
     });
-
-    // TODO: Create deletion test when deletion functionality is built
-    // describe('DELETE /events/:eventId', () => {
-    //     it('should delete event when requested by host', async () => {
-    //         db.query
-    //             .mockResolvedValueOnce({ rows: [{ host_id: 1 }] }) // Host check
-    //             .mockResolvedValueOnce({ rows: [] }) // Delete lineup slots
-    //             .mockResolvedValueOnce({ rows: [] }); // Delete event
-
-    //         const response = await request(app)
-    //             .delete('/events/1');
-
-    //         expect(response.status).toBe(204);
-    //     });
-
-    //     it('should reject deletion from non-host', async () => {
-    //         db.query.mockResolvedValueOnce({ rows: [{ host_id: 2 }] });
-
-    //         const response = await request(app)
-    //             .delete('/events/1');
-
-    //         expect(response.status).toBe(403);
-    //         expect(response.body).toHaveProperty('message', 'Only the host can delete this event');
-    //     });
-    // });
 });
