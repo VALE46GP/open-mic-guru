@@ -12,6 +12,7 @@ const notificationQueries = {
                 e.setup_duration,
                 e.types as event_types,
                 e.active,
+                e.deleted,
                 v.name as venue_name,
                 v.address as venue_address,
                 v.latitude as venue_latitude,

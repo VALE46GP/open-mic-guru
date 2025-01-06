@@ -134,7 +134,7 @@ const eventsController = {
 
             const eventData = await eventQueries.getEventById(eventId);
             if (!eventData) {
-                return res.status(404).json(createErrorResponse('Event not found'));
+                return res.status(410).json(createErrorResponse('Event has been deleted'));
             }
 
             const lineup = await eventQueries.getEventLineup(eventId, nonUserId, ipAddress);

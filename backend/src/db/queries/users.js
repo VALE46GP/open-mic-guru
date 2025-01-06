@@ -132,8 +132,8 @@ const userQueries = {
                 JOIN users u ON e.host_id = u.id
                 LEFT JOIN lineup_slots ls ON e.id = ls.event_id
                     AND ls.user_id = $1
-            WHERE e.host_id = $1
-                OR ls.user_id = $1
+            WHERE (e.host_id = $1 OR ls.user_id = $1)
+                AND e.deleted = false
             ORDER BY e.start_time DESC
         `, [userId]);
         return result.rows;
