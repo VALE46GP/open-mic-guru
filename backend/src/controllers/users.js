@@ -1,18 +1,12 @@
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
-const AWS = require('aws-sdk');
+const { S3Client, PutObjectCommand } = require("@aws-sdk/client-s3");
+const { getSignedUrl } = require("@aws-sdk/s3-request-presigner");
 const pool = require('../db');
 const { userQueries } = require('../db/queries');
 const { logger } = require('../../tests/utils/logger');
 
-// Configure AWS SDK
-AWS.config.update({
-    accessKeyId: process.env.AWS_ACCESS_KEY_ID,
-    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
-    region: process.env.AWS_REGION
-});
-
-const s3 = new AWS.S3();
+const s3Client = new S3Client({ region: process.env.AWS_REGION });
 
 const usersController = {
     async getAllUsers(req, res) {
@@ -190,14 +184,14 @@ const usersController = {
         try {
             const { fileName, fileType, userId } = req.body;
             const uniqueFileName = `${userId}-${fileName}`;
-            const s3Params = {
+            
+            const command = new PutObjectCommand({
                 Bucket: process.env.S3_BUCKET_NAME,
                 Key: `users/${uniqueFileName}`,
-                Expires: 60,
                 ContentType: fileType
-            };
+            });
 
-            const uploadURL = await s3.getSignedUrlPromise('putObject', s3Params);
+            const uploadURL = await getSignedUrl(s3Client, command, { expiresIn: 60 });
             res.json({ uploadURL });
         } catch (err) {
             logger.error(err);

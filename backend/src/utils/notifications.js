@@ -1,5 +1,6 @@
 const db = require('../db');
 const { logger } = require('../../tests/utils/logger');
+const { sendNotification } = require('./notifications.util');
 
 // Define notification types enum for consistency
 const NOTIFICATION_TYPES = {
@@ -54,7 +55,7 @@ async function createNotification(userId, type, message, eventId = null, lineupS
             return;
         }
 
-        // Create the notification
+        // Create the notification in database
         const result = await db.query(
             `INSERT INTO notifications 
              (user_id, type, message, event_id, lineup_slot_id, created_at) 
@@ -65,7 +66,7 @@ async function createNotification(userId, type, message, eventId = null, lineupS
 
         logger.log('Notification created:', result.rows[0]);
 
-        // Get complete notification data for broadcast
+        // Get complete notification data
         const notificationData = await db.query(`
             SELECT 
                 n.*,
@@ -83,7 +84,7 @@ async function createNotification(userId, type, message, eventId = null, lineupS
             WHERE n.id = $1
         `, [result.rows[0].id]);
 
-        // Broadcast the notification
+        // Broadcast through WebSocket
         if (req && req.app && req.app.locals.broadcastNotification) {
             const notificationPayload = {
                 type: 'NOTIFICATION_UPDATE',
@@ -93,10 +94,20 @@ async function createNotification(userId, type, message, eventId = null, lineupS
             req.app.locals.broadcastNotification(notificationPayload);
         }
 
+        // If user has external notifications enabled (e.g., email via SNS)
+        if (prefs.notify_external && process.env.AWS_SNS_TOPIC_ARN) {
+            try {
+                await sendNotification(notificationData.rows[0], process.env.AWS_SNS_TOPIC_ARN);
+            } catch (snsError) {
+                logger.error('Error sending SNS notification:', snsError);
+                // Don't throw error here - we still created the notification in our DB
+            }
+        }
+
         return result.rows[0];
     } catch (err) {
         logger.error('Error creating notification:', err);
-        return undefined; // Return undefined instead of throwing
+        return undefined;
     }
 }
 

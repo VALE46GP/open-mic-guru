@@ -1,4 +1,3 @@
-const AWS = require('aws-sdk');
 const { eventQueries } = require('../db/queries/events');
 const { calculateSlotStartTime, formatTimeToLocalString, formatTimeInTimezone, formatDateInTimezone, formatTimeComparison, formatTimeToLocalStringWithComparison } = require('../utils/timeCalculations');
 const { createNotification, NOTIFICATION_TYPES } = require('../utils/notifications');
@@ -6,15 +5,10 @@ const { createApiResponse, createErrorResponse } = require('../utils/apiResponse
 const { logger } = require('../../tests/utils/logger');
 const db = require('../db')
 const { DateTime } = require('luxon');
+const { S3Client, PutObjectCommand } = require("@aws-sdk/client-s3");
+const { getSignedUrl } = require("@aws-sdk/s3-request-presigner");
 
-// Configure AWS SDK
-AWS.config.update({
-    accessKeyId: process.env.AWS_ACCESS_KEY_ID,
-    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
-    region: process.env.AWS_REGION
-});
-
-const s3 = new AWS.S3();
+const s3Client = new S3Client({ region: process.env.AWS_REGION });
 
 async function getUpdateMessage(originalEvent, updatedFields, venueUtcOffset) {
     const changes = [];
@@ -577,15 +571,15 @@ const eventsController = {
     async getUploadUrl(req, res) {
         const { fileName, fileType } = req.body;
         const uniqueFileName = `${Date.now()}-${fileName}`;
-        const s3Params = {
+        
+        const command = new PutObjectCommand({
             Bucket: process.env.S3_BUCKET_NAME,
             Key: `events/${uniqueFileName}`,
-            Expires: 60,
             ContentType: fileType
-        };
+        });
 
         try {
-            const uploadURL = await s3.getSignedUrlPromise('putObject', s3Params);
+            const uploadURL = await getSignedUrl(s3Client, command, { expiresIn: 60 });
             res.json({ uploadURL });
         } catch (err) {
             logger.error(err);
@@ -594,4 +588,4 @@ const eventsController = {
     }
 };
 
-module.exports = eventsController;module.exports = eventsController;
+module.exports = eventsController;

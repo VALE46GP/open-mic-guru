@@ -134,16 +134,8 @@ function EventPage() {
         async function updateFormattedTimes() {
             if (!eventDetails?.event || !eventDetails?.venue) return;
             
-            console.log('Event times:', {
-                start: eventDetails.event.start_time,
-                end: eventDetails.event.end_time,
-                venue: eventDetails.venue
-            });
-            
             const start = await formatEventTime(eventDetails.event.start_time);
             const end = await formatEventTime(eventDetails.event.end_time);
-            
-            console.log('Formatted times:', { start, end });
             
             setFormattedStartTime(start);
             setFormattedEndTime(end);
