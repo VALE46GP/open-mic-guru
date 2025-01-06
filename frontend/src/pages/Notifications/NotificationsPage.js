@@ -76,7 +76,8 @@ function NotificationsPage() {
                         is_performer: performerNotification ? true : false,
                         performer_slot_time: performerNotification ? performerNotification.performer_slot_time : null,
                         event_types: notification.event_types,
-                        active: notification.active
+                        active: notification.active,
+                        deleted: notification.deleted
                     },
                     venue: {
                         name: notification.venue_name,
@@ -251,6 +252,7 @@ function NotificationsPage() {
                                             <EventCard 
                                                 event={data.event} 
                                                 slotTime={data.notifications[0]?.performer_slot_time}
+                                                showDeleted={true}
                                             />
                                         </div>
                                     </div>

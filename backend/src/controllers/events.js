@@ -132,9 +132,14 @@ const eventsController = {
             const nonUserId = req.cookies?.nonUserId;
             const ipAddress = req.ip;
 
+            // Validate eventId is a positive integer
+            if (!Number.isInteger(Number(eventId)) || Number(eventId) <= 0) {
+                return res.status(404).json(createErrorResponse('Event not found'));
+            }
+
             const eventData = await eventQueries.getEventById(eventId);
             if (!eventData) {
-                return res.status(404).json(createErrorResponse('Event not found'));
+                return res.status(410).json(createErrorResponse('Event has been deleted'));
             }
 
             const lineup = await eventQueries.getEventLineup(eventId, nonUserId, ipAddress);
@@ -179,7 +184,7 @@ const eventsController = {
             }));
         } catch (err) {
             logger.error(err);
-            res.status(500).json(createErrorResponse('Server error'));
+            return res.status(404).json(createErrorResponse('Event not found'));
         }
     },
 
@@ -378,8 +383,18 @@ const eventsController = {
                     // Create notifications for each user
                     for (const performer of lineupUsers) {
                         try {
-                            // Only add performance time if event wasn't cancelled
-                            if (active !== false) {
+                            if (active === false || (active === true && !originalEvent.active)) {
+                                // Send cancellation/reinstatement notification
+                                await createNotification(
+                                    performer.user_id,
+                                    NOTIFICATION_TYPES.EVENT_STATUS,
+                                    active ? 'This event has been reinstated.' : 'This event has been cancelled.',
+                                    eventId,
+                                    performer.lineup_slot_id,
+                                    req
+                                );
+                            } else if (active !== false) {
+                                // Only send time/venue update notifications if the event is not being cancelled
                                 const slotTime = calculateSlotStartTime(
                                     start_time || originalEvent.start_time,
                                     performer.slot_number,
@@ -400,9 +415,7 @@ const eventsController = {
 
                                 await createNotification(
                                     performer.user_id,
-                                    active === false || (active === true && !originalEvent.active) 
-                                        ? NOTIFICATION_TYPES.EVENT_STATUS 
-                                        : NOTIFICATION_TYPES.EVENT_UPDATE,
+                                    NOTIFICATION_TYPES.EVENT_UPDATE,
                                     message,
                                     eventId,
                                     performer.lineup_slot_id,
@@ -450,8 +463,45 @@ const eventsController = {
                 return res.status(403).json(createErrorResponse('Only the host can delete this event'));
             }
 
-            await eventQueries.deleteEvent(eventId);
-            res.status(204).send();
+            // Soft delete the event and get info about whether it was active
+            const updatedEvent = await eventQueries.softDeleteEvent(eventId);
+            const lineupUsers = await eventQueries.getLineupUsers(eventId);
+
+            // If the event was active before deletion, send cancellation notifications first
+            if (updatedEvent.was_active) {
+                for (const performer of lineupUsers) {
+                    try {
+                        await createNotification(
+                            performer.user_id,
+                            NOTIFICATION_TYPES.EVENT_STATUS,
+                            'This event has been cancelled.',
+                            eventId,
+                            performer.lineup_slot_id,
+                            req
+                        );
+                    } catch (err) {
+                        console.error('Error creating cancellation notification for performer:', performer.user_id, err);
+                    }
+                }
+            }
+
+            // Then send deletion notifications
+            for (const performer of lineupUsers) {
+                try {
+                    await createNotification(
+                        performer.user_id,
+                        NOTIFICATION_TYPES.EVENT_STATUS,
+                        'This event has been deleted.',
+                        eventId,
+                        performer.lineup_slot_id,
+                        req
+                    );
+                } catch (err) {
+                    console.error('Error creating deletion notification for performer:', performer.user_id, err);
+                }
+            }
+
+            res.status(200).json(createApiResponse({ message: 'Event deleted successfully' }));
         } catch (err) {
             logger.error('Error while deleting event:', err);
             res.status(500).json(createErrorResponse('Server error'));
@@ -544,5 +594,4 @@ const eventsController = {
     }
 };
 
-module.exports = eventsController;
-module.exports = eventsController;
+module.exports = eventsController;module.exports = eventsController;

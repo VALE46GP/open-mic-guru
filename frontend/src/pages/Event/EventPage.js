@@ -36,23 +36,27 @@ function EventPage() {
     }, []);
 
     useEffect(() => {
-        const fetchEventDetails = async () => {
+        const fetchEventData = async () => {
             try {
                 const response = await fetch(`/api/events/${eventId}`);
+                if (response.status === 410) {
+                    navigate('/events', { 
+                        replace: true,
+                        state: { message: 'This event has been deleted' }
+                    });
+                    return;
+                }
                 const { data } = await response.json();
                 setEventDetails(data);
                 setIsLoading(false);
             } catch (error) {
-                console.error('Error fetching event details:', error);
+                console.error('Error fetching event data:', error);
                 setError(error.message);
                 setIsLoading(false);
             }
         };
-
-        if (eventId) {
-            fetchEventDetails();
-        }
-    }, [eventId]);
+        fetchEventData();
+    }, [eventId, navigate]);
 
     useEffect(() => {
         const baseUrl = process.env.NODE_ENV === 'development'

@@ -32,6 +32,7 @@ const eventQueries = {
                      JOIN venues v ON e.venue_id = v.id
                      LEFT JOIN users u ON e.host_id = u.id
                      LEFT JOIN lineup_slots ls ON e.id = ls.event_id
+            WHERE e.deleted = false
         `);
         return result.rows;
     },
@@ -61,7 +62,7 @@ const eventQueries = {
             FROM events e
                      JOIN venues v ON e.venue_id = v.id
                      JOIN users u ON e.host_id = u.id
-            WHERE e.id = $1
+            WHERE e.id = $1 AND e.deleted = false
         `, [eventId]);
         return result.rows[0];
     },
@@ -206,6 +207,69 @@ const eventQueries = {
             [venueId]
         );
         return result.rows[0];
+    },
+
+    async softDeleteEvent(eventId) {
+        // First check if the event is already cancelled
+        const eventCheck = await db.query(
+            'SELECT active FROM events WHERE id = $1',
+            [eventId]
+        );
+        
+        const wasActive = eventCheck.rows[0]?.active;
+
+        // Use a transaction to ensure both updates happen or neither does
+        const result = await db.query(`
+            WITH updated AS (
+                UPDATE events 
+                SET active = false,
+                    deleted = true
+                WHERE id = $1 
+                RETURNING *
+            )
+            SELECT *, $2::boolean as was_active FROM updated
+        `, [eventId, wasActive]);
+
+        return result.rows[0];
+    },
+
+    async getUserEvents(userId) {
+        const result = await db.query(`
+            SELECT DISTINCT 
+                e.id        AS event_id,
+                e.name      AS event_name,
+                e.start_time,
+                e.end_time,
+                e.slot_duration,
+                e.setup_duration,
+                e.additional_info,
+                e.types     AS event_types,
+                e.image     AS event_image,
+                e.active,
+                v.id        AS venue_id,
+                v.name      AS venue_name,
+                v.address   AS venue_address,
+                v.latitude  AS venue_latitude,
+                v.longitude AS venue_longitude,
+                v.utc_offset AS venue_utc_offset,
+                e.host_id,
+                u.name      AS host_name,
+                ls.user_id  AS performer_id,
+                ls.slot_number,
+                e.start_time +
+                (INTERVAL '1 minute' * (ls.slot_number - 1) *
+                    (EXTRACT (EPOCH FROM e.slot_duration + e.setup_duration) / 60)
+                    )       AS performer_slot_time
+            FROM events e
+                JOIN venues v ON e.venue_id = v.id
+                JOIN users u ON e.host_id = u.id
+                LEFT JOIN lineup_slots ls ON e.id = ls.event_id
+                    AND ls.user_id = $1
+            WHERE (e.host_id = $1 OR ls.user_id = $1)
+                AND e.deleted = false
+            ORDER BY e.start_time DESC
+        `, [userId]);
+        return result.rows;
     }
 };
 
