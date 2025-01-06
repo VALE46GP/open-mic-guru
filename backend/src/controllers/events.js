@@ -378,8 +378,18 @@ const eventsController = {
                     // Create notifications for each user
                     for (const performer of lineupUsers) {
                         try {
-                            // Only add performance time if event wasn't cancelled
-                            if (active !== false) {
+                            if (active === false || (active === true && !originalEvent.active)) {
+                                // Send cancellation/reinstatement notification
+                                await createNotification(
+                                    performer.user_id,
+                                    NOTIFICATION_TYPES.EVENT_STATUS,
+                                    active ? 'This event has been reinstated.' : 'This event has been cancelled.',
+                                    eventId,
+                                    performer.lineup_slot_id,
+                                    req
+                                );
+                            } else if (active !== false) {
+                                // Only send time/venue update notifications if the event is not being cancelled
                                 const slotTime = calculateSlotStartTime(
                                     start_time || originalEvent.start_time,
                                     performer.slot_number,
@@ -400,9 +410,7 @@ const eventsController = {
 
                                 await createNotification(
                                     performer.user_id,
-                                    active === false || (active === true && !originalEvent.active) 
-                                        ? NOTIFICATION_TYPES.EVENT_STATUS 
-                                        : NOTIFICATION_TYPES.EVENT_UPDATE,
+                                    NOTIFICATION_TYPES.EVENT_UPDATE,
                                     message,
                                     eventId,
                                     performer.lineup_slot_id,
@@ -581,4 +589,4 @@ const eventsController = {
     }
 };
 
-module.exports = eventsController;
+module.exports = eventsController;module.exports = eventsController;
