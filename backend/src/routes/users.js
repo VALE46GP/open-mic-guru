@@ -24,4 +24,8 @@ router.post('/upload', usersController.generateUploadUrl);
 // POST validate password
 router.post('/validate-password', usersController.validatePassword);
 
+// Email verification routes
+router.put('/verifications/:token', usersController.verifyEmail);  // Verify an email
+router.post('/verifications', usersController.resendVerification);
+
 module.exports = router;

@@ -7,8 +7,15 @@ const tables = {
             password VARCHAR(255),
             image VARCHAR,
             social_media_accounts jsonb DEFAULT '[]'::jsonb,
-            bio TEXT
+            bio TEXT,
+            email_verified BOOLEAN DEFAULT FALSE,
+            verification_token VARCHAR(255),
+            verification_token_expires TIMESTAMP WITH TIME ZONE,
+            auth_provider VARCHAR(20) DEFAULT 'email',
+            auth_provider_id VARCHAR(255)
         );
+        CREATE INDEX idx_verification_token ON users(verification_token);
+        CREATE INDEX idx_auth_provider ON users(auth_provider, auth_provider_id);
     `,
     venues: `
         CREATE TABLE IF NOT EXISTS venues (

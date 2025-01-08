@@ -60,7 +60,7 @@ function EventPage() {
 
     useEffect(() => {
         const baseUrl = process.env.NODE_ENV === 'development'
-            ? `http://${DEV_IP}:3000`
+            ? `http://${DEV_IP}:3001`
             : window.location.origin;
         setQrUrl(`${baseUrl}/events/${eventId}`);
     }, [eventId]);

@@ -85,7 +85,13 @@ const userQueries = {
 
     async getUserByEmail(email) {
         const result = await pool.query(
-            'SELECT * FROM users WHERE email = $1',
+            `SELECT *,
+                CASE 
+                    WHEN verification_token_expires > NOW() THEN verification_token_expires
+                    ELSE NULL 
+                END as active_token_expires
+         FROM users 
+         WHERE email = $1`,
             [email]
         );
         return result.rows[0];
@@ -165,6 +171,70 @@ const userQueries = {
             [userId]
         );
         return result.rows;
+    },
+
+    async createUserWithVerification(email, hashedPassword, name, photoUrl, socialMediaJson, bio, verificationToken, tokenExpires) {
+        const result = await pool.query(
+            `INSERT INTO users (
+                email, password, name, image, social_media_accounts, bio, 
+                verification_token, verification_token_expires, email_verified
+            )
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, false)
+            RETURNING *`,
+            [email, hashedPassword, name, photoUrl, socialMediaJson, bio, verificationToken, tokenExpires]
+        );
+        return result.rows[0];
+    },
+
+    async verifyEmail(verificationToken) {
+        const result = await pool.query(
+            `UPDATE users 
+             SET email_verified = true,
+                 verification_token = NULL,
+                 verification_token_expires = NULL
+             WHERE verification_token = $1 
+             AND verification_token_expires > NOW()
+             AND email_verified = false
+             RETURNING *`,
+            [verificationToken]
+        );
+        return result.rows[0];
+    },
+
+    async getUserByVerificationToken(token) {
+        const result = await pool.query(
+            `SELECT * FROM users 
+             WHERE verification_token = $1 
+             AND verification_token_expires > NOW()
+             AND email_verified = false`,
+            [token]
+        );
+        return result.rows[0];
+    },
+
+    async updateVerificationToken(email, verificationToken, tokenExpires) {
+        const result = await pool.query(
+            `UPDATE users 
+             SET verification_token = $1,
+                 verification_token_expires = $2,
+                 email_verified = false
+             WHERE email = $3
+             RETURNING *`,
+            [verificationToken, tokenExpires, email]
+        );
+        return result.rows[0];
+    },
+
+    async getRecentlyVerifiedUser(token) {
+        const result = await pool.query(`
+        SELECT * FROM users 
+        WHERE email_verified = true 
+        AND verification_token = $1
+        OR verification_token IS NULL
+        ORDER BY updated_at DESC 
+        LIMIT 1
+    `, [token]);
+        return result.rows[0];
     }
 };
 
