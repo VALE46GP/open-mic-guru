@@ -12,7 +12,9 @@ const tables = {
             verification_token VARCHAR(255),
             verification_token_expires TIMESTAMP WITH TIME ZONE,
             auth_provider VARCHAR(20) DEFAULT 'email',
-            auth_provider_id VARCHAR(255)
+            auth_provider_id VARCHAR(255),
+            created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
         );
         CREATE INDEX idx_verification_token ON users(verification_token);
         CREATE INDEX idx_auth_provider ON users(auth_provider, auth_provider_id);

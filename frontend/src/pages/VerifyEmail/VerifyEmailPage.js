@@ -11,6 +11,8 @@ function VerifyEmailPage() {
     const navigate = useNavigate();
 
     useEffect(() => {
+        let isSubscribed = true; // For handling component unmount
+
         const verifyEmail = async () => {
             const token = searchParams.get('token');
             if (!token) {
@@ -20,14 +22,14 @@ function VerifyEmailPage() {
             }
 
             try {
-                // Log the full URL being called
                 const verifyUrl = `/api/users/verifications/${token}`;
                 console.log('Making verification request to:', verifyUrl);
 
                 const verifyResponse = await fetch(verifyUrl, {
                     method: 'PUT',
                     headers: {
-                        'Cache-Control': 'no-cache'
+                        'Cache-Control': 'no-cache',
+                        'Content-Type': 'application/json'
                     }
                 });
 
@@ -35,14 +37,23 @@ function VerifyEmailPage() {
                 const verifyData = await verifyResponse.json();
                 console.log('Response data:', verifyData);
 
-                if (verifyResponse.ok || verifyData.message === 'Email already verified') {
-                    setStatus('success');
-                    setEmail(verifyData.email);
+                if (!isSubscribed) return; // Don't update state if component unmounted
+
+                if (verifyResponse.ok && verifyData.email) {
+                    if (verifyData.message === 'Email verified successfully' || 
+                        verifyData.message === 'Email already verified') {
+                        setStatus('success');
+                        setEmail(verifyData.email);
+                    } else {
+                        setStatus('error');
+                        setError('Verification response was invalid');
+                    }
                 } else {
                     setStatus('error');
                     setError(verifyData.error || 'Verification failed');
                 }
             } catch (err) {
+                if (!isSubscribed) return;
                 console.error('Verification error:', err);
                 setStatus('error');
                 setError('An error occurred during verification. Please try again.');
@@ -50,6 +61,10 @@ function VerifyEmailPage() {
         };
 
         verifyEmail();
+
+        return () => {
+            isSubscribed = false;
+        };
     }, [searchParams]);
 
     const handleResendVerification = async () => {

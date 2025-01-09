@@ -309,11 +309,30 @@ const usersController = {
             const { token } = req.params;
             console.log('Backend received verification token:', token);
 
+            // First check if user was already verified with this token
+            const recentlyVerifiedUser = await userQueries.getRecentlyVerifiedUser(token);
+            if (recentlyVerifiedUser) {
+                console.log('User was already verified:', recentlyVerifiedUser.email);
+                return res.json({
+                    message: 'Email already verified',
+                    email: recentlyVerifiedUser.email
+                });
+            }
+
             // Check if token exists and hasn't expired
             const user = await userQueries.getUserByVerificationToken(token);
             console.log('Found user for verification:', user);
 
             if (!user) {
+                // Check if the user was just verified (token is now null)
+                const justVerifiedUser = await userQueries.getJustVerifiedUser(token);
+                if (justVerifiedUser && justVerifiedUser.email_verified) {
+                    return res.json({
+                        message: 'Email already verified',
+                        email: justVerifiedUser.email
+                    });
+                }
+
                 console.log('No user found for token');
                 return res.status(400).json({
                     error: 'Invalid or expired verification token'
@@ -324,13 +343,6 @@ const usersController = {
                 console.log('Token has expired:', user.verification_token_expires);
                 return res.status(400).json({
                     error: 'Verification token has expired'
-                });
-            }
-
-            if (user.email_verified) {
-                return res.json({
-                    message: 'Email already verified',
-                    email: user.email
                 });
             }
 
@@ -352,7 +364,10 @@ const usersController = {
 
         } catch (error) {
             console.error('Email verification error:', error);
-            res.status(500).json({ error: 'Verification failed' });
+            res.status(500).json({ 
+                error: 'Verification failed',
+                details: error.message
+            });
         }
     },
 
