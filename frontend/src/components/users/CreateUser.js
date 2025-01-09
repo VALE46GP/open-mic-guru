@@ -15,11 +15,10 @@ function CreateUser({ initialData, onCancel }) {
     const [socialMediaAccounts, setSocialMediaAccounts] = useState([]);
     const [error, setError] = useState(null);
     const [success, setSuccess] = useState(false);
+    const [passwordResetSuccess, setPasswordResetSuccess] = useState(false);
+    const [passwordResetError, setPasswordResetError] = useState(null);
     const fileInputRef = useRef(null);
     const navigate = useNavigate();
-    const [oldPassword, setOldPassword] = useState('');
-    const [newPassword, setNewPassword] = useState('');
-    const [passwordError, setPasswordError] = useState(null);
     const { login, getToken, logout } = useAuth();
     const [bio, setBio] = useState(initialData?.bio || '');
 
@@ -39,7 +38,6 @@ function CreateUser({ initialData, onCancel }) {
     const handleInputChange = (setter) => (e) => {
         setter(e.target.value);
         setError(null);
-        setPasswordError(null);
         setSuccess(false);
     };
 
@@ -57,48 +55,39 @@ function CreateUser({ initialData, onCancel }) {
         setSocialMediaAccounts(socialMediaAccounts.filter((_, i) => i !== index));
     };
 
-    const validatePasswordChange = async () => {
-        if (newPassword && !oldPassword) {
-            setPasswordError('Old password is required to change password');
-            return false;
-        }
+    const handlePasswordReset = async () => {
+        setPasswordResetError(null);
+        setPasswordResetSuccess(false);
 
-        if (oldPassword) {
-            try {
-                const response = await fetch('/api/users/validate-password', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        userId: initialData.id,
-                        password: oldPassword
-                    })
-                });
+        try {
+            const response = await fetch('/api/users/forgot-password', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ 
+                    email: registerEmail,
+                    isLoggedInRequest: true
+                }),
+            });
 
-                if (!response.ok) {
-                    console.log('Password validation failed:', await response.json());
-                    setPasswordError('Invalid old password');
-                    return false;
-                }
-                console.log('Password validation successful');
-                setPasswordError(null);
-            } catch (error) {
-                console.error('Error validating password:', error);
-                setPasswordError('Error validating password');
-                return false;
+            const data = await response.json();
+
+            if (response.ok) {
+                setPasswordResetSuccess(data.message);
+            } else {
+                setPasswordResetError(data.error || 'Failed to process request');
             }
+        } catch (error) {
+            setPasswordResetError('An error occurred. Please try again.');
+            console.error('Password reset error:', error);
         }
-        return true;
     };
 
     const handleRegister = async (e) => {
         e.preventDefault();
         setError(null);
         setSuccess(false);
-
-        if (initialData && newPassword) {
-            const isValid = await validatePasswordChange();
-            if (!isValid) return;
-        }
 
         let photoUrl = profilePhoto;
         if (profilePhoto && profilePhoto instanceof File) {
@@ -127,7 +116,7 @@ function CreateUser({ initialData, onCancel }) {
             socialMediaAccounts: socialMediaAccounts,
             isUpdate: !!initialData,
             userId: initialData?.id,
-            password: initialData ? newPassword : registerPassword,
+            password: initialData ? undefined : registerPassword,
             bio,
         };
 
@@ -194,7 +183,7 @@ function CreateUser({ initialData, onCancel }) {
 
     return (
         <div className='create-user__container'>
-            <h2 className='create-user__title'>{initialData ? 'Edit Profile' : 'Create New User'}</h2>
+            <h1 className='create-user__title'>{initialData ? 'Edit Profile' : 'Create New User'}</h1>
 
             {/* BorderBox for Profile Photo */}
             <BorderBox
@@ -326,41 +315,24 @@ function CreateUser({ initialData, onCancel }) {
                 </form>
             </BorderBox>
 
-            {/* New BorderBox for Password Change */}
-            {initialData && (
-                <BorderBox className='create-user__password-box'>
-                    <h3>Change Password</h3>
-                    {passwordError && (
-                        <p className='create-user__password-error'>{passwordError}</p>
-                    )}
-                    <div className='create-user__input-group'>
-                        <label htmlFor='old-password' className='create-user__label'>Old
-                            Password</label>
-                        <input
-                            id='old-password'
-                            type='password'
-                            placeholder='Old Password'
-                            value={oldPassword}
-                            onChange={handleInputChange(setOldPassword)}
-                            className='create-user__input'
-                        />
-                    </div>
-                    <div className='create-user__input-group'>
-                        <label htmlFor='new-password' className='create-user__label'>New
-                            Password</label>
-                        <input
-                            id='new-password'
-                            type='password'
-                            placeholder='New Password'
-                            value={newPassword}
-                            onChange={handleInputChange(setNewPassword)}
-                            className='create-user__input'
-                        />
-                    </div>
-                </BorderBox>
+            {passwordResetSuccess && (
+                <div className='create-user__success-message create-user__success-message--password'>
+                    {passwordResetSuccess}
+                </div>
             )}
+            {passwordResetError && (
+                <div className='create-user__error-message create-user__error-message--password'>
+                    {passwordResetError}
+                </div>
+            )}
+            <button
+                type="button"
+                onClick={handlePasswordReset}
+                className='create-user__password-reset-button'
+            >
+                Reset Password
+            </button>
 
-            {/* Moved buttons outside of BorderBox */}
             <div className="create-user__button-group">
                 <button
                     className='create-user__submit-button'

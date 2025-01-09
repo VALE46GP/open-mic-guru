@@ -432,10 +432,11 @@ const usersController = {
     async forgotPassword(req, res) {
         try {
             const { email } = req.body;
+            const isLoggedInRequest = req.body.isLoggedInRequest; // New flag
             const user = await userQueries.getUserByEmail(email);
 
             if (!user) {
-                // Return 200 even if user doesn't exist for security
+                // Only for non-logged-in requests, we use the ambiguous message
                 return res.json({ 
                     message: 'If an account exists with this email, a password reset link will be sent.' 
                 });
@@ -451,9 +452,12 @@ const usersController = {
             // Send reset email
             await emailService.sendPasswordResetEmail(email, resetToken);
 
-            res.json({ 
-                message: 'If an account exists with this email, a password reset link will be sent.' 
-            });
+            // Different messages based on context
+            const message = isLoggedInRequest
+                ? 'A password reset link has been sent to your email.'
+                : 'If an account exists with this email, a password reset link will be sent.';
+
+            res.json({ message });
         } catch (error) {
             logger.error('Forgot password error:', error);
             res.status(500).json({ error: 'Failed to process password reset request' });

@@ -35,7 +35,6 @@ function EditUserPage() {
 
     return (
         <div>
-            <h2>Edit Profile</h2>
             <CreateUser initialData={userData} onCancel={handleCancel}/>
         </div>
     );
