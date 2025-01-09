@@ -81,7 +81,10 @@ function initializeWebSocketServer(server) {
     function broadcastNotification(data) {
         const targetUserId = data.userId;
         wss.clients.forEach(client => {
-            if (client.readyState === WebSocket.OPEN && clients.get(client) === targetUserId) {
+            const clientInfo = clients.get(client);
+            if (client.readyState === WebSocket.OPEN && 
+                clientInfo?.type === 'user' && 
+                clientInfo?.id === targetUserId) {
                 client.send(JSON.stringify(data));
             }
         });

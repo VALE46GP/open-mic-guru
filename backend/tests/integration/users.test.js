@@ -3,6 +3,7 @@ const express = require('express');
 const { mockDb, resetMockDb } = require('../helpers/mockDb');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
+const WebSocket = require('ws');
 
 // Add AWS SDK v3 mocks
 jest.mock('@aws-sdk/client-s3', () => ({
@@ -18,6 +19,12 @@ jest.mock('@aws-sdk/s3-request-presigner', () => ({
 
 // Mock the database
 jest.mock('../../src/db', () => mockDb);
+
+// Add this near the top with other mocks
+jest.mock('../../src/utils/emailService.util', () => ({
+    sendVerificationEmail: jest.fn().mockResolvedValue(true),
+    sendPasswordResetEmail: jest.fn().mockResolvedValue(true)
+}));
 
 const app = express();
 const usersController = require('../../src/controllers/users');
@@ -36,7 +43,7 @@ app.post('/users/login', usersController.loginUser);
 app.get('/users/:userId', usersController.getUserById);
 app.delete('/users/:userId', mockVerifyToken, usersController.deleteUser);
 app.post('/users/upload', usersController.generateUploadUrl);
-app.post('/users/validate-password', usersController.validatePassword);
+app.put('/users/verifications/:token', usersController.verifyEmail);
 
 describe('Users Controller', () => {
     beforeEach(() => {
@@ -75,7 +82,7 @@ describe('Users Controller', () => {
     });
 
     describe('POST /users/register', () => {
-        it('should register a new user successfully', async () => {
+        it('should register a new user successfully and send verification email', async () => {
             const newUser = {
                 email: 'new@example.com',
                 password: 'password123',
@@ -84,38 +91,61 @@ describe('Users Controller', () => {
                 socialMediaAccounts: ['twitter.com/newuser']
             };
 
+            // Mock for checking existing user
+            mockDb.query.mockResolvedValueOnce({ rows: [] });
+            
+            // Mock for creating user with verification
             mockDb.query.mockResolvedValueOnce({
                 rows: [{
                     id: 1,
                     ...newUser,
-                    password: await bcrypt.hash(newUser.password, 10)
+                    verification_token: 'test-token',
+                    email_verified: false
                 }]
             });
+
+            const emailService = require('../../src/utils/emailService.util');
 
             const response = await request(app)
                 .post('/users/register')
                 .send(newUser);
 
             expect(response.status).toBe(201);
-            expect(response.body).toHaveProperty('user');
-            expect(response.body).toHaveProperty('token');
+            expect(response.body).toHaveProperty('needsVerification', true);
+            expect(response.body).toHaveProperty('message', 'Registration successful. Please check your email to verify your account.');
+            expect(emailService.sendVerificationEmail).toHaveBeenCalled();
         });
 
-        it('should handle duplicate email registration', async () => {
+        it('should handle duplicate email registration with unverified account', async () => {
             const duplicateUser = {
                 email: 'existing@example.com',
                 password: 'password123',
                 name: 'Duplicate User'
             };
 
-            mockDb.query.mockRejectedValueOnce(new Error('duplicate key value'));
+            // Mock existing unverified user
+            mockDb.query.mockResolvedValueOnce({
+                rows: [{
+                    email: duplicateUser.email,
+                    email_verified: false
+                }]
+            });
+
+            // Mock update verification token
+            mockDb.query.mockResolvedValueOnce({
+                rows: [{
+                    email: duplicateUser.email,
+                    verification_token: 'new-token'
+                }]
+            });
 
             const response = await request(app)
                 .post('/users/register')
                 .send(duplicateUser);
 
-            expect(response.status).toBe(500);
-            expect(response.body).toHaveProperty('error', 'Server error');
+            expect(response.status).toBe(200);
+            expect(response.body).toHaveProperty('needsVerification', true);
+            expect(response.body.message).toContain('Account already exists but is not verified');
         });
 
         it('should update existing user when isUpdate is true', async () => {
@@ -143,7 +173,7 @@ describe('Users Controller', () => {
     });
 
     describe('POST /users/login', () => {
-        it('should login user successfully', async () => {
+        it('should login verified user successfully', async () => {
             const password = 'testpass123';
             const hashedPassword = await bcrypt.hash(password, 10);
 
@@ -151,7 +181,8 @@ describe('Users Controller', () => {
                 rows: [{
                     id: 1,
                     email: 'login@example.com',
-                    password: hashedPassword
+                    password: hashedPassword,
+                    email_verified: true
                 }]
             });
 
@@ -166,6 +197,30 @@ describe('Users Controller', () => {
             expect(response.body).toHaveProperty('token');
         });
 
+        it('should reject unverified user login', async () => {
+            const password = 'testpass123';
+            const hashedPassword = await bcrypt.hash(password, 10);
+
+            mockDb.query.mockResolvedValueOnce({
+                rows: [{
+                    id: 1,
+                    email: 'unverified@example.com',
+                    password: hashedPassword,
+                    email_verified: false
+                }]
+            });
+
+            const response = await request(app)
+                .post('/users/login')
+                .send({
+                    email: 'unverified@example.com',
+                    password: password
+                });
+
+            expect(response.status).toBe(403);
+            expect(response.body).toHaveProperty('needsVerification', true);
+        });
+
         it('should reject invalid credentials', async () => {
             const password = 'testpass123';
             const hashedPassword = await bcrypt.hash(password, 10);
@@ -174,7 +229,8 @@ describe('Users Controller', () => {
                 rows: [{
                     id: 1,
                     email: 'login@example.com',
-                    password: hashedPassword
+                    password: hashedPassword,
+                    email_verified: true
                 }]
             });
 
@@ -186,7 +242,7 @@ describe('Users Controller', () => {
                 });
 
             expect(response.status).toBe(401);
-            expect(response.body).toHaveProperty('message', 'Authentication failed');
+            expect(response.body).toHaveProperty('error', 'Invalid email or password');
         });
     });
 
@@ -254,60 +310,49 @@ describe('Users Controller', () => {
         });
     });
 
-    describe('POST /users/validate-password', () => {
-        it('should validate correct password', async () => {
-            const password = 'testpass123';
-            const hashedPassword = await bcrypt.hash(password, 10);
-
-            mockDb.query.mockResolvedValueOnce({
-                rows: [{ password: hashedPassword }]
-            });
+    // Add new email verification tests
+    describe('PUT /users/verifications/:token', () => {
+        it('should verify email successfully', async () => {
+            mockDb.query
+                .mockResolvedValueOnce({ // Check if already verified
+                    rows: []
+                })
+                .mockResolvedValueOnce({ // Get user by token
+                    rows: [{
+                        email: 'test@example.com',
+                        verification_token: 'valid-token',
+                        verification_token_expires: new Date(Date.now() + 86400000),
+                        email_verified: false
+                    }]
+                })
+                .mockResolvedValueOnce({ // Update verification
+                    rows: [{
+                        email: 'test@example.com',
+                        email_verified: true
+                    }]
+                });
 
             const response = await request(app)
-                .post('/users/validate-password')
-                .send({
-                    userId: 1,
-                    password: password
-                });
+                .put('/users/verifications/valid-token');
 
             expect(response.status).toBe(200);
-            expect(response.body).toHaveProperty('valid', true);
+            expect(response.body).toHaveProperty('message', 'Email verified successfully');
         });
 
-        it('should reject incorrect password', async () => {
-            const password = 'testpass123';
-            const hashedPassword = await bcrypt.hash(password, 10);
-
-            mockDb.query.mockResolvedValueOnce({
-                rows: [{ password: hashedPassword }]
-            });
-
-            const response = await request(app)
-                .post('/users/validate-password')
-                .send({
-                    userId: 1,
-                    password: 'wrongpassword'
+        it('should handle already verified email', async () => {
+            mockDb.query
+                .mockResolvedValueOnce({ // Check if already verified
+                    rows: [{
+                        email: 'test@example.com',
+                        email_verified: true
+                    }]
                 });
 
-            expect(response.status).toBe(401);
-            expect(response.body).toHaveProperty('error', 'Invalid password');
-        });
-
-        it('should handle non-existent user', async () => {
-            mockDb.query.mockResolvedValueOnce({ rows: [] });
-
             const response = await request(app)
-                .post('/users/validate-password')
-                .send({
-                    userId: 999,
-                    password: 'anypassword'
-                });
+                .put('/users/verifications/valid-token');
 
-            expect(response.status).toBe(404);
-            expect(response.body).toHaveProperty('error', 'User not found');
+            expect(response.status).toBe(200);
+            expect(response.body).toHaveProperty('message', 'Email already verified');
         });
-
-        // TODO: Create method for deleting a user (will need to handle events they host)
-        // TODO: Write tests for this functionality
     });
 });
