@@ -64,51 +64,20 @@ const usersController = {
                         message: 'This email address is already in use. Please use a different email or try logging in.'
                     });
                 }
-            }
 
-            let hashedPassword = null;
-            if (password) {
-                hashedPassword = await bcrypt.hash(password, 10);
-            }
+                // Hash password for new user registration
+                const hashedPassword = await bcrypt.hash(password, 10);
 
-            if (isUpdate) {
-                const socialMediaJson = JSON.stringify(socialMediaAccounts || []);
-                const client = await pool.connect();
-
-                try {
-                    await client.query('BEGIN');
-                    const updatedUser = await userQueries.updateUser(
-                        client,
-                        email,
-                        name,
-                        photoUrl,
-                        socialMediaJson,
-                        hashedPassword,
-                        userId,
-                        bio
-                    );
-                    await client.query('COMMIT');
-                    res.status(200).json({ user: updatedUser });
-                } catch (err) {
-                    await client.query('ROLLBACK');
-                    throw err;
-                } finally {
-                    client.release();
-                }
-            } else {
                 // New user registration
                 const socialMediaJson = JSON.stringify(socialMediaAccounts || []);
-
-                // Generate verification token
                 const verificationToken = TokenUtility.generateToken();
-                const tokenExpires = TokenUtility.generateExpirationTime(24); // 24 hours
+                const tokenExpires = TokenUtility.generateExpirationTime(24);
 
                 let newUser;
                 try {
-                    // Create user first
                     newUser = await userQueries.createUserWithVerification(
                         email,
-                        hashedPassword,
+                        hashedPassword, // Pass hashed password for new users
                         name,
                         photoUrl,
                         socialMediaJson,
@@ -141,6 +110,30 @@ const usersController = {
                         error: 'Registration failed',
                         details: dbError.message
                     });
+                }
+            } else {
+                // Update existing user (no password handling here)
+                const socialMediaJson = JSON.stringify(socialMediaAccounts || []);
+                const client = await pool.connect();
+
+                try {
+                    await client.query('BEGIN');
+                    const updatedUser = await userQueries.updateUser(
+                        client,
+                        email,
+                        name,
+                        photoUrl,
+                        socialMediaJson,
+                        userId,
+                        bio
+                    );
+                    await client.query('COMMIT');
+                    res.status(200).json({ user: updatedUser });
+                } catch (err) {
+                    await client.query('ROLLBACK');
+                    throw err;
+                } finally {
+                    client.release();
                 }
             }
         } catch (err) {
@@ -280,27 +273,6 @@ const usersController = {
         } catch (err) {
             logger.error(err);
             res.status(500).json({ error: 'Error generating upload URL' });
-        }
-    },
-
-    async validatePassword(req, res) {
-        try {
-            const { userId, password } = req.body;
-            const user = await userQueries.getUserPassword(userId);
-
-            if (!user) {
-                return res.status(404).json({ error: 'User not found' });
-            }
-
-            const isValid = await bcrypt.compare(password, user.password);
-            if (!isValid) {
-                return res.status(401).json({ error: 'Invalid password' });
-            }
-
-            res.json({ valid: true });
-        } catch (error) {
-            logger.error('Error validating password:', error);
-            res.status(500).json({ error: 'Server error' });
         }
     },
 

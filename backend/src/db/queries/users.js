@@ -62,26 +62,18 @@ const userQueries = {
         return result.rows[0];
     },
 
-    async updateUser(client, email, name, photoUrl, socialMediaJson, hashedPassword, userId, bio) {
-        let updateQuery = `
-            UPDATE users
-            SET email = $1,
-                name = $2,
-                image = $3,
-                social_media_accounts = $4::jsonb,
-                bio = $5
-        `;
-        let queryParams = [email, name, photoUrl, socialMediaJson, bio];
-
-        if (hashedPassword) {
-            queryParams.push(hashedPassword);
-            updateQuery += `, password = $${queryParams.length}`;
-        }
-
-        queryParams.push(userId);
-        updateQuery += ` WHERE id = $${queryParams.length} RETURNING *`;
-
-        const result = await client.query(updateQuery, queryParams);
+    async updateUser(client, email, name, photoUrl, socialMediaJson, userId, bio) {
+        const result = await client.query(
+            `UPDATE users
+             SET email = $1,
+                 name = $2,
+                 image = $3,
+                 social_media_accounts = $4::jsonb,
+                 bio = $5
+             WHERE id = $6
+             RETURNING *`,
+            [email, name, photoUrl, socialMediaJson, bio, userId]
+        );
         return result.rows[0];
     },
 
@@ -145,14 +137,6 @@ const userQueries = {
             ORDER BY e.start_time DESC
         `, [userId]);
         return result.rows;
-    },
-
-    async getUserPassword(userId) {
-        const result = await pool.query(
-            'SELECT password FROM users WHERE id = $1',
-            [userId]
-        );
-        return result.rows[0];
     },
 
     async checkUserExists(userId) {
