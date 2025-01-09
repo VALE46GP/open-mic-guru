@@ -10,6 +10,7 @@ const userQueries = {
                 FROM users u
                          LEFT JOIN events e ON e.host_id = u.id
                 WHERE e.types IS NOT NULL
+                AND u.email_verified = true
 
                 UNION
 
@@ -45,6 +46,7 @@ const userQueries = {
                 array_agg(DISTINCT uet.event_type) FILTER (WHERE uet.event_type IS NOT NULL) as event_types
             FROM users
                      LEFT JOIN user_event_types uet ON users.id = uet.user_id
+            WHERE users.email_verified = true
             GROUP BY users.id, users.name, users.image, users.social_media_accounts
         `);
         return result.rows;

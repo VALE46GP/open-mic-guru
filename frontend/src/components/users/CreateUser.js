@@ -144,15 +144,21 @@ function CreateUser({ initialData, onCancel }) {
                 throw new Error(result.error || 'Failed to update user');
             }
 
-            if (!initialData && result.token) {
-                login(result.token);
+            // Handle new user registration
+            if (!initialData) {
+                if (result.needsVerification) {
+                    navigate(`/verify-email?email=${encodeURIComponent(registerEmail)}`);
+                    return;
+                }
+                if (result.token) {
+                    login(result.token);
+                }
             }
 
+            // Handle profile update
             setSuccess(true);
             if (initialData?.id) {
                 navigate(`/users/${initialData.id}`);
-            } else if (result.user?.id) {
-                navigate(`/users/${result.user.id}`);
             }
         } catch (error) {
             console.error('Registration/Update error:', error);

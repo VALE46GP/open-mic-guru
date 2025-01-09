@@ -123,16 +123,16 @@ const usersController = {
                     } catch (emailError) {
                         logger.error('Failed to send verification email:', emailError);
                         return res.status(201).json({
-                            user: newUser,
                             needsVerification: true,
+                            email: email,
                             message: 'Registration successful but verification email could not be sent. Please contact support.',
                             emailError: true
                         });
                     }
 
                     res.status(201).json({
-                        user: newUser,
                         needsVerification: true,
+                        email: email,
                         message: 'Registration successful. Please check your email to verify your account.'
                     });
                 } catch (dbError) {
