@@ -5,22 +5,31 @@ import './VerifyEmailPage.sass';
 
 function VerifyEmailPage() {
     const [searchParams] = useSearchParams();
-    const [status, setStatus] = useState('verifying');
+    const [status, setStatus] = useState('pending');
     const [error, setError] = useState('');
     const [email, setEmail] = useState('');
+    const [message, setMessage] = useState('');
     const navigate = useNavigate();
 
     useEffect(() => {
-        let isSubscribed = true; // For handling component unmount
+        const token = searchParams.get('token');
+        const emailParam = searchParams.get('email');
+        
+        if (emailParam) {
+            setEmail(emailParam);
+            setStatus('unverified');
+            setMessage('Your email has not been verified yet. Please check your inbox for the verification link or request a new one.');
+            return;
+        }
 
+        if (!token) {
+            setStatus('error');
+            setError('No verification token provided');
+            return;
+        }
+
+        let isSubscribed = true;
         const verifyEmail = async () => {
-            const token = searchParams.get('token');
-            if (!token) {
-                setStatus('error');
-                setError('No verification token provided');
-                return;
-            }
-
             try {
                 const verifyUrl = `/api/users/verifications/${token}`;
                 console.log('Making verification request to:', verifyUrl);
@@ -61,7 +70,6 @@ function VerifyEmailPage() {
         };
 
         verifyEmail();
-
         return () => {
             isSubscribed = false;
         };
@@ -82,7 +90,8 @@ function VerifyEmailPage() {
             const data = await response.json();
 
             if (response.ok) {
-                setError('A new verification email has been sent. Please check your inbox.');
+                setMessage('A new verification email has been sent. Please check your inbox.');
+                setError('');
             } else {
                 setError(data.error || 'Failed to resend verification email');
             }
@@ -95,10 +104,29 @@ function VerifyEmailPage() {
     return (
         <div className="verify-email">
             <BorderBox>
-                {status === 'verifying' && (
+                {status === 'pending' && (
                     <div className="verify-email__status">
                         <h2>Verifying Your Email</h2>
                         <p>Please wait while we verify your email address...</p>
+                    </div>
+                )}
+
+                {status === 'unverified' && (
+                    <div className="verify-email__status">
+                        <h2>Email Not Verified</h2>
+                        <p>{message}</p>
+                        <button
+                            onClick={handleResendVerification}
+                            className="verify-email__button verify-email__button--resend"
+                        >
+                            Resend Verification Email
+                        </button>
+                        <button
+                            onClick={() => navigate('/login')}
+                            className="verify-email__button"
+                        >
+                            Return to Login
+                        </button>
                     </div>
                 )}
 

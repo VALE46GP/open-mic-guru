@@ -158,7 +158,7 @@ const usersController = {
             const user = await userQueries.getUserByEmail(email);
 
             if (!user) {
-                return res.status(401).json({ error: 'Authentication failed' });
+                return res.status(401).json({ error: 'Invalid email or password' });
             }
 
             // Check if email is verified
@@ -173,7 +173,7 @@ const usersController = {
             // Verify password
             const isMatch = await bcrypt.compare(password, user.password);
             if (!isMatch) {
-                return res.status(401).json({ error: 'Authentication failed' });
+                return res.status(401).json({ error: 'Invalid email or password' });
             }
 
             const token = jwt.sign(

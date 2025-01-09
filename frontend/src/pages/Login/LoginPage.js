@@ -37,8 +37,10 @@ function LoginPage() {
                 setSuccess(true);
                 login(data.token);
                 navigate('/');
+            } else if (data.needsVerification) {
+                navigate(`/verify-email?email=${encodeURIComponent(email)}`);
             } else {
-                setError(data.errors?.[0]?.msg || 'Invalid credentials');
+                setError(data.error || 'Invalid credentials');
             }
         } catch (error) {
             setError('An error occurred during login');
