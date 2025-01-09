@@ -427,6 +427,66 @@ const usersController = {
             console.error('Error checking verification status:', error);
             res.status(500).json({ error: 'Failed to check verification status' });
         }
+    },
+
+    async forgotPassword(req, res) {
+        try {
+            const { email } = req.body;
+            const user = await userQueries.getUserByEmail(email);
+
+            if (!user) {
+                // Return 200 even if user doesn't exist for security
+                return res.json({ 
+                    message: 'If an account exists with this email, a password reset link will be sent.' 
+                });
+            }
+
+            // Generate reset token
+            const resetToken = TokenUtility.generateToken();
+            const tokenExpires = TokenUtility.generateExpirationTime(1); // 1 hour expiry
+
+            // Update user with reset token
+            await userQueries.updateResetToken(email, resetToken, tokenExpires);
+
+            // Send reset email
+            await emailService.sendPasswordResetEmail(email, resetToken);
+
+            res.json({ 
+                message: 'If an account exists with this email, a password reset link will be sent.' 
+            });
+        } catch (error) {
+            logger.error('Forgot password error:', error);
+            res.status(500).json({ error: 'Failed to process password reset request' });
+        }
+    },
+
+    async resetPassword(req, res) {
+        try {
+            const { token, newPassword } = req.body;
+            
+            // Verify token and get user
+            const user = await userQueries.getUserByResetToken(token);
+            
+            if (!user || TokenUtility.isExpired(user.reset_password_expires)) {
+                return res.status(400).json({ 
+                    error: 'Password reset token is invalid or has expired' 
+                });
+            }
+
+            // Hash new password
+            const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+            // Update password and clear reset token
+            await userQueries.updatePasswordAndClearResetToken(
+                user.email, 
+                hashedPassword
+            );
+
+            res.json({ message: 'Password has been reset successfully' });
+        } catch (error) {
+            logger.error('Reset password error:', error);
+            res.status(500).json({ error: 'Failed to reset password' });
+        }
     }
 };
 

@@ -16,6 +16,7 @@ import { NotificationsProvider } from './context/NotificationsContext';
 import NotificationsPage from './pages/Notifications/NotificationsPage';
 import NotFoundPage from './pages/NotFound/NotFoundPage';
 import VerifyEmailPage from './pages/VerifyEmail/VerifyEmailPage'
+import ResetPasswordPage from './pages/ResetPassword/ResetPasswordPage';
 
 function App() {
     return (
@@ -38,6 +39,7 @@ function App() {
                                     <Route path="/events" element={<EventsPage />} />
                                     <Route path="/users" element={<UsersPage />} />
                                     <Route path="/notifications" element={<NotificationsPage />} />
+                                    <Route path="/reset-password" element={<ResetPasswordPage />} />
                                     {/* Fallback route */}
                                     <Route path="*" element={<NotFoundPage />} />
                                 </Routes>

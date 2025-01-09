@@ -28,4 +28,8 @@ router.post('/validate-password', usersController.validatePassword);
 router.put('/verifications/:token', usersController.verifyEmail);  // Verify an email
 router.post('/verifications', usersController.resendVerification);
 
+// Add these new routes
+router.post('/forgot-password', usersController.forgotPassword);
+router.post('/reset-password', usersController.resetPassword);
+
 module.exports = router;

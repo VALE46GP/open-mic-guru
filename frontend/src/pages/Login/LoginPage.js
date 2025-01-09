@@ -12,6 +12,9 @@ function LoginPage() {
     const { login } = useAuth();
     const navigate = useNavigate();
     const [showCreateUser, setShowCreateUser] = useState(false);
+    const [showForgotPassword, setShowForgotPassword] = useState(false);
+    const [forgotPasswordEmail, setForgotPasswordEmail] = useState('');
+    const [forgotPasswordMessage, setForgotPasswordMessage] = useState('');
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -48,6 +51,39 @@ function LoginPage() {
         }
     };
 
+    const handleForgotPassword = async (e) => {
+        e.preventDefault();
+        setError('');
+        setForgotPasswordMessage('');
+
+        if (!forgotPasswordEmail) {
+            setError('Please enter your email address');
+            return;
+        }
+
+        try {
+            const response = await fetch('/api/users/forgot-password', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ email: forgotPasswordEmail }),
+            });
+
+            const data = await response.json();
+
+            if (response.ok) {
+                setForgotPasswordMessage(data.message);
+                setForgotPasswordEmail('');
+            } else {
+                setError(data.error || 'Failed to process request');
+            }
+        } catch (error) {
+            setError('An error occurred. Please try again.');
+            console.error('Forgot password error:', error);
+        }
+    };
+
     return (
         <div>
             <button 
@@ -57,15 +93,34 @@ function LoginPage() {
             >
                 {showCreateUser ? 'Login Existing User' : 'Create New User'}
             </button>
-            {!showCreateUser ? (
+            {!showCreateUser && !showForgotPassword && (
                 <h2>Login Existing User</h2>
-            ) : (
-                <div/>
             )}
             {error && <div data-testid="error-message" className="error-message">{error}</div>}
             {success && <div data-testid="success-message" className="success-message">Login successful!</div>}
+            {forgotPasswordMessage && (
+                <div className="success-message">{forgotPasswordMessage}</div>
+            )}
             {showCreateUser ? (
                 <CreateUser/>
+            ) : showForgotPassword ? (
+                <form onSubmit={handleForgotPassword}>
+                    <h2>Reset Password</h2>
+                    <input
+                        type="email"
+                        placeholder="Email"
+                        value={forgotPasswordEmail}
+                        onChange={(e) => setForgotPasswordEmail(e.target.value)}
+                        data-testid="forgot-password-email"
+                    />
+                    <button type="submit">Send Reset Link</button>
+                    <button 
+                        type="button"
+                        onClick={() => setShowForgotPassword(false)}
+                    >
+                        Back to Login
+                    </button>
+                </form>
             ) : (
                 <form onSubmit={handleSubmit}>
                     <input
@@ -87,6 +142,13 @@ function LoginPage() {
                         data-testid="login-button"
                     >
                         Login
+                    </button>
+                    <button 
+                        type="button"
+                        onClick={() => setShowForgotPassword(true)}
+                        className="login-page__forgot-password"
+                    >
+                        Forgot Password?
                     </button>
                 </form>
             )}

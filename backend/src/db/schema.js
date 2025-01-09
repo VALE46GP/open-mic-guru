@@ -14,10 +14,13 @@ const tables = {
             auth_provider VARCHAR(20) DEFAULT 'email',
             auth_provider_id VARCHAR(255),
             created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-            updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+            updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+            reset_password_token VARCHAR(255),
+            reset_password_expires TIMESTAMP WITH TIME ZONE
         );
         CREATE INDEX idx_verification_token ON users(verification_token);
         CREATE INDEX idx_auth_provider ON users(auth_provider, auth_provider_id);
+        CREATE INDEX idx_reset_password_token ON users(reset_password_token);
     `,
     venues: `
         CREATE TABLE IF NOT EXISTS venues (

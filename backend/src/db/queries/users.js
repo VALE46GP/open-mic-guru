@@ -253,6 +253,40 @@ const userQueries = {
         `);
         console.log('Just verified user query result:', result.rows[0]);
         return result.rows[0];
+    },
+
+    async updateResetToken(email, resetToken, tokenExpires) {
+        const result = await pool.query(
+            `UPDATE users 
+             SET reset_password_token = $1,
+                 reset_password_expires = $2
+             WHERE email = $3
+             RETURNING *`,
+            [resetToken, tokenExpires, email]
+        );
+        return result.rows[0];
+    },
+
+    async getUserByResetToken(token) {
+        const result = await pool.query(
+            `SELECT * FROM users 
+             WHERE reset_password_token = $1`,
+            [token]
+        );
+        return result.rows[0];
+    },
+
+    async updatePasswordAndClearResetToken(email, hashedPassword) {
+        const result = await pool.query(
+            `UPDATE users 
+             SET password = $1,
+                 reset_password_token = NULL,
+                 reset_password_expires = NULL
+             WHERE email = $2
+             RETURNING *`,
+            [hashedPassword, email]
+        );
+        return result.rows[0];
     }
 };
 
