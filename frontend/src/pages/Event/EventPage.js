@@ -71,6 +71,12 @@ function EventPage() {
 
         try {
             const update = JSON.parse(lastMessage.data);
+            console.log('WebSocket message received:', {
+                update,
+                currentUser: userId,
+                isNonUser: !userId,
+                eventId
+            });
 
             if (update.type === 'LINEUP_UPDATE' && update.eventId === parseInt(eventId)) {
                 setEventDetails(prevDetails => {
@@ -86,16 +92,22 @@ function EventPage() {
                             slot => slot.slot_number !== update.data.slot_number
                         );
 
+                        const newSlot = {
+                            slot_id: update.data.slot_id,
+                            slot_number: update.data.slot_number,
+                            slot_name: update.data.slot_name,
+                            user_id: update.data.user_id,
+                            user_name: update.data.user_name,
+                            user_image: update.data.user_image,
+                            slot_start_time: new Date(update.data.slot_start_time),
+                            non_user_identifier: update.data.non_user_identifier,
+                            ip_address: update.data.ip_address
+                        };
+
                         return {
                             ...prevDetails,
-                            lineup: [
-                                ...filteredLineup,
-                                {
-                                    ...update.data,
-                                    user_image: update.data.user_image,
-                                    slot_start_time: new Date(update.data.slot_start_time)
-                                }
-                            ].sort((a, b) => a.slot_number - b.slot_number)
+                            lineup: [...filteredLineup, newSlot]
+                                .sort((a, b) => a.slot_number - b.slot_number)
                         };
                     } else if (update.action === 'REORDER') {
                         const updatedLineup = prevDetails.lineup.map(slot => {
@@ -200,6 +212,14 @@ function EventPage() {
             ? user.name
             : slotName;
 
+        // Get nonUserId from cookies
+        const getCookie = (name) => {
+            const value = `; ${document.cookie}`;
+            const parts = value.split(`; ${name}=`);
+            if (parts.length === 2) return parts.pop().split(';').shift();
+        };
+        const nonUserId = getCookie('nonUserId');
+
         const response = await fetch('/api/lineup_slots/', {
             method: 'POST',
             headers: {
@@ -210,7 +230,8 @@ function EventPage() {
                 user_id: isHostAssignment ? null : userId,
                 slot_number: slot.slot_number,
                 slot_name: finalSlotName,
-                isHostAssignment
+                isHostAssignment,
+                nonUserId: !userId ? nonUserId : null  // Include nonUserId if there's no userId
             }),
         });
 

@@ -14,18 +14,26 @@ export const WebSocketProvider = ({ children }) => {
 
         const connectWebSocket = () => {
             const token = getToken();
-            if (!token || !isAuthenticated) return;
+            const wsHost = window.location.hostname;
+            let wsUrl = `ws://${wsHost}:3001/ws`;
 
-            try {
-                // Check token expiration
-                const payload = JSON.parse(atob(token.split('.')[1]));
-                if (payload.exp * 1000 < Date.now()) {
-                    logout();
+            // Add token if authenticated
+            if (token && isAuthenticated) {
+                try {
+                    const payload = JSON.parse(atob(token.split('.')[1]));
+                    if (payload.exp * 1000 < Date.now()) {
+                        logout();
+                        return;
+                    }
+                    wsUrl += `?token=${token}`;
+                } catch (error) {
+                    console.error('Token validation error:', error);
                     return;
                 }
+            }
 
-                const wsHost = window.location.hostname;
-                ws = new WebSocket(`ws://${wsHost}:3001/ws?token=${token}`);
+            try {
+                ws = new WebSocket(wsUrl);
 
                 ws.onopen = () => {
                     console.log('WebSocket connected');

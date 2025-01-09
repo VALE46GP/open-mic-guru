@@ -35,16 +35,16 @@ function initializeWebSocketServer(server) {
     wss.on('connection', (ws, req) => {
         const url = new URL(req.url, 'ws://localhost');
         const token = url.searchParams.get('token');
+        const nonUserId = getCookieFromRequest(req, 'nonUserId');
+
+        // Generate a unique ID for this connection
+        ws.id = Math.random().toString(36).substring(7);
 
         if (token) {
             try {
                 const decoded = jwt.verify(token, process.env.JWT_SECRET);
                 const userId = decoded.userId;
-                clients.set(ws, userId);
-
-                ws.on('close', () => {
-                    clients.delete(ws);
-                });
+                clients.set(ws, { type: 'user', id: userId });
             } catch (err) {
                 logger.error('Invalid token:', err);
                 if (err.name === 'TokenExpiredError') {
@@ -52,9 +52,31 @@ function initializeWebSocketServer(server) {
                 } else {
                     ws.close(1008, 'Invalid token');
                 }
+                return;
             }
+        } else if (nonUserId) {
+            // Store non-user connection with their nonUserId
+            clients.set(ws, { type: 'nonuser', id: nonUserId });
+        } else {
+            // For connections without token or nonUserId
+            clients.set(ws, { type: 'anonymous', id: ws.id });
         }
+
+        ws.on('close', () => {
+            clients.delete(ws);
+        });
+
+        logger.log(`Client connected: ${ws.id} (${clients.get(ws)?.type}: ${clients.get(ws)?.id})`);
     });
+
+    // Helper function to get cookie value from request
+    function getCookieFromRequest(req, cookieName) {
+        const cookies = req.headers.cookie;
+        if (!cookies) return null;
+        
+        const match = cookies.match(new RegExp(`${cookieName}=([^;]+)`));
+        return match ? match[1] : null;
+    }
 
     function broadcastNotification(data) {
         const targetUserId = data.userId;
@@ -66,8 +88,19 @@ function initializeWebSocketServer(server) {
     }
 
     function broadcastLineupUpdate(data) {
+        console.log('Broadcasting update:', data);
+        const clientCount = wss.clients.size;
+        console.log('Number of connected clients:', clientCount);
+        
+        if (clientCount === 0) {
+            console.warn('No clients connected to receive broadcast');
+            return;
+        }
+
         wss.clients.forEach(client => {
             if (client.readyState === WebSocket.OPEN) {
+                const clientInfo = clients.get(client);
+                console.log(`Sending to client ${client.id} (${clientInfo?.type}: ${clientInfo?.id})`);
                 client.send(JSON.stringify(data));
             }
         });
