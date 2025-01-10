@@ -1,53 +1,50 @@
+@import '../../../styles/variables'
 @import '../../../styles/mixins'
 
 .border-box
     width: 100%
-    max-width: 800px
-    margin: 10px auto
-    padding: 0.75rem
-    border: 1px solid black
-    border-radius: 10px
+    max-width: $container-max-width
+    margin: $spacing-sm auto
+    padding: $spacing-md
+    border: 1px solid $color-black
+    border-radius: $border-radius-md
     position: relative
     box-sizing: border-box
 
-    @media (min-width: 992px)
-        border-radius: 20px
-        padding: 1.5rem 2rem
+    +media-up($lg)
+        border-radius: $border-radius-xl
+        padding: $spacing-lg $spacing-xl
 
     &__icons
         position: absolute
-        top: 0.75rem
-        right: 0.75rem
-        display: flex
+        top: $spacing-md
+        right: $spacing-md
+        +flex
 
     &__icon-button
-        @media (min-width: $lg)
+        +button-icon
+        
+        +media-up($lg)
             width: 40px
             height: 40px
-        background: none
-        border: none
-        padding: 0
+        
         width: 30px
         height: 30px
-        cursor: pointer
-        display: flex
-        align-items: center
-        justify-content: center
 
         &:focus-visible,
         &:hover
             background: none
             .edit-icon-stroke
-                stroke: gray
+                stroke: $text-secondary
             .delete-icon-stroke
-                stroke: red
+                stroke: $color-danger
 
     &__icon
-        @media (min-width: $lg)
+        +media-up($lg)
             width: 24px
             height: 24px
         width: 20px
         height: 20px
 
         path
-            stroke: black
+            stroke: $color-black

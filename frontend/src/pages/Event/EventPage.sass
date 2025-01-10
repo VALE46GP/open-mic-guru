@@ -1,10 +1,9 @@
+@import '../../styles/variables'
 @import '../../styles/mixins'
 
 .event-page
     &__button
-        background: none
-        border: none
-        padding: 0
+        +button-icon
         width: 30px
         height: 30px
 
@@ -12,9 +11,9 @@
         &:hover
             background: none
             .delete-icon-stroke
-                stroke: red
+                stroke: $color-danger
             .edit-icon-stroke
-                stroke: gray
+                stroke: $text-secondary
 
         &--edit
             @media (min-width: $lg)
@@ -24,25 +23,22 @@
             height: 20px
 
     &__buttons
-        display: flex
-        align-items: center
-        gap: .5rem
+        +flex($align: center)
+        gap: $spacing-sm
 
     &__lineup
-        display: flex
-        flex-direction: column
-        gap: 10px
+        +flex-column
+        gap: $spacing-sm
 
     &__lineup__slot
-        display: flex
-        justify-content: space-between
-        padding: 10px
-        border: 1px solid #ccc
-        border-radius: 5px
+        +flex($justify: space-between)
+        padding: $spacing-sm
+        border: 1px solid $border-color
+        border-radius: $border-radius-sm
 
         &.clickable:hover,
         &:focus
-            background-color: #f0f0f0
+            background-color: $bg-light
             cursor: pointer !important
 
     &__slot-artist

@@ -11,6 +11,13 @@
   "keywords": [],
   "author": "",
   "license": "ISC",
+  "browserslist": [
+    ">0.2%",
+    "not dead",
+    "not op_mini all",
+    "iOS >= 9",
+    "Safari >= 9"
+  ],
   "dependencies": {
     "@aws-sdk/client-s3": "^3.722.0",
     "@aws-sdk/client-ses": "^3.723.0",

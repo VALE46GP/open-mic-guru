@@ -1,39 +1,30 @@
+@import '../../styles/variables'
+@import '../../styles/mixins'
+
 .user-search
     width: 100%
     position: relative
 
     &__input-wrapper
         width: 100%
-        display: flex
-        align-items: center
-        gap: 0.5rem
+        +flex($align: center)
+        gap: $spacing-sm
 
     &__input
-        flex: 1
-        padding: 0.75rem
-        border: 1px solid #ddd
-        border-radius: 8px
-        font-size: 1rem
+        +input-base
         
         &:focus
             outline: none
-            border-color: #0066cc
-            box-shadow: 0 0 0 2px rgba(0, 102, 204, 0.1)
+            border-color: $color-primary
+            box-shadow: 0 0 0 2px rgba($color-primary, 0.1)
 
     &__clear-button
+        +button-icon
         flex-shrink: 0
-        background: none
-        border: none
-        font-size: 1.5rem
-        color: #666
-        cursor: pointer
-        padding: 0.25rem
-        line-height: 1
+        font-size: $font-size-xl
+        color: $text-secondary
         width: 2rem
         height: 2rem
-        display: flex
-        align-items: center
-        justify-content: center
         
         &:hover
-            color: #333
+            color: $text-primary

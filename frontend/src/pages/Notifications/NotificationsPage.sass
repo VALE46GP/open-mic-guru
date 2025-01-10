@@ -1,278 +1,238 @@
-// Variables
-$color-primary: #007bff
-$color-bg-light: #f8f9fa
-$color-border: #eee
-$color-text-secondary: #797979
-$border-radius: 4px
-$spacing-unit: 16px
+@import '../../styles/variables'
+@import '../../styles/mixins'
 
 .notifications
-  max-width: 800px
-  margin: 0 auto
+    +page-container
 
-  &__header
-    display: flex
-    justify-content: space-between
-    align-items: center
-    margin-bottom: $spacing-unit * 1.5
-    flex-wrap: wrap
-    gap: $spacing-unit
+    &__header
+        +flex($justify: space-between, $align: center)
+        margin-bottom: $spacing-lg
+        flex-wrap: wrap
+        gap: $spacing-md
 
-  &__title
-    font-size: 1.75rem
-    margin: 2rem 0
-    color: #333
-    text-align: center
+    &__title
+        font-size: $font-size-xl
+        margin: $spacing-xl 0 $spacing-md
+        color: $text-primary
+        text-align: center
 
-  &__tabs
-    display: flex
-    gap: $spacing-unit * 0.625
-    flex: 1
-    justify-content: center
-    min-width: 200px
+    &__tabs
+        +flex($justify: center)
+        gap: $spacing-sm
+        flex: 1
+        min-width: 200px
 
-  &__tab
-    padding: $spacing-unit * 0.5 $spacing-unit
-    border: 1px solid $color-primary
-    border-radius: $border-radius
-    background: transparent
-    color: $color-primary
-    cursor: pointer
-    transition: all 0.2s ease
-    font-weight: 500
+    &__tab
+        padding: $spacing-sm $spacing-md
+        border: 1px solid $color-primary
+        border-radius: $border-radius-sm
+        background: transparent
+        color: $color-primary
+        cursor: pointer
+        transition: all $transition-fast
+        font-weight: $font-weight-medium
 
-    &:focus-visible,
-    &:hover
-      background: rgba($color-primary, 0.1)
+        &:focus-visible,
+        &:hover
+            background: rgba($color-primary, 0.1)
 
-    &--active
-      background: $color-primary
-      color: white
+        &--active
+            background: $color-primary
+            color: $color-white
 
-  &__mark-all
-    padding: $spacing-unit * 0.5 $spacing-unit
-    background: $color-primary
-    color: white
-    border: none
-    border-radius: $border-radius
-    cursor: pointer
-    transition: all 0.2s ease
-    font-weight: 500
+    &__mark-all
+        +button-primary
+        padding: $spacing-sm $spacing-md
 
-    &:focus-visible,
-    &:hover
-      background: darken($color-primary, 10%)
+    &__item
+        +flex($justify: space-between, $align: center)
+        gap: $spacing-md
+        padding: $spacing-md
+        text-align: left
 
-  &__item
-    display: flex
-    gap: $spacing-unit
-    padding: $spacing-unit
-    align-items: center
-    justify-content: space-between
-    text-align: left
+        &--unread
+            position: relative
 
-    &--unread
-      position: relative
+    &__top-button-row
+        +flex
+        gap: $spacing-xl
+        margin-bottom: $spacing-md
 
-  &__top-button-row
-    display: flex
-    gap: 2rem
-    margin-bottom: 1rem
+    &__top-button-container
+        +flex($direction: column, $justify: center, $align: center)
+        padding-left: 1px
 
-  &__top-button-container
-    display: flex
-    flex-direction: column
-    justify-content: center
-    align-items: center
-    padding-left: 1px
+    &__delete-button
+        +button-icon
+        margin: auto
+        background: $color-white
+        color: $text-secondary
+        width: 28px
+        height: 28px
 
-  &__delete-button
-    padding: 0
-    margin: auto
-    background: white
-    border: none
-    color: $color-text-secondary
-    width: 28px
-    height: 28px
-    transition: all 0.2s ease
+        svg
+            width: 28px
+            height: 28px
 
-    svg
-      width: 28px
-      height: 28px
+        &--active
+            color: $color-primary
 
-    &:focus-visible,
-    &:hover
-      background: white
-      color: $color-text-secondary
+            &:focus-visible,
+            &:hover
+                color: $color-primary-dark
 
-    &--active
-      color: $color-primary
+    &__button-column
+        +flex($direction: column, $justify: center)
+        gap: $spacing-md
+        flex: 0
+        height: 100%
 
-      &:focus-visible,
-      &:hover
-        color: darken($color-primary, 10%)
+    &__message-column
+        flex: 1
 
-  &__button-column
-    display: flex
-    flex-direction: column
-    justify-content: center
-    gap: 1rem
-    flex: 0
-    height: 100%
+    &__event-row
+        +flex
+        position: relative
+        gap: $spacing-md
+        align-items: center
 
-  &__message-column
-    flex: 1
+    &__select-button
+        background: $color-white
+        color: $color-primary
+        border: 2px solid $color-primary
+        border-radius: $border-radius-circle
+        width: 32px
+        height: 32px
+        +flex-center
+        cursor: pointer
+        transition: all $transition-fast
+        position: relative
+        flex-shrink: 0
 
-  &__event-row
-    display: flex
-    position: relative
-    gap: 1rem
-    align-items: center
+        &:focus-visible,
+        &:hover
+            background: rgba($color-primary, 0.1)
 
-  &__select-button
-    background: white
-    color: $color-primary
-    border: 2px solid $color-primary
-    border-radius: 50%
-    width: 32px
-    height: 32px
-    display: flex
-    align-items: center
-    justify-content: center
-    cursor: pointer
-    transition: all 0.2s ease
-    position: relative
-    flex-shrink: 0
+        &--selected
+            color: $color-white
+            background: $color-primary-dark !important
 
+    &__toggle-button
+        position: relative
+        flex-shrink: 0
+        +flex-center
+        background: $color-white
+        color: $color-primary
+        border: none
+        border-radius: $border-radius-circle
+        padding: 0
+        width: 32px
+        height: 32px
+        cursor: pointer
+        transition: all $transition-fast
 
-    &:focus-visible,
-    &:hover
-      background: rgba($color-primary, 0.1)
+        &:focus-visible,
+        &:hover
+            background: white
+            color: darken($color-primary, 10%)
 
-    &--selected
-      color: white
-      background: darken($color-primary, 10%) !important
+        &--expanded
+            background: white
+            color: darken($color-primary, 10%)
 
-  &__toggle-button
-    display: flex
-    position: relative
-    justify-content: center
-    flex-shrink: 0
-    align-items: center
-    background: white
-    color: $color-primary
-    border: none
-    border-radius: 50%
-    padding: 0
-    width: 32px
-    height: 32px
-    cursor: pointer
-    transition: all 0.2s ease
+        &--has-unread
+            background: $color-danger
+            color: $color-white
 
-    &:focus-visible,
-    &:hover
-      background: white
-      color: darken($color-primary, 10%)
+            &:focus-visible,
+            &:hover
+                background: $color-danger-dark
 
-    &--expanded
-      background: white
-      color: darken($color-primary, 10%)
+        svg
+            width: 32px
+            height: 32px
 
-    &--has-unread
-      background: #ff4444
-      color: white
+    &__status-icon
+        background: none
+        border: none
+        padding: 0
+        cursor: pointer
+        color: $color-primary
+        display: flex
+        align-items: center
+        justify-content: center
+        min-width: 24px
+        height: 24px
+        transition: transform 0.2s ease, color 0.2s ease
+        flex-shrink: 0
 
-      &:focus-visible,
-      &:hover
-        background: darken(#ff4444, 10%)
+        &:focus-visible,
+        &:hover
+            transform: scale(1.1)
+            color: darken($color-primary, 10%)
 
-    svg
-      width: 32px
-      height: 32px
+        svg
+            width: 20px
+            height: 20px
 
-  &__status-icon
-    background: none
-    border: none
-    padding: 0
-    cursor: pointer
-    color: $color-primary
-    display: flex
-    align-items: center
-    justify-content: center
-    min-width: 24px
-    height: 24px
-    transition: transform 0.2s ease, color 0.2s ease
-    flex-shrink: 0
+    &__message
+        white-space: pre-line
+        margin: 0
+        padding: 0
+        color: #333
+        line-height: 1.4
 
-    &:focus-visible,
-    &:hover
-      transform: scale(1.1)
-      color: darken($color-primary, 10%)
+    &__empty
+        text-align: center
+        color: $text-secondary
+        padding: $spacing-xl
+        font-size: $font-size-lg
 
-    svg
-      width: 20px
-      height: 20px
-
-  &__message
-    white-space: pre-line
-    margin: 0
-    padding: 0
-    color: #333
-    line-height: 1.4
-
-  &__empty
-    text-align: center
-    color: $color-text-secondary
-    padding: $spacing-unit * 2
-    font-size: 1.1rem
-
-  &__event-group
-    margin-bottom: 1rem
-  
-  &__badge
-    font-size: 14px
-    font-weight: bold
-    width: 32px
-    height: 32px
-    display: flex
-    align-items: center
-    justify-content: center
-    background-color: #ff4444
-    color: white
-    border-radius: 50%
-
-  &__event-card
-    flex: 1
-
-  &__messages
-    margin: 0.5rem 0 0 48px
-    padding-left: 1rem
-    border-left: 2px solid $color-border
-    text-align: left
-
-  &__message
-    padding: 0.5rem 0
-    color: #333
-    border-bottom: 1px solid #ccc
+    &__event-group
+        margin-bottom: $spacing-md
     
-    &:last-child
-      border-bottom: none
+    &__badge
+        font-size: $font-size-sm
+        font-weight: $font-weight-bold
+        width: 32px
+        height: 32px
+        +flex-center
+        background-color: $color-danger
+        color: $color-white
+        border-radius: $border-radius-circle
+
+    &__event-card
+        flex: 1
+
+    &__messages
+        margin: 0.5rem 0 0 48px
+        padding-left: 1rem
+        border-left: 2px solid $border-color
+        text-align: left
+
+    &__message
+        padding: 0.5rem 0
+        color: $text-primary
+        border-bottom: 1px solid $border-color
+        
+        &:last-child
+            border-bottom: none
+        
+        &--read
+            color: $text-secondary
     
-    &--read
-      color: $color-text-secondary
-  
-  &__time
-    font-size: 0.875rem
-    display: block
-    margin-bottom: 0.125rem
+    &__time
+        font-size: $font-size-sm
+        display: block
+        margin-bottom: 0.125rem
 
-    &--read
-      color: $color-text-secondary
+        &--read
+            color: $text-secondary
 
-  p
-    &:last-child
-      margin-bottom: 0
+    p
+        &:last-child
+            margin-bottom: 0
 
-  &__badge
-    font-size: 14px
-    font-weight: bold
+    &__badge
+        font-size: 14px
+        font-weight: bold

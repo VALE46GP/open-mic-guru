@@ -1,16 +1,17 @@
+@import '../../styles/variables'
+@import '../../styles/mixins'
+
 .navigation
     position: fixed
     top: 0
     left: 0
     width: 100%
-    display: flex
-    justify-content: space-between
-    align-items: center
-    padding: 1rem
-    background-color: white
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1)
-    transition: transform 0.3s cubic-bezier(0.4, 0.0, 0.2, 1)
-    z-index: 1000
+    +flex($justify: space-between, $align: center)
+    padding: $spacing-md
+    background-color: $color-white
+    box-shadow: $shadow-sm
+    transition: transform $transition-base
+    z-index: $z-index-fixed
 
     svg
         width: 2rem
@@ -23,50 +24,40 @@
         transform: translateY(0)
 
     &__left
-        font-size: 1.5rem
-        font-weight: bold
+        font-size: $font-size-xl
+        font-weight: $font-weight-bold
 
     &__logo
-        color: black
+        color: $color-black
         text-decoration: none
 
     &__right
-        display: flex
-        align-items: center
-        gap: 1.5rem
+        +flex($align: center)
+        gap: $spacing-lg
 
     &__create-event
-        color: #28a745
-        font-size: 1.5rem
-        display: flex
-        align-items: center
-        justify-content: center
+        color: $color-success
+        font-size: $font-size-xl
+        +flex-center
         text-decoration: none
 
         &:hover,
         &:focus-visible
-            color: #218838
+            color: $color-success-dark
 
     &__user-thumbnail
-        width: 40px
-        height: 40px
-        border-radius: 50%
-        object-fit: cover
+        +image-container(40px)
 
     &__login-icon
-        color: black
-        font-size: 1.5rem
-        display: flex
-        align-items: center
-        justify-content: center
+        color: $color-black
+        font-size: $font-size-xl
+        +flex-center
 
     &__placeholder
-        margin-bottom: 1rem
+        margin-bottom: $spacing-md
         height: 72px
 
     &__users-link
-        color: black
-        font-size: 1.5rem
-        display: flex
-        align-items: center
-        justify-content: center
+        color: $color-black
+        font-size: $font-size-xl
+        +flex-center
