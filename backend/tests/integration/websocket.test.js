@@ -46,25 +46,45 @@ describe('WebSocket Server', () => {
     });
 
     it('should broadcast notifications to specific user', (done) => {
-        const port = server.address().port;
         const mockToken = jwt.sign({ userId: 1 }, process.env.JWT_SECRET);
+        let messageReceived = false;
+        
         client = new WebSocket(`ws://localhost:${port}/ws?token=${mockToken}`);
 
+        client.on('error', (error) => {
+            done(error);
+        });
+
         client.on('message', (data) => {
-            const message = JSON.parse(data);
-            expect(message).toHaveProperty('type', 'NOTIFICATION_UPDATE');
-            expect(message).toHaveProperty('userId', 1);
-            done();
+            try {
+                const message = JSON.parse(data);
+                expect(message).toHaveProperty('type', 'NOTIFICATION_UPDATE');
+                expect(message).toHaveProperty('userId', 1);
+                messageReceived = true;
+                done();
+            } catch (error) {
+                done(error);
+            }
         });
 
         client.on('open', () => {
-            wss.broadcastNotification({  // Changed from wsServer to wss
-                type: 'NOTIFICATION_UPDATE',
-                userId: 1,
-                notification: { id: 1, message: 'Test notification' }
-            });
+            // Wait a bit to ensure connection is fully established
+            setTimeout(() => {
+                wss.broadcastNotification({
+                    type: 'NOTIFICATION_UPDATE',
+                    userId: 1,
+                    notification: { id: 1, message: 'Test notification' }
+                });
+            }, 100);
         });
-    });
+
+        // Add timeout safety
+        setTimeout(() => {
+            if (!messageReceived) {
+                done(new Error('Message not received within timeout'));
+            }
+        }, 4000);
+    }, 5000);
 
     describe('WebSocket Error Handling', () => {
         it('should handle invalid tokens', (done) => {

@@ -10,6 +10,7 @@ const userQueries = {
                 FROM users u
                          LEFT JOIN events e ON e.host_id = u.id
                 WHERE e.types IS NOT NULL
+                AND u.email_verified = true
 
                 UNION
 
@@ -45,6 +46,7 @@ const userQueries = {
                 array_agg(DISTINCT uet.event_type) FILTER (WHERE uet.event_type IS NOT NULL) as event_types
             FROM users
                      LEFT JOIN user_event_types uet ON users.id = uet.user_id
+            WHERE users.email_verified = true
             GROUP BY users.id, users.name, users.image, users.social_media_accounts
         `);
         return result.rows;
@@ -60,32 +62,30 @@ const userQueries = {
         return result.rows[0];
     },
 
-    async updateUser(client, email, name, photoUrl, socialMediaJson, hashedPassword, userId, bio) {
-        let updateQuery = `
-            UPDATE users
-            SET email = $1,
-                name = $2,
-                image = $3,
-                social_media_accounts = $4::jsonb,
-                bio = $5
-        `;
-        let queryParams = [email, name, photoUrl, socialMediaJson, bio];
-
-        if (hashedPassword) {
-            queryParams.push(hashedPassword);
-            updateQuery += `, password = $${queryParams.length}`;
-        }
-
-        queryParams.push(userId);
-        updateQuery += ` WHERE id = $${queryParams.length} RETURNING *`;
-
-        const result = await client.query(updateQuery, queryParams);
+    async updateUser(client, email, name, photoUrl, socialMediaJson, userId, bio) {
+        const result = await client.query(
+            `UPDATE users
+             SET email = $1,
+                 name = $2,
+                 image = $3,
+                 social_media_accounts = $4::jsonb,
+                 bio = $5
+             WHERE id = $6
+             RETURNING *`,
+            [email, name, photoUrl, socialMediaJson, bio, userId]
+        );
         return result.rows[0];
     },
 
     async getUserByEmail(email) {
         const result = await pool.query(
-            'SELECT * FROM users WHERE email = $1',
+            `SELECT *,
+                CASE 
+                    WHEN verification_token_expires > NOW() THEN verification_token_expires
+                    ELSE NULL 
+                END as active_token_expires
+         FROM users 
+         WHERE email = $1`,
             [email]
         );
         return result.rows[0];
@@ -139,14 +139,6 @@ const userQueries = {
         return result.rows;
     },
 
-    async getUserPassword(userId) {
-        const result = await pool.query(
-            'SELECT password FROM users WHERE id = $1',
-            [userId]
-        );
-        return result.rows[0];
-    },
-
     async checkUserExists(userId) {
         const result = await pool.query(
             'SELECT id FROM users WHERE id = $1',
@@ -165,6 +157,120 @@ const userQueries = {
             [userId]
         );
         return result.rows;
+    },
+
+    async createUserWithVerification(email, hashedPassword, name, photoUrl, socialMediaJson, bio, verificationToken, tokenExpires) {
+        const result = await pool.query(
+            `INSERT INTO users (
+                email, password, name, image, social_media_accounts, bio, 
+                verification_token, verification_token_expires, email_verified
+            )
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, false)
+            RETURNING *`,
+            [email, hashedPassword, name, photoUrl, socialMediaJson, bio, verificationToken, tokenExpires]
+        );
+        return result.rows[0];
+    },
+
+    async verifyEmail(verificationToken) {
+        console.log('Attempting to verify email with token:', verificationToken);
+        const result = await pool.query(
+            `UPDATE users 
+             SET email_verified = true,
+                 verification_token = NULL,
+                 verification_token_expires = NULL,
+                 updated_at = CURRENT_TIMESTAMP
+             WHERE verification_token = $1 
+             AND verification_token_expires > NOW()
+             AND email_verified = false
+             RETURNING *`,
+            [verificationToken]
+        );
+        console.log('Verify email query result:', result.rows[0]);
+        return result.rows[0];
+    },
+
+    async getUserByVerificationToken(token) {
+        const result = await pool.query(
+            `SELECT * FROM users 
+             WHERE verification_token = $1 
+             AND verification_token_expires > NOW()
+             AND email_verified = false`,
+            [token]
+        );
+        return result.rows[0];
+    },
+
+    async updateVerificationToken(email, verificationToken, tokenExpires) {
+        const result = await pool.query(
+            `UPDATE users 
+             SET verification_token = $1,
+                 verification_token_expires = $2,
+                 email_verified = false
+             WHERE email = $3
+             RETURNING *`,
+            [verificationToken, tokenExpires, email]
+        );
+        return result.rows[0];
+    },
+
+    async getRecentlyVerifiedUser(token) {
+        console.log('Checking for recently verified user with token:', token);
+        const result = await pool.query(`
+            SELECT * FROM users 
+            WHERE verification_token = $1
+            AND email_verified = true 
+            LIMIT 1
+        `, [token]);
+        console.log('Recently verified user query result:', result.rows[0]);
+        return result.rows[0];
+    },
+
+    async getJustVerifiedUser(originalToken) {
+        console.log('Checking for just verified user with original token:', originalToken);
+        const result = await pool.query(`
+            SELECT * FROM users 
+            WHERE email_verified = true 
+            AND updated_at >= NOW() - INTERVAL '5 minutes'
+            ORDER BY updated_at DESC
+            LIMIT 1
+        `);
+        console.log('Just verified user query result:', result.rows[0]);
+        return result.rows[0];
+    },
+
+    async updateResetToken(email, resetToken, tokenExpires) {
+        const result = await pool.query(
+            `UPDATE users 
+             SET reset_password_token = $1,
+                 reset_password_expires = $2
+             WHERE email = $3
+             RETURNING *`,
+            [resetToken, tokenExpires, email]
+        );
+        return result.rows[0];
+    },
+
+    async getUserByResetToken(token) {
+        const result = await pool.query(
+            `SELECT * FROM users 
+             WHERE reset_password_token = $1`,
+            [token]
+        );
+        return result.rows[0];
+    },
+
+    async updatePasswordAndClearResetToken(email, hashedPassword) {
+        const result = await pool.query(
+            `UPDATE users 
+             SET password = $1,
+                 reset_password_token = NULL,
+                 reset_password_expires = NULL
+             WHERE email = $2
+             RETURNING *`,
+            [hashedPassword, email]
+        );
+        return result.rows[0];
     }
 };
 

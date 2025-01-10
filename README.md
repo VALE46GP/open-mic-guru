@@ -164,7 +164,7 @@ The backend server will run on `http://localhost:3001`
     npm start
     ```
 
-The frontend application will run on `http://localhost:3000`
+The frontend application will run on `http://localhost:3001`
 
 ### Development
 - Frontend tests: `cd frontend && npm test`

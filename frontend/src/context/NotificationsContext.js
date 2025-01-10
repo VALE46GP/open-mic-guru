@@ -104,26 +104,28 @@ export function NotificationsProvider({ children }) {
             try {
                 const data = JSON.parse(message.data);
                 
-                // Force a notifications refresh on any WebSocket message
-                // This ensures we're always in sync with the server
-                fetchNotifications();
-                
-                if ((data.type === 'NOTIFICATION_UPDATE' || data.type === 'NEW_NOTIFICATION') 
-                    && data.userId === getUserId()) {
-                    setNotifications(prev => {
-                        const exists = prev.some(n => n.id === data.notification.id);
-                        if (exists) {
-                            return prev.map(n => 
-                                n.id === data.notification.id ? data.notification : n
-                            );
-                        }
-                        return [data.notification, ...prev];
-                    });
+                // Only fetch notifications for authenticated users and notification updates
+                if (getUserId() && (data.type === 'NOTIFICATION_UPDATE' || data.type === 'NEW_NOTIFICATION')) {
+                    fetchNotifications();
+                    
+                    if (data.userId === getUserId()) {
+                        setNotifications(prev => {
+                            const exists = prev.some(n => n.id === data.notification.id);
+                            if (exists) {
+                                return prev.map(n => 
+                                    n.id === data.notification.id ? data.notification : n
+                                );
+                            }
+                            return [data.notification, ...prev];
+                        });
+                    }
                 }
             } catch (error) {
                 console.error('Error processing WebSocket message:', error);
-                clearTimeout(retryTimeout);
-                retryTimeout = setTimeout(fetchNotifications, 1000);
+                if (getUserId()) {  // Only retry for authenticated users
+                    clearTimeout(retryTimeout);
+                    retryTimeout = setTimeout(fetchNotifications, 1000);
+                }
             }
         };
 

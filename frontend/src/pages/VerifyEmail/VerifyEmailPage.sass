@@ -1,0 +1,35 @@
+.verify-email
+    display: flex
+    justify-content: center
+    align-items: center
+    min-height: 80vh
+    padding: 2rem
+
+    &__status
+        text-align: center
+        padding: 2rem
+
+        h2
+            margin-bottom: 1rem
+
+        p
+            margin-bottom: 1.5rem
+
+        &--success
+            color: #2e7d32
+
+        &--error
+            color: #d32f2f
+
+    &__button
+        padding: 0.75rem 1.5rem
+        border-radius: 4px
+        border: none
+        background-color: #1976d2
+        color: white
+        cursor: pointer
+        font-size: 1rem
+        transition: background-color 0.2s
+
+        &:hover
+            background-color: #1565c0
