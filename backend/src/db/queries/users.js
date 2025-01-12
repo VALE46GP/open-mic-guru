@@ -173,7 +173,6 @@ const userQueries = {
     },
 
     async verifyEmail(verificationToken) {
-        console.log('Attempting to verify email with token:', verificationToken);
         const result = await pool.query(
             `UPDATE users 
              SET email_verified = true,
@@ -186,7 +185,6 @@ const userQueries = {
              RETURNING *`,
             [verificationToken]
         );
-        console.log('Verify email query result:', result.rows[0]);
         return result.rows[0];
     },
 
@@ -215,19 +213,16 @@ const userQueries = {
     },
 
     async getRecentlyVerifiedUser(token) {
-        console.log('Checking for recently verified user with token:', token);
         const result = await pool.query(`
             SELECT * FROM users 
             WHERE verification_token = $1
             AND email_verified = true 
             LIMIT 1
         `, [token]);
-        console.log('Recently verified user query result:', result.rows[0]);
         return result.rows[0];
     },
 
     async getJustVerifiedUser(originalToken) {
-        console.log('Checking for just verified user with original token:', originalToken);
         const result = await pool.query(`
             SELECT * FROM users 
             WHERE email_verified = true 
@@ -235,7 +230,6 @@ const userQueries = {
             ORDER BY updated_at DESC
             LIMIT 1
         `);
-        console.log('Just verified user query result:', result.rows[0]);
         return result.rows[0];
     },
 

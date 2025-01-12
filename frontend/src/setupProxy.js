@@ -9,13 +9,13 @@ module.exports = function (app) {
             target,
             changeOrigin: true,
             pathRewrite: { '^/api': '' },
-            onProxyReq: (proxyReq, req) => {
-                console.log('Proxying request:', {
-                    method: req.method,
-                    path: req.path,
-                    target: target
-                });
-            },
+            // onProxyReq: (proxyReq, req) => {
+            //     console.log('Proxying request:', {
+            //         method: req.method,
+            //         path: req.path,
+            //         target: target
+            //     });
+            // },
             onError: (err, req, res) => {
                 console.error('Proxy error:', err);
             }

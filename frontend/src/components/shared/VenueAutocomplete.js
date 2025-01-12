@@ -63,7 +63,6 @@ const VenueAutocomplete = ({
                     current_opening_hours: place.current_opening_hours
                 };
 
-                console.log('Final processed venue:', processedVenue);
                 onPlaceSelected(processedVenue);
                 setInputValue(processedVenue.name || processedVenue.formatted_address || "");
             } catch (error) {

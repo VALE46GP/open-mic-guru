@@ -65,8 +65,6 @@ function initializeWebSocketServer(server) {
         ws.on('close', () => {
             clients.delete(ws);
         });
-
-        logger.log(`Client connected: ${ws.id} (${clients.get(ws)?.type}: ${clients.get(ws)?.id})`);
     });
 
     // Helper function to get cookie value from request

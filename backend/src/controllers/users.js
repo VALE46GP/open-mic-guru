@@ -250,7 +250,7 @@ const usersController = {
             res.status(204).send();
         } catch (err) {
             await client.query('ROLLBACK');
-            console.error('Error deleting user:', err);
+            logger.error('Error deleting user:', err);
             res.status(500).json({ error: 'Server error' });
         } finally {
             client.release();
@@ -279,12 +279,10 @@ const usersController = {
     async verifyEmail(req, res) {
         try {
             const { token } = req.params;
-            console.log('Backend received verification token:', token);
 
             // First check if user was already verified with this token
             const recentlyVerifiedUser = await userQueries.getRecentlyVerifiedUser(token);
             if (recentlyVerifiedUser) {
-                console.log('User was already verified:', recentlyVerifiedUser.email);
                 return res.json({
                     message: 'Email already verified',
                     email: recentlyVerifiedUser.email
@@ -293,7 +291,6 @@ const usersController = {
 
             // Check if token exists and hasn't expired
             const user = await userQueries.getUserByVerificationToken(token);
-            console.log('Found user for verification:', user);
 
             if (!user) {
                 // Check if the user was just verified (token is now null)
@@ -305,7 +302,7 @@ const usersController = {
                     });
                 }
 
-                console.log('No user found for token');
+                logger.error('No user found for token');
                 return res.status(400).json({
                     error: 'Invalid or expired verification token'
                 });
@@ -313,6 +310,7 @@ const usersController = {
 
             if (TokenUtility.isExpired(user.verification_token_expires)) {
                 console.log('Token has expired:', user.verification_token_expires);
+                logger.error('Token has expired:', user.verification_token_expires);
                 return res.status(400).json({
                     error: 'Verification token has expired'
                 });
@@ -320,7 +318,6 @@ const usersController = {
 
             // Update user verification status
             const verifiedUser = await userQueries.verifyEmail(token);
-            console.log('User verification result:', verifiedUser);
 
             if (!verifiedUser) {
                 console.log('Verification update failed');

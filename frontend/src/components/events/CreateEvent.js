@@ -1,17 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../hooks/useAuth';
-import { convertToUTC, convertFromUTC, formatTimeToLocalString } from '../../utils/timeCalculations';
+import { convertToUTC, convertFromUTC } from '../../utils/timeCalculations';
 import { useNavigate, useParams } from 'react-router-dom';
 import VenueAutocomplete from '../shared/VenueAutocomplete';
 import TextInput from '../shared/TextInput';
 import LocationMap from '../shared/LocationMap';
 import './CreateEvent.sass';
 import BorderBox from '../shared/BorderBox/BorderBox';
-import axios from 'axios';
 
 function CreateEvent() {
     const { eventId } = useParams();
-    const [eventData, setEventData] = useState(null);
     const [newEventName, setNewEventName] = useState('');
     const [startTime, setStartTime] = useState('');
     const [endTime, setEndTime] = useState('');
@@ -20,7 +18,7 @@ function CreateEvent() {
     const [selectedVenue, setSelectedVenue] = useState(null);
     const [additionalInfo, setAdditionalInfo] = useState('');
     const [resetTrigger, setResetTrigger] = useState(false);
-    const { getToken, getUserId, authenticatedFetch } = useAuth();
+    const { getUserId, authenticatedFetch } = useAuth();
     const navigate = useNavigate();
     const isEditMode = !!eventId;
     const [isGoogleMapsLoaded, setIsGoogleMapsLoaded] = useState(false);
@@ -46,7 +44,6 @@ function CreateEvent() {
                     const { data } = await response.json();
 
                     if (data.event) {
-                        setEventData(data);
                         setNewEventName(data.event.name || '');
                         setAdditionalInfo(data.event.additional_info || '');
                         setEventTypes(data.event.event_types || []);
@@ -114,7 +111,7 @@ function CreateEvent() {
         } else {
             setIsGoogleMapsLoaded(true);
         }
-    }, []);
+    }, [isGoogleMapsLoaded]);
 
     const handleVenueSelect = async (place) => {
         if (!place || !place.geometry) return;
@@ -148,7 +145,6 @@ function CreateEvent() {
         }
     };
 
-    // TODO: test image updates
     const handleImageChange = (e) => {
         const file = e.target.files[0];
         if (file) {

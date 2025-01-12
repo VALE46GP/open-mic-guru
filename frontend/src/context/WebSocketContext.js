@@ -36,7 +36,7 @@ export const WebSocketProvider = ({ children }) => {
                 ws = new WebSocket(wsUrl);
 
                 ws.onopen = () => {
-                    console.log('WebSocket connected');
+                    // console.log('WebSocket connected');
                     setIsConnected(true);
                     setSocket(ws);
                 };
@@ -46,7 +46,7 @@ export const WebSocketProvider = ({ children }) => {
                 };
 
                 ws.onclose = (event) => {
-                    console.log('WebSocket closed:', event);
+                    // console.log('WebSocket closed:', event);
                     setIsConnected(false);
                     setSocket(null);
                     if (event.code === 1000 && event.reason === 'Token expired') {

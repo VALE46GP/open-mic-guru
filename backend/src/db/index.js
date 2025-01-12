@@ -15,8 +15,8 @@ pool.on('error', (err) => {
     process.exit(-1);
 });
 
-pool.on('connect', () => {
-    logger.log('Database connected successfully');
-});
+// pool.on('connect', () => {
+//     logger.log('Database connected successfully');
+// });
 
 module.exports = pool;
