@@ -53,9 +53,9 @@ function EventCard({ event, slotTime, compact, showDeleted = false }) {
         <div className="event-card__wrapper">
             {(event.is_host || event.is_performer) && (
                 <div className="event-card__role">
-                    {event.is_host && <span className="event-card__role-badge host">Host</span>}
+                    {event.is_host && <span className="event-card__role-badge event-card__role-badge--host">Host</span>}
                     {event.is_performer &&
-                        <span className="event-card__role-badge performer">Performer</span>}
+                        <span className="event-card__role-badge event-card__role-badge--performer">Performer</span>}
                 </div>
             )}
             <BorderBox className={`event-card ${!event.active ? 'event-card--cancelled' : ''}`}>
@@ -95,12 +95,12 @@ function EventCard({ event, slotTime, compact, showDeleted = false }) {
                             Hosted by: {event.host_name}
                         </span>
                         {slotTime && (
-                            <div>
-                                <span className="event-card__meta-item">Slot Time: </span>
+                            <p>
+                                <span className="event-card__meta-item">Performance Time: </span>
                                 <span className="event-card__slot-time">
                                     {formattedSlotTime}
                                 </span>
-                            </div>
+                            </p>
                         )}
                     </div>
                 </div>

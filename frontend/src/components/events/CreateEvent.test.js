@@ -71,7 +71,7 @@ describe('CreateEvent', () => {
             fireEvent.change(screen.getByLabelText(/end time/i), {
                 target: { value: '2024-12-25T21:00' }
             });
-            fireEvent.change(screen.getByLabelText(/slot duration/i), {
+            fireEvent.change(screen.getByLabelText(/performance duration/i), {
                 target: { value: '10' }
             });
             fireEvent.change(screen.getByLabelText(/setup duration/i), {

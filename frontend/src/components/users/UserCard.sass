@@ -18,11 +18,11 @@
     &__role-badge
         +badge-base
 
-        &.host
-            +badge-status($color-primary, darken($color-primary, 20%))
+        &--host
+            +badge--host
 
-        &.performer
-            +badge-status($color-info, darken($color-info, 20%))
+        &--performer
+            +badge--performer
 
     &__name
         font-size: $font-size-lg
@@ -63,7 +63,7 @@
         overflow: hidden
 
     &__image
-        +image-cover
+        +image
         aspect-ratio: 1
 
     &__social-media

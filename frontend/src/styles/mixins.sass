@@ -1,3 +1,5 @@
+@import './_variables'
+
 // Breakpoints
 $xxs: 375px
 $xs: 430px
@@ -41,7 +43,7 @@ $xxl: 1400px
 
 // Button styles
 =button-base
-    padding: $spacing-md
+    padding: $spacing-md $spacing-sm
     border: none
     border-radius: $border-radius-sm
     font-weight: $font-weight-medium
@@ -59,7 +61,8 @@ $xxl: 1400px
     background-color: $color-primary
     color: $color-white
 
-    &:hover, &:focus-visible
+    &:focus-visible,
+    &:hover
         background-color: $color-primary-dark
 
 =button-secondary
@@ -67,7 +70,8 @@ $xxl: 1400px
     background-color: $color-secondary
     color: $color-white
 
-    &:hover, &:focus-visible
+    &:focus-visible,
+    &:hover
         background-color: $color-secondary-dark
 
 =button-danger
@@ -75,7 +79,8 @@ $xxl: 1400px
     background-color: $color-danger
     color: $color-white
 
-    &:hover, &:focus-visible
+    &:focus-visible,
+    &:hover
         background-color: $color-danger-dark
 
 // Input styles
@@ -104,16 +109,11 @@ $xxl: 1400px
     text-overflow: ellipsis
     white-space: nowrap
 
-// Image styles
-=image-cover
-    width: 100%
-    height: 100%
-    object-fit: cover
-
 // Hover transition
 =hover-transition
     transition: all $transition-base
-    
+
+    &:focus-visible,
     &:hover
         transform: translateY(-1px)
         box-shadow: $shadow-md
@@ -154,7 +154,8 @@ $xxl: 1400px
     border: 1px solid $border-color
     color: $text-primary
     
-    &:hover, &:focus-visible
+    &:focus-visible,
+    &:hover
         background: $bg-light
         border-color: $border-color-dark
 
@@ -167,7 +168,8 @@ $xxl: 1400px
     align-items: center
     justify-content: center
     transition: all $transition-fast
-    
+
+    &:focus-visible,
     &:hover
         opacity: 0.8
 
@@ -178,7 +180,8 @@ $xxl: 1400px
     color: $color-primary
     cursor: pointer
     text-decoration: none
-    
+
+    &:focus-visible,
     &:hover
         text-decoration: underline
 
@@ -227,10 +230,14 @@ $xxl: 1400px
     font-weight: $font-weight-semibold
     text-transform: uppercase
 
-=badge-status($bg-color, $text-color)
+=badge--host
     +badge-base
-    background-color: rgba($bg-color, 0.1)
-    color: $text-color
+    background-color: #f3e5f5
+    color: #7b1fa2
+
+=badge--performer
+    background-color: #e3f2fd
+    color: #1976d2
 
 // List styles
 =list-unstyled
@@ -244,20 +251,27 @@ $xxl: 1400px
     gap: $spacing-sm
     flex-wrap: wrap
 
-// Image container mixins
-=image-container($size)
+// Image mixins
+=image-container($size, $border-radius:$border-radius-circle)
     width: $size
     height: $size
-    border-radius: $border-radius-circle
+    border-radius: $border-radius
     overflow: hidden
     flex-shrink: 0
+
+=image
+    width: 100%
+    height: 100%
+    object-fit: cover
+    object-position: center
 
 // Social media related mixins
 =social-media-icon
     width: 42px
     height: 42px
     transition: all $transition-fast
-    
+
+    &:focus-visible,
     &:hover
         transform: scale(1.1)
 
@@ -299,7 +313,8 @@ $xxl: 1400px
         border-width: 3px
         border-radius: 6px
         border-color: #28a745
-        
+
+        &:focus-visible,
         &:hover
             border-color: darken(#28a745, 10%)
             background-color: #f8f8f8
