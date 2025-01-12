@@ -1,126 +1,87 @@
-@import '../../styles/extensions'
+@import '../../styles/variables'
+@import '../../styles/mixins'
 
 .user-page
-    max-width: 800px
-    margin: 0 auto
+    +page-container
         
     h1
-        margin: 0
-        font-size: 3rem
-        text-align: center
+        +page-title
+        font-size: $font-size-xxl
         
         +media-down($xs)
-            font-size: 2.5rem
+            font-size: $font-size-xl
 
     +media-down($sm)
-        padding: 10px
+        padding: $spacing-sm
 
     &__header
-        margin-bottom: 2rem
+        margin-bottom: $spacing-xl
 
     &__profile-section
-        display: flex
-        flex-direction: column
-        align-items: center
-        gap: 1.5rem
-        margin-bottom: 1rem
+        +flex-column
+        gap: $spacing-lg
+        margin-bottom: $spacing-md
         
         +media-up($md)
             flex-direction: row
             align-items: flex-start
 
     &__image-container
-        flex-shrink: 0
+        +image-container(320px)
         margin: 0 auto
-        width: 320px
-        height: 320px
         
         +media-down($xs)
             width: 300px
             height: 300px
 
     &__profile-image
-        width: 100%
-        height: 100%
-        border-radius: 50%
-        object-fit: cover
+        +image
 
     &__user-info
         flex-grow: 1
 
     &__actions
-        display: flex
-        justify-content: center
-        gap: 1rem
-        margin-top: 1rem
-
-    &__edit-button,
-    &__logout-button
-        padding: 0.5rem 1rem
-        border-radius: 4px
-        font-weight: 500
-        cursor: pointer
-        border: none
-        transition: background-color 0.2s ease
+        +flex-center
+        gap: $spacing-md
+        margin-top: $spacing-md
 
     &__edit-button
-        background-color: #007bff
-        color: white
-        
-        &:hover
-            background-color: #0056b3
+        +button-primary
 
     &__logout-button
-        background-color: #dc3545
-        color: white
-        
-        &:hover
-            background-color: #c82333
+        +button-danger
 
     &__social-media-box
-        margin-bottom: 2rem
+        margin-bottom: $spacing-xl
 
     &__social-media-list
-        display: flex
+        +flex-center
         flex-wrap: wrap
-        gap: 1rem
-        justify-content: center
+        gap: $spacing-md
 
     &__social-media-item
         a
-            display: flex
-            align-items: center
-            gap: 0.5rem
-            color: #333
-            text-decoration: none
-            padding: 0.5rem 1rem
-            border-radius: 4px
-            transition: background-color 0.2s ease
-
-            &:focus-visible,
-            &:hover
-                background-color: #f0f0f0
+            +social-media-link
 
     &__social-media-icon
-        width: 42px
-        height: 42px
+        +social-media-icon
         
     &__events-grid
-        display: grid
+        +grid(1)
 
     h2
         text-align: center
-        font-size: 2rem
-        margin-bottom: 1.5rem
+        font-size: $font-size-xl
+        margin-bottom: $spacing-lg
         
         &:not(:first-child)
-            margin-top: 3rem
+            margin-top: $spacing-xxl
 
     &__bio-section
-        margin: 2rem 0
+        margin: $spacing-xl 0
         
         h2
-            margin-bottom: 1rem
+            margin-bottom: $spacing-md
         
         p
             line-height: 1.5

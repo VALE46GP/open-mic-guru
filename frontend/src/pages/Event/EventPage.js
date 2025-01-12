@@ -312,9 +312,9 @@ function EventPage() {
                 </p>
                 {eventDetails?.event?.event_types && eventDetails.event.event_types.length > 0 && (
                     <div className="event-page__info">
-                        <p className="event-page__types">{eventDetails.event.event_types.map(type =>
+                        <p>Performance Type(s): <span className="event-page__types">{eventDetails.event.event_types.map(type =>
                             type.charAt(0).toUpperCase() + type.slice(1).replace('_', ' ')
-                        ).join(', ')}
+                        ).join(', ')}</span>
                         </p>
                     </div>
                 )}
@@ -327,9 +327,11 @@ function EventPage() {
                         />
                     </div>
                 )}
-                <p className="event-page__info">Slot
+                <p className="event-page__info">Performance
                     Duration: {eventDetails?.event?.slot_duration?.minutes} minutes</p>
-                <p className="event-page__info">Details: {eventDetails?.event?.additional_info}</p>
+                {eventDetails?.event?.additional_info && (
+                    <p className="event-page__info">Details: {eventDetails.event.additional_info}</p>
+                )}
                 <div className="event-page__host-image-container">
                     <Link to={`/users/${eventDetails?.host?.id}`}>
                         {eventDetails?.host?.image && (

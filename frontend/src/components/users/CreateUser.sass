@@ -1,59 +1,49 @@
-@import '../../styles/extensions'
+@import '../../styles/variables'
+@import '../../styles/mixins'
 
 .create-user
     &__container
         max-width: 500px
         margin: 0 auto
-        display: flex
-        flex-direction: column
-        align-items: center
+        +flex-column($align: center)
 
     &__title
-        font-size: 1.5rem
-        margin-bottom: 1rem
+        font-size: $font-size-xl
+        margin-bottom: $spacing-md
         text-align: center
 
     &__profile-box,
     &__social-media-box,
     &__form-box
         width: 100%
-        margin-bottom: 1rem
+        margin-bottom: $spacing-md
 
     &__profile-image
         width: 100%
         height: auto
-        border-radius: 50%
+        border-radius: $border-radius-circle
         object-fit: cover
 
     &__form
         width: 100%
 
     &__input
-        width: 100%
-        padding: 0.75rem
-        margin-bottom: 1rem
-        border: 1px solid #ccc
-        border-radius: 4px
-        font-size: 1rem
+        +input-base
+        margin-bottom: $spacing-md
 
         &--textarea
-            resize: vertical
-            min-height: 100px
-            line-height: 1.5
+            +textarea-base
 
     &__social-media-input-group
-        display: flex
-        align-items: center
-        gap: 0.5rem
-        margin-bottom: 0.5rem
+        +flex($align: center)
+        gap: $spacing-sm
+        margin-bottom: $spacing-sm
         width: 100%
 
     &__social-input
+        +input-base
         flex: 1 1 auto
-        padding: 0.5rem
-        border: 1px solid #ccc
-        border-radius: 4px
-        font-size: 1rem
+        padding: $spacing-sm
         min-width: 20px
 
         &--platform
@@ -63,154 +53,97 @@
             flex: 2
 
     &__delete-social-button
-        background: none
-        border: none
-        cursor: pointer
-        padding: 0
-        display: flex
-        align-items: center
-        justify-content: center
+        +button-icon
         width: 30px
         height: 30px
-        outline: none
+
+        path
+            stroke: $text-primary
+            transition: stroke $transition-fast
 
         &:hover,
         &:focus-visible
-            background: none
-            outline: none
-
-        &:hover .create-user__delete-icon path,
-        &:focus-visible .create-user__delete-icon path
-            stroke: red
-
-    &__delete-icon
-        width: 20px
-        height: 20px
-
-        path
-            stroke: black
-            transition: stroke 0.2s ease
+            path
+                stroke: $color-danger
 
     &__add-social-button
-        background-color: #28a745
-        color: #fff
-        padding: 0.5rem 1rem
-        font-size: 1rem
-        border: none
-        border-radius: 4px
-        cursor: pointer
-        text-align: center
-        margin-top: 1rem
+        +button-primary
+        background-color: $color-success
+        margin-top: $spacing-md
+        
         &:hover
-            background-color: #218838
+            background-color: $color-success-dark
 
     &__input-group
-        width: 100%
-        margin-bottom: 1rem
+        +input-group
 
     &__label
-        display: block
-        margin-bottom: 0.5rem
-        font-weight: 500
-        color: #333
+        +form-label
 
     &__password-box
-        margin-bottom: 2rem
+        margin-bottom: $spacing-xl
 
     &__password-error
-        color: red
-        margin: -0.5rem 0 1rem 0
-        font-size: 0.9rem
+        +form-error
+        margin: -$spacing-sm 0 $spacing-md 0
 
     &__button-group
-        display: flex
-        justify-content: center
-        gap: 1rem
-        margin-top: 1rem
+        +flex($justify: center)
+        gap: $spacing-md
+        margin-top: $spacing-md
         width: 100%
 
     &__submit-button,
     &__cancel-button
-        padding: 0.5rem 1rem
-        border-radius: 4px
-        font-weight: 500
-        cursor: pointer
-        border: none
-        transition: background-color 0.2s ease
+        +button-base
+        padding: $spacing-sm $spacing-md
+        transition: background-color $transition-fast
 
     &__submit-button
-        background-color: #007bff
-        color: white
-        
-        &:hover
-            background-color: #0056b3
+        +button-primary
 
     &__cancel-button
-        background-color: #dc3545
-        color: white
-        
-        &:hover
-            background-color: #c82333
+        +button-danger
 
     &__success-message
-        color: green
-        margin-top: 1rem
+        color: $color-success
+        margin-top: $spacing-md
         text-align: center
 
     &__error-message
-        color: red
-        margin-top: 1rem
+        color: $color-danger
+        margin-top: $spacing-md
         text-align: center
 
     &__delete-button
-        background-color: #dc3545
-        color: white
-        padding: 10px 20px
-        border: none
-        border-radius: 4px
-        cursor: pointer
-        margin-top: 20px
-
-        &:hover
-            background-color: #c82333
+        +button-danger
+        padding: $spacing-sm $spacing-md
+        margin-top: $spacing-md
 
     &__password-info
-        margin-bottom: 1rem
-        color: #666
-        font-size: 0.9rem
+        margin-bottom: $spacing-md
+        color: $text-secondary
+        font-size: $font-size-sm
 
     &__password-reset-button
-        padding: 0.75rem 1.5rem
-        border: none
-        border-radius: 4px
-        background: #007bff
-        color: #fff
-        cursor: pointer
-        font-weight: 500
-        transition: all 0.3s ease
+        +button-primary
         width: 100%
-
-        &:hover
-            background: #0056b3
-            transform: translateY(-1px)
-
-        &:active
-            transform: translateY(0)
+        +hover-transition
 
     &__success-message,
     &__error-message
         &--password
-            padding: 0.75rem
-            border-radius: 4px
-            font-size: 0.9rem
+            padding: $spacing-sm
+            border-radius: $border-radius-sm
+            font-size: $font-size-sm
             text-align: left
 
     &__success-message--password
-        background-color: rgba(40, 167, 69, 0.1)
-        border: 1px solid #28a745
-        color: #155724
+        background-color: rgba($color-success, 0.1)
+        border: 1px solid $color-success
+        color: darken($color-success, 20%)
 
     &__error-message--password
-        background-color: rgba(220, 53, 69, 0.1)
-        border: 1px solid #dc3545
-        color: #721c24
+        background-color: rgba($color-danger, 0.1)
+        border: 1px solid $color-danger
+        color: darken($color-danger, 20%)

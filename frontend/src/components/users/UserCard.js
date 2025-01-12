@@ -17,9 +17,9 @@ function UserCard({ user }) {
             <div className="user-card__wrapper">
                 {(user.is_host || user.is_performer) && (
                     <div className="user-card__role">
-                        {user.is_host && <span className="user-card__role-badge host">Host</span>}
+                        {user.is_host && <span className="user-card__role-badge user-card__role-badge--host">Host</span>}
                         {user.is_performer &&
-                            <span className="user-card__role-badge performer">Performer</span>}
+                            <span className="user-card__role-badge user-card__role-badge--performer">Performer</span>}
                     </div>
                 )}
                 <BorderBox className="user-card">

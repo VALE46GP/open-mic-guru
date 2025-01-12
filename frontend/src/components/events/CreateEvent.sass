@@ -1,192 +1,99 @@
-@import '../../styles/extensions'
+@import '../../styles/variables'
+@import '../../styles/mixins'
 
 .create-event
-    &__container
-        display: flex
-        flex-direction: column
-        align-items: center
+    &__form
+        +flex-column
+        gap: $spacing-md
         width: 100%
+        max-width: 500px
         margin: 0 auto
 
     &__title
+        font-size: $font-size-xl
         text-align: center
-        width: 100%
+        margin-bottom: $spacing-lg
 
-    &__form-content
-        display: flex
-        flex-direction: column
-        align-items: center
-        gap: 1rem
-        width: 100%
+    &__input-group
+        +input-group
 
-    &__input-field
-        width: 100%
+    &__label
+        +form-label
 
-    &__map-container
-        align-items: center
-        width: 100%
+    &__input
+        +input-base
 
-    &__text
-        margin-top: 1rem
-        text-align: center
-        width: 100%
+        &--textarea
+            +textarea-base
 
-    label
-        display: block
-        text-align: left
-        width: 100%
+    &__date-time
+        +flex($align: center)
+        gap: $spacing-md
 
-    input, textarea
-        width: 100%
-
-    &__file-input
-        width: 100%
-        padding: 0.5rem
-        margin-bottom: 1rem
-        border: 1px solid #ccc
-        border-radius: 4px
-        background-color: white
+        input
+            +input-base
 
     &__image-preview
         width: 100%
-        max-width: 300px
-        height: auto
-        margin: 1rem auto
-        display: block
-        border-radius: 8px
-        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1)
+        aspect-ratio: 16/9
+        border-radius: $border-radius-md
+        overflow: hidden
+        background: $bg-light
+        +flex-center
+
+        img
+            +image
+
+    &__image-input
+        display: none
+
+    &__image-button
+        +button-secondary
+        margin-top: $spacing-sm
+
+    &__submit-button
+        +button-primary
+        margin-top: $spacing-lg
+
+    &__error
+        +error-message
+
+    &__success
+        +success-message
+
+    &__map-container
+        width: 100%
+        margin: $spacing-md 0
+
+    &__map
+        +map-container
+
+    &__event-types
+        +flex-column($align: center)
+        text-align: center
+        margin-bottom: $spacing-md
+
+    &__event-type
+        cursor: pointer
+        margin: $spacing-xs 0
+
+    &__input-field
+        margin-bottom: $spacing-md
 
     &__checkboxes
-        display: flex
+        +flex
         flex-wrap: wrap
-        gap: 1rem
-        margin-top: 0.5rem
+        gap: $spacing-md
+        width: 100%
 
     &__checkbox-group
-        display: flex
+        +flex($align: center)
 
     &__checkbox-label
-        display: flex
-        align-items: center
-        gap: 0.5rem
+        +flex($align: center)
+        gap: $spacing-sm
         cursor: pointer
 
-        input[type="checkbox"]
-            width: auto
-            margin: 0
-
-    &__button-row
-        display: flex
-        justify-content: center
-        flex-wrap: wrap
-        gap: .5rem
-        width: 100%
-
-    &__button
-        flex-grow: 1
-        flex-basis: 40%
-
-    &__button,
-    &__status-button
-        padding: 0.5rem 1rem
+    &__checkbox
+        width: auto
         margin: 0
-        border-radius: 4px
-        font-weight: 600
-        cursor: pointer
-        border: none
-
-    &__status-button
-        flex-basis: 100%
-        margin-bottom: .5rem
-
-        &--delete
-            margin-top: .5rem
-            flex-basis: unset
-            width: max-content
-
-        &--cancel,
-        &--delete
-            background-color: #dc3545
-            color: white
-
-            &:focus-visible,
-            &:hover
-                background-color: darken(#dc3545, 10%)
-
-        &--reinstate
-            background-color: #28a745
-            color: white
-
-            &:focus-visible,
-            &:hover
-                background-color: darken(#28a745, 10%)
-
-        &--pending
-            opacity: 0.7
-            position: relative
-            
-            &::after
-                content: ''
-                position: absolute
-                top: 0
-                left: 0
-                right: 0
-                bottom: 0
-                background: rgba(0, 0, 0, 0.1)
-                border-radius: inherit
-
-    &__modal
-        position: fixed
-        top: 0
-        left: 0
-        width: 100%
-        height: 100%
-        background-color: rgba(0, 0, 0, 0.5)
-        display: flex
-        justify-content: center
-        align-items: center
-        z-index: 1000
-
-    &__modal-content
-        background: white
-        padding: 2rem
-        border-radius: 8px
-        max-width: 400px
-        width: 90%
-        text-align: center
-
-        h4
-            margin-bottom: 1rem
-            color: #333
-
-        p
-            margin-bottom: 1.5rem
-            color: #666
-
-    &__modal-buttons
-        display: flex
-        justify-content: center
-        gap: 1rem
-
-    &__modal-button
-        padding: 0.5rem 1rem
-        border: none
-        border-radius: 4px
-        cursor: pointer
-        font-weight: 600
-
-        &--confirm
-            background-color: #dc3545
-            color: white
-
-            &:focus-visible,
-            &:hover
-                background-color: darken(#dc3545, 10%)
-
-        &--cancel
-            background-color: #6c757d
-            color: white
-
-            &:focus-visible,
-            &:hover
-                background-color: darken(#6c757d, 10%)

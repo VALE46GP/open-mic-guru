@@ -1,8 +1,9 @@
+@import '../../styles/variables'
+@import '../../styles/mixins'
+
 .users-page
-    max-width: 800px
-    margin: 0 auto
+    +page-container
 
     &__list
-        display: flex
-        flex-direction: column
-        margin-top: 2rem
+        +flex-column
+        margin-top: $spacing-xl

@@ -1,5 +1,4 @@
 import './styles/mixins.sass'
-import './styles/extensions.sass'
 import './index.sass';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import React from 'react';

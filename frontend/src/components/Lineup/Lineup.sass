@@ -1,18 +1,17 @@
+@import '../../styles/variables'
+@import '../../styles/mixins'
+
 .lineup
     &__title
         text-align: center
         margin-bottom: 1rem
 
     &__slots
-        display: flex
-        flex-direction: column
+        +flex-column
         gap: 0.5rem
 
     &__slot
-        position: relative
-        border: 1px solid #ccc
-        border-radius: 4px
-        transition: all 0.2s ease-in-out
+        +lineup-slot
         
         &-content
             display: grid
@@ -24,36 +23,18 @@
             &--editing
                 grid-template-columns: auto 50px 100px 1fr
 
-        &--open
-            border-width: 3px
-            border-radius: 6px
-            border-color: #28a745  // Green border for open slots
-
-            &:focus-visible,
-            &:hover
-                border-color: darken(#28a745, 10%)
-                background-color: #f8f8f8
-
         &-username
             text-decoration: none !important
-                
+
         &--user-slot
             border-width: 3px
             border-radius: 6px
-            border-color: #0066cc  // Blue border for user's slots
+            border-color: #0066cc
             
             &:focus-visible,
             &:hover
                 border-color: darken(#0066cc, 10%)
                 background-color: #f8f8f8
-
-        &--cancelled
-            &.lineup__slot--open
-                border-color: #6c757d
-                
-                &:focus-visible,
-                &:hover
-                    border-color: darken(#6c757d, 10%)
 
     &__slot-number
         text-align: center

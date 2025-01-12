@@ -384,11 +384,11 @@ function CreateEvent() {
                             />
                         </div>
                         <div className="create-event__input-field">
-                            <label htmlFor="slot-duration">Slot Duration (minutes)</label>
+                            <label htmlFor="slot-duration">Performance Duration (minutes)</label>
                             <TextInput
                                 id="slot-duration"
                                 type="number"
-                                placeholder="Slot Duration (minutes)"
+                                placeholder="Performance Duration (minutes)"
                                 value={slotDuration || ''}
                                 onChange={(e) => setSlotDuration(e.target.value)}
                             />

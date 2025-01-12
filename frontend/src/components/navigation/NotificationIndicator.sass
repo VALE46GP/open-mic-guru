@@ -1,34 +1,21 @@
+@import '../../styles/variables'
+@import '../../styles/mixins'
+
 .notification-indicator
-    display: flex
+    +flex($align: center)
     position: relative
     min-width: 26px
     height: 26px
-    color: rgba(255, 255, 255, 0.7)
+    color: rgba($color-white, 0.7)
     text-decoration: none
-    align-items: center
-    transition: color 0.2s ease
+    transition: color $transition-fast
 
     &:focus-visible,
     &:hover
-        color: #fff
+        color: $color-white
 
     .notification-indicator__fa-bell
-        font-size: 18px
+        font-size: $font-size-lg
 
     &__badge
-        position: absolute
-        top: 50%
-        right: 0
-        transform: translateY(-50%)
-        background-color: #ff4444
-        color: white
-        border-radius: 50%
-        font-size: 14px
-        min-width: 26px
-        height: 26px
-        display: flex
-        align-items: center
-        justify-content: center
-
-        &--empty
-            background-color: #b4b4b4
+        +notification-badge
