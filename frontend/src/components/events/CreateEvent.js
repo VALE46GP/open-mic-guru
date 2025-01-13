@@ -26,7 +26,6 @@ function CreateEvent() {
     const [imagePreview, setImagePreview] = useState(null);
     const [eventTypes, setEventTypes] = useState([]);
     const [isEventActive, setIsEventActive] = useState(true);
-    const [showStatusModal, setShowStatusModal] = useState(false);
     const [pendingStatusChange, setPendingStatusChange] = useState(false);
 
     const EVENT_TYPE_OPTIONS = [
@@ -320,7 +319,7 @@ function CreateEvent() {
     };
 
     const handleDelete = async () => {
-        if (window.confirm('Are you sure you want to delete this event? This action cannot be undone.\nAlternatively, you can cancel the event so that it is still visible and editable.')) {
+        if (window.confirm('Are you sure you want to perminantly delete this event? \nYou could just cancel the event. \nCancelled events are still visible and can be reinstated.')) {
             try {
                 const response = await authenticatedFetch(`/api/events/${eventId}`, {
                     method: 'DELETE'
@@ -488,22 +487,8 @@ function CreateEvent() {
                         {isEventActive ? 'Cancel Event' : 'Reinstate Event'}
                     </button>
                 )}
-                <button 
-                    className="create-event__button"
-                    onClick={handleSubmit}
-                >
-                    {isEditMode ? 'Save' : 'Submit'}
-                </button>
-                {isEditMode && (
-                    <button 
-                        className="create-event__button"
-                        onClick={() => navigate(-1)}
-                    >
-                        Cancel
-                    </button>
-                )}
-                {isEditMode && (
-                    <button 
+                {isEditMode && pendingStatusChange && isEventActive && (
+                    <button
                         className="create-event__status-button create-event__status-button--delete"
                         onClick={handleDelete}
                     >
@@ -511,39 +496,22 @@ function CreateEvent() {
                     </button>
                 )}
             </div>
-            {showStatusModal && (
-                <div className="create-event__modal">
-                    <div className="create-event__modal-content" data-testid="status-modal">
-                        <h4>
-                            {isEventActive
-                                ? 'Are you sure you want to cancel this event?'
-                                : 'Are you sure you want to reinstate this event?'}
-                        </h4>
-                        <p>
-                            {isEventActive 
-                                ? 'This will notify all participants that the event has been cancelled.' 
-                                : 'This will notify all participants that the event has been reinstated.'}
-                        </p>
-                        <div className="create-event__modal-buttons">
-                            <button 
-                                className="create-event__modal-button create-event__modal-button--confirm"
-                                onClick={handleConfirmStatusChange}
-                            >
-                                Confirm
-                            </button>
-                            <button 
-                                className="create-event__modal-button create-event__modal-button--cancel"
-                                onClick={() => {
-                                    setShowStatusModal(false);
-                                    setPendingStatusChange(false);
-                                }}
-                            >
-                                Cancel
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            )}
+            <div className="create-event__button-row">
+                <button 
+                    className="create-event__submit-button create-event__submit-button--save"
+                    onClick={handleSubmit}
+                >
+                    {isEditMode ? 'Save' : 'Submit'}
+                </button>
+                {isEditMode && (
+                    <button 
+                        className="create-event__submit-button create-event__submit-button--cancel"
+                        onClick={() => navigate(-1)}
+                    >
+                        Cancel
+                    </button>
+                )}
+            </div>
         </div>
     );
 }
