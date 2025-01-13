@@ -7,6 +7,9 @@ const db = require('../db')
 const { DateTime } = require('luxon');
 const { S3Client, PutObjectCommand } = require("@aws-sdk/client-s3");
 const { getSignedUrl } = require("@aws-sdk/s3-request-presigner");
+const s3Util = require('../utils/s3.util');
+
+console.log('s3Util loaded:', s3Util);
 
 const s3Client = new S3Client({ region: process.env.AWS_REGION });
 
@@ -231,12 +234,13 @@ const eventsController = {
             // Set timezone to UTC explicitly
             await db.query("SET timezone TO 'UTC'");
 
-            const hostCheck = await eventQueries.checkEventHost(eventId);
-            if (!hostCheck) {
+            // Get original event first
+            const originalEvent = await eventQueries.getEventById(eventId);
+            if (!originalEvent) {
                 return res.status(404).json(createErrorResponse('Event not found'));
             }
 
-            if (hostCheck.host_id !== userId) {
+            if (originalEvent.host_id !== userId) {
                 return res.status(403).json(createErrorResponse('Only the host can modify this event'));
             }
 
@@ -253,20 +257,35 @@ const eventsController = {
                 active
             } = req.body;
 
+            // Add debug logs
+            console.log('Update Event Debug:', {
+                newImage: image,
+                originalImage: originalEvent.event_image,
+                areImagesDifferent: image !== originalEvent.event_image
+            });
+
             // Validate times first
             if (start_time && end_time && new Date(start_time) >= new Date(end_time)) {
                 return res.status(400).json(createErrorResponse('Start time must be before end time'));
-            }
-
-            const originalEvent = await eventQueries.getOriginalEvent(eventId);
-            if (!originalEvent) {
-                return res.status(404).json(createErrorResponse('Event not found'));
             }
 
             // Build update query
             const updates = [];
             const values = [];
             let paramCount = 1;
+
+            // If there's a new image and it's different from the original, delete the old one
+            if (image && originalEvent.event_image && image !== originalEvent.event_image) {
+                console.log('Deleting old image:', originalEvent.event_image);
+                await s3Util.deleteImage(originalEvent.event_image);
+            }
+
+            // Handle image update
+            if (image !== undefined) {
+                updates.push(`image = $${paramCount}`);
+                values.push(image);
+                paramCount++;
+            }
 
             // Handle start_time and end_time specifically to ensure UTC storage
 
@@ -316,17 +335,6 @@ const eventsController = {
             if (active !== undefined) {
                 updates.push(`active = $${paramCount}`);
                 values.push(active);
-                paramCount++;
-            }
-
-            if (image !== undefined) {
-                console.log('Debug - Image before update:', {
-                    imageValue: image,
-                    imageType: typeof image,
-                    isS3URL: typeof image === 'string' && image.includes('amazonaws.com')
-                });
-                updates.push(`image = $${paramCount}`);
-                values.push(image);
                 paramCount++;
             }
 

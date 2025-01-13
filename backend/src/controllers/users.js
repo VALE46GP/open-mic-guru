@@ -7,6 +7,7 @@ const { userQueries } = require('../db/queries');
 const { logger } = require('../../tests/utils/logger');
 const TokenUtility = require('../utils/token.util');
 const emailService = require('../utils/emailService.util');
+const { s3Util } = require('../utils/s3.util');
 
 const s3Client = new S3Client({ region: process.env.AWS_REGION });
 
@@ -136,6 +137,10 @@ const usersController = {
                     client.release();
                 }
             }
+
+            if (isUpdate && photoUrl && existingUser.image && photoUrl !== existingUser.image) {
+                await s3Util.deleteImage(existingUser.image);
+            }
         } catch (err) {
             logger.error('Registration Error:', err);
             res.status(500).json({
@@ -254,6 +259,11 @@ const usersController = {
             res.status(500).json({ error: 'Server error' });
         } finally {
             client.release();
+        }
+
+        const user = await userQueries.getUserProfileById(parsedUserId);
+        if (user?.image && !user.image.includes('user-default.jpg')) {
+            await s3Util.deleteImage(user.image);
         }
     },
 
