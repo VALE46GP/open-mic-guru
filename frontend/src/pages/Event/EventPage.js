@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { formatEventTimeInVenueTimezone, calculateSlotStartTime, formatTimeComparison, formatEventStartEndTimes } from '../../utils/timeCalculations';
+import { calculateSlotStartTime, formatEventStartEndTimes } from '../../utils/timeCalculations';
 import LocationMap from '../../components/shared/LocationMap';
 import BorderBox from '../../components/shared/BorderBox/BorderBox';
 import './EventPage.sass';

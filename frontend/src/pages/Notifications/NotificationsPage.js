@@ -6,7 +6,6 @@ import { formatEventTimeInVenueTimezone } from '../../utils/timeCalculations';
 import { BsChevronDown, BsChevronRight } from 'react-icons/bs';
 import { Modal, Button } from 'react-bootstrap';
 import { FaTrash } from 'react-icons/fa';
-import { DateTime } from 'luxon';
 
 function NotificationMessage({ notification, venue, isRead, isLocallyViewed }) {
     const [formattedTime, setFormattedTime] = useState('');

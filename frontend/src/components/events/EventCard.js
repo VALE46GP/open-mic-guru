@@ -1,11 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { formatEventTimeInVenueTimezone, formatTimeComparison, formatPerformerTime } from '../../utils/timeCalculations';
 import BorderBox from '../shared/BorderBox/BorderBox';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import './EventCard.sass';
 
 function EventCard({ event, slotTime, compact, showDeleted = false }) {
-    const navigate = useNavigate();
     const [formattedEventTime, setFormattedEventTime] = useState('');
     const [formattedSlotTime, setFormattedSlotTime] = useState('');
 
@@ -37,14 +36,6 @@ function EventCard({ event, slotTime, compact, showDeleted = false }) {
     if (event.deleted && !showDeleted) {
         return null;
     }
-
-    const handleClick = (e) => {
-        if (event.deleted) {
-            e.preventDefault();
-            return;
-        }
-        navigate(`/events/${event.event_id}`);
-    };
 
     const cardContent = (
         <div className="event-card__wrapper">
