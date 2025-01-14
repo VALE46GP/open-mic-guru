@@ -1,13 +1,13 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { formatEventTimeInVenueTimezone, calculateSlotStartTime, formatTimeComparison } from '../../utils/timeCalculations';
+import { formatEventTimeInVenueTimezone, calculateSlotStartTime, formatTimeComparison, formatEventStartEndTimes } from '../../utils/timeCalculations';
 import LocationMap from '../../components/shared/LocationMap';
 import BorderBox from '../../components/shared/BorderBox/BorderBox';
 import './EventPage.sass';
 import { QRCodeSVG } from 'qrcode.react';
 import Lineup from '../../components/Lineup/Lineup';
 import { v4 as uuidv4 } from 'uuid';
-import { useAuth } from '../../hooks/useAuth'; // Correct import here
+import { useAuth } from '../../hooks/useAuth';
 import { useWebSocketContext } from '../../context/WebSocketContext';
 
 const DEV_IP = '192.168.1.104';
@@ -18,13 +18,10 @@ function EventPage() {
     const [eventDetails, setEventDetails] = useState(null);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState(null);
-    // const [showDeleteConfirmModal,ShowDeleteConfirmModal set] = useState(false);
     const [qrUrl, setQrUrl] = useState('');
     const [formattedStartTime, setFormattedStartTime] = useState('');
     const [formattedEndTime, setFormattedEndTime] = useState('');
     const { lastMessage } = useWebSocketContext();
-
-    // Call useAuth inside the component body
     const { getUserId, getToken, user } = useAuth();
     const userId = getUserId();
 
@@ -146,8 +143,17 @@ function EventPage() {
         async function updateFormattedTimes() {
             if (!eventDetails?.event || !eventDetails?.venue) return;
             
-            const start = await formatEventTime(eventDetails.event.start_time);
-            const end = await formatEventTime(eventDetails.event.end_time);
+            const venue = {
+                latitude: eventDetails.venue.latitude,
+                longitude: eventDetails.venue.longitude,
+                utc_offset: eventDetails.venue.utc_offset
+            };
+            
+            const { start, end } = formatEventStartEndTimes(
+                eventDetails.event.start_time,
+                eventDetails.event.end_time,
+                venue
+            );
             
             setFormattedStartTime(start);
             setFormattedEndTime(end);
@@ -261,36 +267,6 @@ function EventPage() {
         }
     };
 
-    // Update the formatEventTime function
-    const formatEventTime = async (dateString) => {
-        if (!eventDetails?.venue) return '';
-        
-        const venue = {
-            latitude: eventDetails.venue.latitude,
-            longitude: eventDetails.venue.longitude,
-            utc_offset: eventDetails.venue.utc_offset
-        };
-        
-        // If we're formatting the end time, compare it with start time
-        if (dateString === eventDetails.event.end_time) {
-            const comparison = formatTimeComparison(
-                eventDetails.event.start_time,
-                dateString,
-                venue.utc_offset
-            );
-            const format = typeof comparison === 'object' ? comparison.format : 'MMM d, yyyy h:mm a';
-            
-            return formatEventTimeInVenueTimezone(dateString, venue, format);
-        }
-        
-        // For start time, always show full date
-        return formatEventTimeInVenueTimezone(dateString, venue, 'MMM d, yyyy h:mm a');
-    };
-
-    // const toggleDeleteConfirmModal = () => {
-    //     setShowDeleteConfirmModal(!showDeleteConfirmModal);
-    // };
-
     if (isLoading) return <div>Loading...</div>;
     if (error) return <div>Error: {error}</div>;
     if (!eventDetails) return <div>No event found</div>;
@@ -304,7 +280,6 @@ function EventPage() {
             )}
             <BorderBox
                 onEdit={eventDetails?.host?.id === userId ? () => navigate(`/events/${eventDetails.event.id}/edit`) : null}
-                // onDelete={eventDetails?.host?.id === userId ? toggleDeleteConfirmModal : null}
             >
                 <h1 className="event-page__title">{eventDetails?.event?.name}</h1>
                 <p className="event-page__time">
@@ -394,17 +369,6 @@ function EventPage() {
                 initialSignupStatus={eventDetails?.event?.is_signup_open}
                 eventId={eventDetails?.event?.id}
             />
-
-            {/* {showDeleteConfirmModal && (
-                <div className="event-page__modal">
-                    <BorderBox className="event-page__modal-content">
-                        <h4>Are you sure you want to delete this event?</h4>
-                        <button onClick={() => handleDeleteEvent(eventDetails.event.id)}>Confirm
-                        </button>
-                        <button onClick={toggleDeleteConfirmModal}>Cancel</button>
-                    </BorderBox>
-                </div>
-            )} */}
         </div>
     );
 }

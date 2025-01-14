@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { formatEventTimeInVenueTimezone, formatTimeComparison } from '../../utils/timeCalculations';
+import { formatEventTimeInVenueTimezone, formatTimeComparison, formatPerformerTime } from '../../utils/timeCalculations';
 import BorderBox from '../shared/BorderBox/BorderBox';
 import { Link, useNavigate } from 'react-router-dom';
 import './EventCard.sass';
@@ -19,13 +19,10 @@ function EventCard({ event, slotTime, compact, showDeleted = false }) {
                 setFormattedEventTime(formattedStartTime);
 
                 if (slotTime) {
-                    const comparison = formatTimeComparison(event.start_time, slotTime, event.venue_utc_offset ?? -420);
-                    const format = typeof comparison === 'object' ? comparison.format : 'MMM d, yyyy h:mm a';
-                    
-                    const formattedSlotTime = formatEventTimeInVenueTimezone(
+                    const formattedSlotTime = formatPerformerTime(
+                        event.start_time,
                         slotTime,
-                        { utc_offset: event.venue_utc_offset ?? -420 },
-                        format
+                        event.venue_utc_offset ?? -420
                     );
                     setFormattedSlotTime(formattedSlotTime);
                 }

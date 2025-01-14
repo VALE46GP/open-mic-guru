@@ -13,13 +13,14 @@ function NotificationMessage({ notification, venue, isRead, isLocallyViewed }) {
 
     useEffect(() => {
         if (notification.created_at) {
-            // Show created_at in user's local timezone
-            const localTime = DateTime.fromISO(notification.created_at, { zone: 'utc' })
-                .toLocal()
-                .toFormat('MMM d, yyyy h:mm a');
-            setFormattedTime(localTime);
+            const formattedTime = formatEventTimeInVenueTimezone(
+                notification.created_at,
+                { utc_offset: venue.utc_offset },
+                'MMM d, yyyy h:mm a'
+            );
+            setFormattedTime(formattedTime);
         }
-    }, [notification]);
+    }, [notification, venue]);
 
     return (
         <div
