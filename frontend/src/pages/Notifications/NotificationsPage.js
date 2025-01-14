@@ -77,13 +77,15 @@ function NotificationsPage() {
                         performer_slot_time: performerNotification ? performerNotification.performer_slot_time : null,
                         event_types: notification.event_types,
                         active: notification.active,
-                        deleted: notification.deleted
+                        deleted: notification.deleted,
+                        venue_utc_offset: notification.venue_utc_offset
                     },
                     venue: {
                         name: notification.venue_name,
                         address: notification.venue_address,
                         latitude: notification.venue_latitude,
-                        longitude: notification.venue_longitude
+                        longitude: notification.venue_longitude,
+                        utc_offset: notification.venue_utc_offset
                     },
                     notifications: [],
                     unreadCount: 0
@@ -253,6 +255,7 @@ function NotificationsPage() {
                                                 event={data.event} 
                                                 slotTime={data.notifications[0]?.performer_slot_time}
                                                 showDeleted={true}
+                                                venue_timezone={data.venue.utc_offset}
                                             />
                                         </div>
                                     </div>

@@ -148,6 +148,7 @@ function UserPage() {
                             key={`event-${event.event_id}`}
                             event={event}
                             slotTime={event.is_performer ? event.performer_slot_time : null}
+                            venue_timezone={event.venue_utc_offset}
                         />
                     ))}
                 </div>
@@ -164,6 +165,7 @@ function UserPage() {
                                 key={`event-${event.event_id}`}
                                 event={event}
                                 slotTime={event.is_performer ? event.performer_slot_time : null}
+                                venue_timezone={event.venue_utc_offset}
                             />
                         ))}
                     </div>
