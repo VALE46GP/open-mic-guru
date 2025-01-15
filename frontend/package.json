@@ -29,7 +29,7 @@
   "scripts": {
     "start": "react-scripts start",
     "build": "react-scripts build",
-    "test": "react-scripts test --env=jsdom --coverage",
+    "test": "react-scripts test --env=jsdom --coverage --watchAll=false",
     "eject": "react-scripts eject"
   },
   "eslintConfig": {
@@ -64,7 +64,19 @@
       "!src/__mocks__/**",
       "!src/testData/**",
       "!src/testUtils/**",
-      "!src/index.js"
+      "!src/index.js",
+      "!src/reportWebVitals.js",
+      "!src/setupProxy.js",
+      "!src/setupTests.js",
+      "!src/utils/tokenRefresh.js",
+      "!**/styles/**",
+      "!**/*.styles.js",
+      "!**/constants/**"
+    ],
+    "coverageReporters": [
+      "text",
+      "lcov",
+      "clover"
     ],
     "moduleNameMapper": {
       "^@/(.*)$": "<rootDir>/src/$1",
