@@ -347,13 +347,15 @@ function CreateUser({ initialData, onCancel }) {
                     {passwordResetError}
                 </div>
             )}
-            <button
-                type="button"
-                onClick={handlePasswordReset}
-                className='create-user__password-reset-button'
-            >
-                Reset Password
-            </button>
+            {initialData && (
+                <button
+                    type="button"
+                    onClick={handlePasswordReset}
+                    className='create-user__password-reset-button'
+                >
+                    Reset Password
+                </button>
+            )}
 
             <div className="create-user__button-group">
                 <button

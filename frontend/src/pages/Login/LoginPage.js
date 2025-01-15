@@ -85,7 +85,7 @@ function LoginPage() {
     };
 
     return (
-        <div>
+        <div className="login-page">
             <button 
                 className="login-page__button"
                 data-testid="toggle-form-button"
