@@ -46,7 +46,7 @@ export function formatEventTimeInVenueTimezone(dateString, venue, format = 'MMM 
         const dt = DateTime.fromISO(dateString, { zone: 'utc' });
         return dt.toLocaleString(DateTime.DATETIME_MED);
     }
-
+    
     try {
         const dt = DateTime.fromISO(dateString, { zone: 'utc' });
         const converted = dt.setZone(`UTC${venue.utc_offset >= 0 ? '+' : ''}${venue.utc_offset / 60}`);
@@ -188,4 +188,14 @@ export function formatPerformerTime(eventStartTime, slotTime, venueUtcOffset) {
         { utc_offset: venueUtcOffset },
         format
     );
+}
+
+export function formatNotificationTime(dateString, format = 'MMM d, yyyy h:mm a') {
+    const dt = DateTime.fromISO(dateString, { zone: 'utc' });
+    return dt.toLocal().toFormat(format);
+}
+
+export function formatRelativeTime(dateString) {
+    const dt = DateTime.fromISO(dateString, { zone: 'utc' });
+    return dt.toRelative();
 }

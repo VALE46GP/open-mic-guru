@@ -3,12 +3,17 @@ export const mockNotification = {
     event_id: '123',
     event_name: 'Test Event 1',
     venue_name: 'Test Venue',
+    venue_utc_offset: -5,
     start_time: '2024-02-01T08:00:00Z',
     is_performer: true,
     performer_slot_time: '2024-02-01T09:00:00Z',
     message: 'New signup for slot 1',
     is_read: false,
-    created_at: '2024-02-01T08:00:00Z'
+    created_at: '2024-02-01T08:00:00Z',
+    venue: {
+        name: 'Test Venue',
+        utc_offset: -5
+    }
 };
 
 export const emptyMockHook = {
@@ -26,8 +31,17 @@ export const populatedMockHook = {
     fetchNotifications: jest.fn(),
     groupedNotifications: {
         '123': {
-            event: mockNotification.event,
-            notifications: [mockNotification]
+            event: {
+                event_id: '123',
+                event_name: 'Test Event 1',
+                venue_name: 'Test Venue',
+                start_time: '2024-02-01T08:00:00Z'
+            },
+            notifications: [mockNotification],
+            venue: {
+                name: 'Test Venue',
+                utc_offset: -5
+            }
         }
     }
 };

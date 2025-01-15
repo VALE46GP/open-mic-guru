@@ -93,4 +93,54 @@ describe('NotificationsPage', () => {
 
         expect(populatedMockHook.deleteNotifications).toHaveBeenCalledWith(['123']);
     });
+
+    it('renders notification timestamps in local timezone', async () => {
+        const testNotification = {
+            id: 1,
+            event_id: '123',
+            event_name: 'Test Event 1',
+            venue_name: 'Test Venue',
+            venue_utc_offset: -5,
+            venue_address: '123 Test St',
+            venue_latitude: 0,
+            venue_longitude: 0,
+            host_name: 'Test Host',
+            event_start_time: '2024-02-01T08:00:00Z',
+            event_image: null,
+            event_types: [],
+            active: true,
+            deleted: false,
+            is_host: false,
+            is_performer: false,
+            created_at: '2024-01-01T12:00:00Z',
+            message: 'Test notification message',
+            is_read: false
+        };
+        
+        const mockHook = {
+            ...populatedMockHook,
+            notifications: [testNotification],
+            markAsRead: jest.fn().mockResolvedValue({}),
+            deleteNotifications: jest.fn().mockResolvedValue({}),
+            fetchNotifications: jest.fn()
+        };
+
+        mockHookImplementation = () => mockHook;
+
+        renderWithProviders(<NotificationsPage />);
+        
+        await waitFor(() => {
+            expect(screen.getByTestId('event-card-123')).toBeInTheDocument();
+        });
+
+        const expandButton = screen.getByRole('button', { name: /show notifications/i });
+        await act(async () => {
+            fireEvent.click(expandButton);
+        });
+
+        await waitFor(() => {
+            const timestampElements = screen.getAllByText(/\d{1,2}:\d{2}/);
+            expect(timestampElements.length).toBeGreaterThan(0);
+        });
+    });
 });
