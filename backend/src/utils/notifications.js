@@ -64,8 +64,6 @@ async function createNotification(userId, type, message, eventId = null, lineupS
             [userId, type, message, eventId, lineupSlotId]
         );
 
-        logger.log('Notification created:', result.rows[0]);
-
         // Get complete notification data
         const notificationData = await db.query(`
             SELECT 
@@ -75,7 +73,10 @@ async function createNotification(userId, type, message, eventId = null, lineupS
                 e.image as event_image,
                 e.slot_duration,
                 e.setup_duration,
+                e.types as event_types,
+                e.active,
                 v.name as venue_name,
+                v.utc_offset as venue_utc_offset,
                 u.name as host_name
             FROM notifications n
             LEFT JOIN events e ON n.event_id = e.id
@@ -85,10 +86,10 @@ async function createNotification(userId, type, message, eventId = null, lineupS
         `, [result.rows[0].id]);
 
         // Broadcast through WebSocket
-        if (req && req.app && req.app.locals.broadcastNotification) {
+        if (req?.app?.locals?.broadcastNotification) {
             const notificationPayload = {
-                type: 'NOTIFICATION_UPDATE',
-                userId: userId,
+                type: 'NEW_NOTIFICATION',
+                userId,
                 notification: notificationData.rows[0]
             };
             req.app.locals.broadcastNotification(notificationPayload);
@@ -107,7 +108,7 @@ async function createNotification(userId, type, message, eventId = null, lineupS
         return result.rows[0];
     } catch (err) {
         logger.error('Error creating notification:', err);
-        return undefined;
+        throw err;
     }
 }
 

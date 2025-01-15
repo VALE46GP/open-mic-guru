@@ -147,12 +147,10 @@ function CreateEvent() {
     const handleImageChange = (e) => {
         const file = e.target.files[0];
         if (file) {
-            // Only set the preview URL in imagePreview
+            // If there was a previous image from S3, it will be deleted when we save
             setImagePreview(URL.createObjectURL(file));
-            // Set the actual file in eventImage
             setEventImage(file);
             
-            // Clean up the blob URL when component unmounts
             return () => URL.revokeObjectURL(imagePreview);
         }
     };
@@ -233,7 +231,9 @@ function CreateEvent() {
             let imageUrl;
             if (eventImage instanceof File) {
                 try {
+                    console.log('Processing new image:', eventImage.name);
                     imageUrl = await processImage(eventImage);
+                    console.log('New image URL:', imageUrl);
                 } catch (error) {
                     console.error('Error processing image:', error);
                     alert('Failed to upload image. Please try again.');
@@ -241,6 +241,7 @@ function CreateEvent() {
                 }
             } else if (isEditMode && !eventImage) {
                 imageUrl = imagePreview;
+                console.log('Using existing image:', imagePreview);
             }
 
             const url = isEditMode ? `/api/events/${eventId}` : '/api/events';

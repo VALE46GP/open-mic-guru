@@ -34,12 +34,12 @@
             +input-base
 
     &__image-preview
+
         width: 100%
-        aspect-ratio: 16/9
+        height: auto
         border-radius: $border-radius-md
-        overflow: hidden
-        background: $bg-light
-        +flex-center
+        object-fit: cover
+        object-position: center
 
         img
             +image

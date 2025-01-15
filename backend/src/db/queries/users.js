@@ -109,10 +109,11 @@ const userQueries = {
                 e.slot_duration,
                 e.additional_info,
                 e.types AS event_types,
-                e.image     AS event_image,
+                e.image AS event_image,
                 e.active,
                 v.id AS venue_id,
                 v.name AS venue_name,
+                v.utc_offset AS venue_utc_offset,
                 u.name AS host_name,
                 CASE
                     WHEN e.host_id = $1 THEN true
@@ -128,10 +129,10 @@ const userQueries = {
                     (EXTRACT (EPOCH FROM e.slot_duration + e.setup_duration) / 60)
                 ) AS performer_slot_time
             FROM events e
-                JOIN venues v ON e.venue_id = v.id
-                JOIN users u ON e.host_id = u.id
-                LEFT JOIN lineup_slots ls ON e.id = ls.event_id
-                    AND ls.user_id = $1
+            JOIN venues v ON e.venue_id = v.id
+            JOIN users u ON e.host_id = u.id
+            LEFT JOIN lineup_slots ls ON e.id = ls.event_id
+                AND ls.user_id = $1
             WHERE (e.host_id = $1 OR ls.user_id = $1)
                 AND e.deleted = false
             ORDER BY e.start_time DESC

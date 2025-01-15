@@ -43,7 +43,7 @@ $xxl: 1400px
 
 // Button styles
 =button-base
-    padding: $spacing-md $spacing-sm
+    padding: $spacing-md $spacing-lg
     border: none
     border-radius: $border-radius-sm
     font-weight: $font-weight-medium
@@ -51,6 +51,9 @@ $xxl: 1400px
     transition: all $transition-base
     text-align: center
     width: 100%
+    
+    +media-down($xs)
+        padding: $spacing-md $spacing-xs
     
     &:disabled
         opacity: 0.7
@@ -368,6 +371,9 @@ $xxl: 1400px
     max-width: 800px
     margin: 0 auto
     padding: $spacing-md
+
+    +media-down($xs)
+        padding: .75rem
 
 =page-title
     text-align: center

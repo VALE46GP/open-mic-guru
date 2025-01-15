@@ -7,8 +7,11 @@ const { userQueries } = require('../db/queries');
 const { logger } = require('../../tests/utils/logger');
 const TokenUtility = require('../utils/token.util');
 const emailService = require('../utils/emailService.util');
+const s3Util = require('../utils/s3.util');
 
 const s3Client = new S3Client({ region: process.env.AWS_REGION });
+
+const defaultImageUrl = 'https://open-mic-guru.s3.us-west-1.amazonaws.com/users/user-default.jpg';
 
 const usersController = {
     async getAllUsers(req, res) {
@@ -22,8 +25,85 @@ const usersController = {
     },
 
     async registerUser(req, res) {
+        const { isUpdate, userId } = req.body;
+        
         try {
-            const { email, password, name, photoUrl, socialMediaAccounts, isUpdate, userId, bio } = req.body;
+            if (isUpdate) {
+                // Check if token exists
+                if (!req.headers.authorization) {
+                    return res.status(401).json({ error: 'Token missing or invalid' });
+                }
+
+                // Check if token is valid
+                if (!req.user) {
+                    return res.status(403).json({ error: 'Invalid token' });
+                }
+
+                // Check if the token's userId matches the requested update userId
+                if (req.user.userId !== userId) {
+                    return res.status(403).json({ error: 'Unauthorized' });
+                }
+            }
+
+            const { email, password, name, photoUrl, socialMediaAccounts, bio } = req.body;
+            let existingUser;
+
+            if (isUpdate) {
+                existingUser = await userQueries.getUserProfileById(userId);
+                console.log('Update user image debug:', {
+                    newPhotoUrl: photoUrl,
+                    existingImage: existingUser?.image,
+                    hasExistingImage: !!existingUser?.image,
+                    isDifferent: photoUrl !== existingUser?.image
+                });
+
+                if (!existingUser) {
+                    return res.status(404).json({ error: 'User not found' });
+                }
+
+                const socialMediaJson = JSON.stringify(socialMediaAccounts || []);
+                const client = await pool.connect();
+
+                try {
+                    await client.query('BEGIN');
+                    const updatedUser = await userQueries.updateUser(
+                        client,
+                        email,
+                        name,
+                        photoUrl,
+                        socialMediaJson,
+                        userId,
+                        bio
+                    );
+                    await client.query('COMMIT');
+
+                    // Handle image deletion after successful update
+                    if (photoUrl && existingUser.image) {
+                        // Extract just the filename part for comparison
+                        const newPhotoKey = photoUrl.split('/').pop();
+                        const existingPhotoKey = existingUser.image.split('/').pop();
+                        
+                        console.log('Image comparison:', {
+                            newPhotoKey,
+                            existingPhotoKey,
+                            isDifferent: newPhotoKey !== existingPhotoKey,
+                            isNotDefault: existingUser.image !== defaultImageUrl
+                        });
+                        
+                        if (newPhotoKey !== existingPhotoKey && existingUser.image !== defaultImageUrl) {
+                            console.log('Deleting old user image:', existingUser.image);
+                            await s3Util.deleteImage(existingUser.image);
+                        }
+                    }
+
+                    return res.status(200).json({ user: updatedUser });
+                } catch (err) {
+                    await client.query('ROLLBACK');
+                    throw err;
+                } finally {
+                    client.release();
+                }
+            }
 
             // Check if email already exists for new registrations
             if (!isUpdate) {
@@ -111,32 +191,14 @@ const usersController = {
                         details: dbError.message
                     });
                 }
-            } else {
-                // Update existing user (no password handling here)
-                const socialMediaJson = JSON.stringify(socialMediaAccounts || []);
-                const client = await pool.connect();
-
-                try {
-                    await client.query('BEGIN');
-                    const updatedUser = await userQueries.updateUser(
-                        client,
-                        email,
-                        name,
-                        photoUrl,
-                        socialMediaJson,
-                        userId,
-                        bio
-                    );
-                    await client.query('COMMIT');
-                    res.status(200).json({ user: updatedUser });
-                } catch (err) {
-                    await client.query('ROLLBACK');
-                    throw err;
-                } finally {
-                    client.release();
-                }
             }
         } catch (err) {
+            console.error('Registration error:', {
+                error: err.message,
+                stack: err.stack,
+                userId,
+                isUpdate
+            });
             logger.error('Registration Error:', err);
             res.status(500).json({
                 error: 'Registration failed',
@@ -174,6 +236,13 @@ const usersController = {
                 process.env.JWT_SECRET,
                 { expiresIn: '24h' }
             );
+
+            res.cookie('token', token, {
+                httpOnly: true,
+                secure: process.env.NODE_ENV === 'production',
+                sameSite: 'lax',
+                domain: process.env.NODE_ENV === 'development' ? '192.168.1.104' : 'your-production-domain.com'
+            });
 
             res.json({ token });
         } catch (error) {
@@ -255,6 +324,11 @@ const usersController = {
         } finally {
             client.release();
         }
+
+        const user = await userQueries.getUserProfileById(parsedUserId);
+        if (user?.image && !user.image.includes('user-default.jpg')) {
+            await s3Util.deleteImage(user.image);
+        }
     },
 
     async generateUploadUrl(req, res) {
@@ -268,7 +342,11 @@ const usersController = {
                 ContentType: fileType
             });
 
-            const uploadURL = await getSignedUrl(s3Client, command, { expiresIn: 60 });
+            const uploadURL = await getSignedUrl(s3Client, command, { 
+                expiresIn: 60,
+                signableHeaders: new Set(['host']),
+            });
+
             res.json({ uploadURL });
         } catch (err) {
             logger.error(err);

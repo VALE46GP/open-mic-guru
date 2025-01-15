@@ -8,9 +8,12 @@ import { mockEvents } from '../../testData';
 import '@testing-library/jest-dom';
 
 // Move component mocks to __mocks__ directory and use jest.mock to reference them
-jest.mock('../../components/events/EventsMap', () => require('../../__mocks__/EventsMap'));
-jest.mock('../../components/events/EventCard', () => require('../../__mocks__/EventCard'));
-jest.mock('../../components/shared/VenueAutocomplete', () => require('../../__mocks__/VenueAutocomplete'));
+jest.mock('../../components/events/EventsMap', () => 
+  require('../../__mocks__/components/events/EventsMap'));
+jest.mock('../../components/events/EventCard', () => 
+  require('../../__mocks__/components/events/EventCard'));
+jest.mock('../../components/shared/VenueAutocomplete', () => 
+  require('../../__mocks__/components/shared/VenueAutocomplete'));
 
 const mockWebSocketContext = {
     lastMessage: null,

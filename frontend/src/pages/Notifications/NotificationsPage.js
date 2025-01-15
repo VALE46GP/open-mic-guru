@@ -2,22 +2,18 @@ import React, { useState, useEffect } from 'react';
 import { useNotifications } from '../../context/NotificationsContext';
 import EventCard from '../../components/events/EventCard';
 import './NotificationsPage.sass';
-import { formatEventTimeInVenueTimezone } from '../../utils/timeCalculations';
+import { formatEventTimeInVenueTimezone, formatNotificationTime } from '../../utils/timeCalculations';
 import { BsChevronDown, BsChevronRight } from 'react-icons/bs';
 import { Modal, Button } from 'react-bootstrap';
 import { FaTrash } from 'react-icons/fa';
-import { DateTime } from 'luxon';
 
 function NotificationMessage({ notification, venue, isRead, isLocallyViewed }) {
     const [formattedTime, setFormattedTime] = useState('');
 
     useEffect(() => {
         if (notification.created_at) {
-            // Show created_at in user's local timezone
-            const localTime = DateTime.fromISO(notification.created_at, { zone: 'utc' })
-                .toLocal()
-                .toFormat('MMM d, yyyy h:mm a');
-            setFormattedTime(localTime);
+            const formattedTime = formatNotificationTime(notification.created_at);
+            setFormattedTime(formattedTime);
         }
     }, [notification]);
 
@@ -77,13 +73,15 @@ function NotificationsPage() {
                         performer_slot_time: performerNotification ? performerNotification.performer_slot_time : null,
                         event_types: notification.event_types,
                         active: notification.active,
-                        deleted: notification.deleted
+                        deleted: notification.deleted,
+                        venue_utc_offset: notification.venue_utc_offset
                     },
                     venue: {
                         name: notification.venue_name,
                         address: notification.venue_address,
                         latitude: notification.venue_latitude,
-                        longitude: notification.venue_longitude
+                        longitude: notification.venue_longitude,
+                        utc_offset: notification.venue_utc_offset
                     },
                     notifications: [],
                     unreadCount: 0
@@ -172,6 +170,23 @@ function NotificationsPage() {
         setShowDeleteModal(false);
     };
 
+    const renderNotification = (notification) => {
+        // Format the notification creation time in user's local timezone
+        const createdAt = formatNotificationTime(notification.created_at);
+        
+        // If the notification references an event, format that time in venue's timezone
+        const eventTime = notification.event?.start_time ? 
+            formatEventTimeInVenueTimezone(notification.event.start_time, notification.event.venue) :
+            null;
+
+        return (
+            <div>
+                <span>Notification received: {createdAt}</span>
+                {eventTime && <span>Event starts: {eventTime}</span>}
+            </div>
+        );
+    };
+
     return (
         <div className="notifications">
             <h1 className="notifications__title">Notifications</h1>
@@ -253,6 +268,7 @@ function NotificationsPage() {
                                                 event={data.event} 
                                                 slotTime={data.notifications[0]?.performer_slot_time}
                                                 showDeleted={true}
+                                                venue_timezone={data.venue.utc_offset}
                                             />
                                         </div>
                                     </div>

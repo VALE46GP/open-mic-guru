@@ -7,7 +7,14 @@ const verifyToken = require('../middleware/verifyToken');
 router.get('/', usersController.getAllUsers);
 
 // POST a new user OR edit existing user
-router.post('/register', usersController.registerUser);
+router.post('/register', (req, res, next) => {
+    // Only verify token for updates
+    if (req.body.isUpdate) {
+        verifyToken(req, res, next);
+    } else {
+        next();
+    }
+}, usersController.registerUser);
 
 // POST login user
 router.post('/login', usersController.loginUser);
@@ -19,7 +26,7 @@ router.get('/:userId', usersController.getUserById);
 router.delete('/:userId', verifyToken, usersController.deleteUser);
 
 // POST get upload URL
-router.post('/upload', usersController.generateUploadUrl);
+router.post('/upload', verifyToken, usersController.generateUploadUrl);
 
 // Email verification routes
 router.put('/verifications/:token', usersController.verifyEmail);  // Verify an email

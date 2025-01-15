@@ -4,6 +4,7 @@ const { mockDb, resetMockDb } = require('../helpers/mockDb');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const WebSocket = require('ws');
+const debug = require('debug')('test:users');
 
 // Add AWS SDK v3 mocks
 jest.mock('@aws-sdk/client-s3', () => ({
@@ -26,19 +27,53 @@ jest.mock('../../src/utils/emailService.util', () => ({
     sendPasswordResetEmail: jest.fn().mockResolvedValue(true)
 }));
 
+// Remove the existing JWT mock
+jest.unmock('jsonwebtoken');
+
 const app = express();
 const usersController = require('../../src/controllers/users');
 
 // Setup middleware
 app.use(express.json());
 const mockVerifyToken = (req, res, next) => {
-    req.user = { id: 1, userId: 1 };
-    next();
+    debug('mockVerifyToken called with:', {
+        headers: req.headers,
+        body: req.body
+    });
+
+    if (!req.headers.authorization) {
+        debug('No authorization header');
+        return res.status(401).json({ error: 'Token missing or invalid' });
+    }
+
+    const token = req.headers.authorization.split(' ')[1];
+    debug('Token extracted:', token);
+    
+    try {
+        // Use jwt.verify directly without callback
+        const decoded = jwt.verify(token, process.env.JWT_SECRET || 'test-secret');
+        debug('Token decoded:', decoded);
+        req.user = decoded;
+        next();
+    } catch (err) {
+        debug('Token verification failed:', err);
+        // Check if it's a non-matching user ID
+        if (err.name === 'JsonWebTokenError') {
+            return res.status(403).json({ error: 'Invalid token' });
+        }
+        // For non-matching user IDs
+        return res.status(403).json({ error: 'Unauthorized' });
+    }
 };
 
 // Setup routes
 app.get('/users', usersController.getAllUsers);
-app.post('/users/register', usersController.registerUser);
+app.post('/users/register', (req, res, next) => {
+    if (req.body.isUpdate) {
+        return mockVerifyToken(req, res, next);
+    }
+    next();
+}, usersController.registerUser);
 app.post('/users/login', usersController.loginUser);
 app.get('/users/:userId', usersController.getUserById);
 app.delete('/users/:userId', mockVerifyToken, usersController.deleteUser);
@@ -149,26 +184,82 @@ describe('Users Controller', () => {
         });
 
         it('should update existing user when isUpdate is true', async () => {
-            const updateUser = {
-                userId: 1,
-                email: 'update@example.com',
-                name: 'Updated User',
-                photoUrl: 'updated-image.jpg',
-                socialMediaAccounts: ['twitter.com/updated'],
-                isUpdate: true
+            process.env.JWT_SECRET = 'test-secret'; // Ensure consistent secret
+            
+            const token = jwt.sign(
+                { userId: 1 },
+                process.env.JWT_SECRET
+            );
+            debug('Test token created:', token);
+
+            // Mock the database responses
+            const mockClient = {
+                query: jest.fn()
+                    .mockResolvedValueOnce({ rows: [] }) // BEGIN
+                    .mockResolvedValueOnce({ // UPDATE
+                        rows: [{
+                            id: 1,
+                            email: 'test@example.com',
+                            name: 'Updated User'
+                        }]
+                    })
+                    .mockResolvedValueOnce({ rows: [] }), // COMMIT
+                release: jest.fn()
             };
 
-            mockDb.connect.mockResolvedValueOnce({
-                query: jest.fn().mockResolvedValue({ rows: [{ ...updateUser, id: 1 }] }),
-                release: jest.fn()
+            mockDb.connect.mockResolvedValue(mockClient);
+            mockDb.query.mockResolvedValueOnce({ // getUserProfileById
+                rows: [{
+                    id: 1,
+                    email: 'test@example.com',
+                    name: 'Test User',
+                    email_verified: true
+                }]
             });
 
             const response = await request(app)
                 .post('/users/register')
-                .send(updateUser);
+                .set('Authorization', `Bearer ${token}`)
+                .send({
+                    email: 'test@example.com',
+                    name: 'Updated User',
+                    isUpdate: true,
+                    userId: 1
+                });
+            
+            debug('Response received:', {
+                status: response.status,
+                body: response.body,
+                headers: response.headers
+            });
 
             expect(response.status).toBe(200);
-            expect(response.body.user).toMatchObject({ name: 'Updated User' });
+            expect(response.body.user).toMatchObject({
+                name: 'Updated User',
+                email: 'test@example.com'
+            });
+        });
+
+        it('should reject updates for non-matching user IDs', async () => {
+            process.env.JWT_SECRET = 'test-secret'; // Ensure consistent secret
+            
+            const token = jwt.sign(
+                { userId: 999 },
+                process.env.JWT_SECRET
+            );
+
+            const response = await request(app)
+                .post('/users/register')
+                .set('Authorization', `Bearer ${token}`)
+                .send({
+                    userId: 1,
+                    email: 'test@example.com',
+                    name: 'Updated User',
+                    isUpdate: true
+                });
+
+            expect(response.status).toBe(403);
+            expect(response.body).toHaveProperty('error', 'Unauthorized');
         });
     });
 

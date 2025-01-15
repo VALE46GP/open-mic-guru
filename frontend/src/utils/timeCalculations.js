@@ -18,27 +18,27 @@ export function convertFromUTC(utcStr, utc_offset) {
     return DateTime.fromISO(utcStr).setZone(`UTC${utc_offset >= 0 ? '+' : ''}${utc_offset / 60}`).toISO();
 }
 
-export async function getTimezoneOffsetFromCoordinates(latitude, longitude) {
-    try {
-        const timestamp = Math.floor(Date.now() / 1000);
-        const response = await fetch(
-            `https://maps.googleapis.com/maps/api/timezone/json?location=${latitude},${longitude}&timestamp=${timestamp}&key=${process.env.REACT_APP_GOOGLE_MAPS_API_KEY}`
-        );
-        const data = await response.json();
-        
-        if (data.status === 'OK') {
-            // Convert total offset (rawOffset + dstOffset) to minutes
-            const totalOffset = (data.rawOffset + data.dstOffset) / 60;
-            return totalOffset;
-        }
-        
-        console.warn('Timezone API error, falling back to default:', data);
-        return -420; // Default to PDT (-7 hours)
-    } catch (error) {
-        console.error('Error fetching timezone:', error);
-        return -420;
-    }
-}
+// export async function getTimezoneOffsetFromCoordinates(latitude, longitude) {
+//     try {
+//         const timestamp = Math.floor(Date.now() / 1000);
+//         const response = await fetch(
+//             `https://maps.googleapis.com/maps/api/timezone/json?location=${latitude},${longitude}&timestamp=${timestamp}&key=${process.env.REACT_APP_GOOGLE_MAPS_API_KEY}`
+//         );
+//         const data = await response.json();
+//
+//         if (data.status === 'OK') {
+//             // Convert total offset (rawOffset + dstOffset) to minutes
+//             const totalOffset = (data.rawOffset + data.dstOffset) / 60;
+//             return totalOffset;
+//         }
+//
+//         console.warn('Timezone API error, falling back to default:', data);
+//         return -420; // Default to PDT (-7 hours)
+//     } catch (error) {
+//         console.error('Error fetching timezone:', error);
+//         return -420;
+//     }
+// }
 
 export function formatEventTimeInVenueTimezone(dateString, venue, format = 'MMM d, yyyy h:mm a') {
     if (typeof venue?.utc_offset !== 'number') {
@@ -46,7 +46,7 @@ export function formatEventTimeInVenueTimezone(dateString, venue, format = 'MMM 
         const dt = DateTime.fromISO(dateString, { zone: 'utc' });
         return dt.toLocaleString(DateTime.DATETIME_MED);
     }
-
+    
     try {
         const dt = DateTime.fromISO(dateString, { zone: 'utc' });
         const converted = dt.setZone(`UTC${venue.utc_offset >= 0 ? '+' : ''}${venue.utc_offset / 60}`);
@@ -80,35 +80,35 @@ export function calculateSlotStartTime(eventStartTime, slotNumber, slotDuration,
     return startTime.plus({ minutes: slotOffsetMinutes }).toJSDate();
 }
 
-export function formatTimeInTimezone(date, utc_offset) {
-    if (typeof utc_offset !== 'number') {
-        console.warn('No UTC offset provided for time formatting, using local timezone');
-        return DateTime.fromISO(date).toLocaleString(DateTime.TIME_SIMPLE);
-    }
-
-    return DateTime.fromISO(date)
-        .setZone(`UTC${utc_offset >= 0 ? '+' : ''}${utc_offset / 60}`)
-        .toLocaleString({
-            hour: 'numeric',
-            minute: '2-digit',
-            hour12: true
-        })
-        .replace(':00', '');
-}
-
-export function formatDateInTimezone(date, utc_offset) {
-    if (typeof utc_offset !== 'number') {
-        console.warn('No UTC offset provided for date formatting, using local timezone');
-        return DateTime.fromISO(date).toLocaleString({ month: 'short', day: 'numeric' });
-    }
-
-    return DateTime.fromISO(date)
-        .setZone(`UTC${utc_offset >= 0 ? '+' : ''}${utc_offset / 60}`)
-        .toLocaleString({
-            month: 'short',
-            day: 'numeric'
-        });
-}
+// export function formatTimeInTimezone(date, utc_offset) {
+//     if (typeof utc_offset !== 'number') {
+//         console.warn('No UTC offset provided for time formatting, using local timezone');
+//         return DateTime.fromISO(date).toLocaleString(DateTime.TIME_SIMPLE);
+//     }
+//
+//     return DateTime.fromISO(date)
+//         .setZone(`UTC${utc_offset >= 0 ? '+' : ''}${utc_offset / 60}`)
+//         .toLocaleString({
+//             hour: 'numeric',
+//             minute: '2-digit',
+//             hour12: true
+//         })
+//         .replace(':00', '');
+// }
+//
+// export function formatDateInTimezone(date, utc_offset) {
+//     if (typeof utc_offset !== 'number') {
+//         console.warn('No UTC offset provided for date formatting, using local timezone');
+//         return DateTime.fromISO(date).toLocaleString({ month: 'short', day: 'numeric' });
+//     }
+//
+//     return DateTime.fromISO(date)
+//         .setZone(`UTC${utc_offset >= 0 ? '+' : ''}${utc_offset / 60}`)
+//         .toLocaleString({
+//             month: 'short',
+//             day: 'numeric'
+//         });
+// }
 
 export function formatTimeToLocalString(date, utc_offset) {
     if (typeof utc_offset !== 'number') {
@@ -158,4 +158,44 @@ export function formatTimeComparison(date1, date2, utc_offset) {
         console.error('Error comparing dates:', error);
         return 'Invalid DateTime';
     }
+}
+
+export function formatEventStartEndTimes(startTime, endTime, venue) {
+    if (!venue) return { start: '', end: '' };
+    
+    const start = formatEventTimeInVenueTimezone(
+        startTime, 
+        venue, 
+        'MMM d, yyyy h:mm a'
+    );
+    
+    const comparison = formatTimeComparison(startTime, endTime, venue.utc_offset);
+    const endFormat = typeof comparison === 'object' ? comparison.format : 'MMM d, yyyy h:mm a';
+    
+    const end = formatEventTimeInVenueTimezone(endTime, venue, endFormat);
+    
+    return { start, end };
+}
+
+export function formatPerformerTime(eventStartTime, slotTime, venueUtcOffset) {
+    if (!slotTime) return '';
+    
+    const comparison = formatTimeComparison(eventStartTime, slotTime, venueUtcOffset);
+    const format = typeof comparison === 'object' ? comparison.format : 'MMM d, yyyy h:mm a';
+    
+    return formatEventTimeInVenueTimezone(
+        slotTime,
+        { utc_offset: venueUtcOffset },
+        format
+    );
+}
+
+export function formatNotificationTime(dateString, format = 'MMM d, yyyy h:mm a') {
+    const dt = DateTime.fromISO(dateString, { zone: 'utc' });
+    return dt.toLocal().toFormat(format);
+}
+
+export function formatRelativeTime(dateString) {
+    const dt = DateTime.fromISO(dateString, { zone: 'utc' });
+    return dt.toRelative();
 }

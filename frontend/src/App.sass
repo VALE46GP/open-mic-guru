@@ -1,9 +1,15 @@
+@import './styles/variables'
+@import './styles/mixins'
+
 .app
   //background-color: #f6efdd
   text-align: center
-  padding: 0 10px
+  padding: 0 $spacing-sm
   margin: auto auto 2rem auto
   width: 100%
+
+  +media-down($xs)
+    padding: 0
 
   &__container
     width: 100%

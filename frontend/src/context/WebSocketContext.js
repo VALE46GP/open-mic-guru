@@ -3,40 +3,38 @@ import { useAuth } from '../hooks/useAuth';
 
 const WebSocketContext = createContext();
 
-export const WebSocketProvider = ({ children }) => {
+export const WebSocketProvider = ({ children, value }) => {
     const { getToken, logout, isAuthenticated } = useAuth();
     const [socket, setSocket] = useState(null);
     const [lastMessage, setLastMessage] = useState(null);
     const [isConnected, setIsConnected] = useState(false);
 
+    // If a value is provided (for testing), use that instead
+    if (value) {
+        return (
+            <WebSocketContext.Provider value={value}>
+                {children}
+            </WebSocketContext.Provider>
+        );
+    }
+
     useEffect(() => {
         let ws = null;
+        let reconnectTimeout;
 
         const connectWebSocket = () => {
             const token = getToken();
             const wsHost = window.location.hostname;
             let wsUrl = `ws://${wsHost}:3001/ws`;
 
-            // Add token if authenticated
             if (token && isAuthenticated) {
-                try {
-                    const payload = JSON.parse(atob(token.split('.')[1]));
-                    if (payload.exp * 1000 < Date.now()) {
-                        logout();
-                        return;
-                    }
-                    wsUrl += `?token=${token}`;
-                } catch (error) {
-                    console.error('Token validation error:', error);
-                    return;
-                }
+                wsUrl += `?token=${token}`;
             }
 
             try {
                 ws = new WebSocket(wsUrl);
 
                 ws.onopen = () => {
-                    // console.log('WebSocket connected');
                     setIsConnected(true);
                     setSocket(ws);
                 };
@@ -46,31 +44,39 @@ export const WebSocketProvider = ({ children }) => {
                 };
 
                 ws.onclose = (event) => {
-                    // console.log('WebSocket closed:', event);
                     setIsConnected(false);
                     setSocket(null);
-                    if (event.code === 1000 && event.reason === 'Token expired') {
+                    
+                    if (event.code !== 1000 || event.reason !== 'Token expired') {
+                        clearTimeout(reconnectTimeout);
+                        reconnectTimeout = setTimeout(connectWebSocket, 3000);
+                    } else {
                         logout();
                     }
                 };
+
+                ws.onerror = (error) => {
+                    console.error('WebSocket error:', error);
+                };
             } catch (error) {
                 console.error('WebSocket connection error:', error);
+                clearTimeout(reconnectTimeout);
+                reconnectTimeout = setTimeout(connectWebSocket, 3000);
             }
         };
 
         connectWebSocket();
 
         return () => {
+            clearTimeout(reconnectTimeout);
             if (ws) {
                 ws.close();
-                setSocket(null);
-                setIsConnected(false);
             }
         };
     }, [isAuthenticated]);
 
     return (
-        <WebSocketContext.Provider value={{ socket, lastMessage, isConnected }}>
+        <WebSocketContext.Provider value={{ socket, lastMessage, setLastMessage, isConnected }}>
             {children}
         </WebSocketContext.Provider>
     );
