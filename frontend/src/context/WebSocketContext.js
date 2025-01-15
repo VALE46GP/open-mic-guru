@@ -3,11 +3,20 @@ import { useAuth } from '../hooks/useAuth';
 
 const WebSocketContext = createContext();
 
-export const WebSocketProvider = ({ children }) => {
+export const WebSocketProvider = ({ children, value }) => {
     const { getToken, logout, isAuthenticated } = useAuth();
     const [socket, setSocket] = useState(null);
     const [lastMessage, setLastMessage] = useState(null);
     const [isConnected, setIsConnected] = useState(false);
+
+    // If a value is provided (for testing), use that instead
+    if (value) {
+        return (
+            <WebSocketContext.Provider value={value}>
+                {children}
+            </WebSocketContext.Provider>
+        );
+    }
 
     useEffect(() => {
         let ws = null;
@@ -22,28 +31,22 @@ export const WebSocketProvider = ({ children }) => {
                 wsUrl += `?token=${token}`;
             }
 
-            console.log('Connecting to WebSocket:', wsUrl);
-
             try {
                 ws = new WebSocket(wsUrl);
 
                 ws.onopen = () => {
-                    console.log('WebSocket connected');
                     setIsConnected(true);
                     setSocket(ws);
                 };
 
                 ws.onmessage = (event) => {
-                    console.log('WebSocket message received:', event.data);
                     setLastMessage(event);
                 };
 
                 ws.onclose = (event) => {
-                    console.log('WebSocket closed:', event);
                     setIsConnected(false);
                     setSocket(null);
                     
-                    // Attempt to reconnect unless token expired
                     if (event.code !== 1000 || event.reason !== 'Token expired') {
                         clearTimeout(reconnectTimeout);
                         reconnectTimeout = setTimeout(connectWebSocket, 3000);
