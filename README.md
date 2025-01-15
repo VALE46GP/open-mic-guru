@@ -115,10 +115,10 @@ providing tools for signup management, real-time updates, and comprehensive even
     CALLBACK_URL=           # OAuth callback URL (update for production)
     
     # AWS Configuration
-    AWS_ACCESS_KEY_ID=      # AWS access key ID for S3
-    AWS_SECRET_ACCESS_KEY=  # AWS secret access key for S3
-    AWS_REGION=             # AWS region (e.g., us-west-1)
-    S3_BUCKET_NAME=         # S3 bucket name for image storage
+    REACT_APP_AWS_ACCESS_KEY_ID=      # AWS access key ID for S3
+    REACT_APP_AWS_SECRET_ACCESS_KEY=  # AWS secret access key for S3
+    REACT_APP_AWS_REGION=             # AWS region (e.g., us-west-1)
+    REACT_APP_S3_BUCKET_NAME=         # S3 bucket name for image storage
     
     # Development
     REACT_APP_DEV_IP=      # Development IP address for local testing
@@ -148,10 +148,10 @@ The backend server will run on `http://localhost:3001`
     REACT_APP_GOOGLE_API_KEY=    # Google Maps API key for location services
 
     # AWS Configuration
-    AWS_ACCESS_KEY_ID=           # AWS access key ID for S3
-    AWS_SECRET_ACCESS_KEY=       # AWS secret access key for S3
-    AWS_REGION=                  # AWS region (e.g., us-west-1)
-    S3_BUCKET_NAME=              # S3 bucket name for image storage
+    REACT_APP_AWS_ACCESS_KEY_ID=           # AWS access key ID for S3
+    REACT_APP_AWS_SECRET_ACCESS_KEY=       # AWS secret access key for S3
+    REACT_APP_AWS_REGION=                  # AWS region (e.g., us-west-1)
+    REACT_APP_S3_BUCKET_NAME=              # S3 bucket name for image storage
 
     # API Configuration
     REACT_APP_WEBSOCKET_URL=     # WebSocket server URL for real-time updates

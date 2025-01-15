@@ -1,6 +1,6 @@
 const { SNSClient, PublishCommand } = require("@aws-sdk/client-sns");
 
-const snsClient = new SNSClient({ region: process.env.AWS_REGION });
+const snsClient = new SNSClient({ region: process.env.REACT_APP_AWS_REGION });
 
 async function sendNotification(message, topicArn) {
   try {

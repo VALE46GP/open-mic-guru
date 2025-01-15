@@ -11,7 +11,7 @@ const s3Util = require('../utils/s3.util');
 
 console.log('s3Util loaded:', s3Util);
 
-const s3Client = new S3Client({ region: process.env.AWS_REGION });
+const s3Client = new S3Client({ region: process.env.REACT_APP_AWS_REGION });
 
 async function getUpdateMessage(originalEvent, updatedFields, venueUtcOffset) {
     const changes = [];
@@ -581,7 +581,7 @@ const eventsController = {
         const uniqueFileName = `${Date.now()}-${fileName}`;
         
         const command = new PutObjectCommand({
-            Bucket: process.env.S3_BUCKET_NAME,
+            Bucket: process.env.REACT_APP_S3_BUCKET_NAME,
             Key: `events/${uniqueFileName}`,
             ContentType: fileType
         });
