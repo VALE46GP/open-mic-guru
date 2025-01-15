@@ -78,12 +78,27 @@ function initializeWebSocketServer(server) {
 
     function broadcastNotification(data) {
         const targetUserId = data.userId;
+        console.log('Broadcasting notification:', { data, targetUserId });
+        
         wss.clients.forEach(client => {
             const clientInfo = clients.get(client);
             if (client.readyState === WebSocket.OPEN && 
                 clientInfo?.type === 'user' && 
                 clientInfo?.id === targetUserId) {
-                client.send(JSON.stringify(data));
+                // Handle different notification types
+                if (data.type === 'NOTIFICATION_DELETE') {
+                    client.send(JSON.stringify({
+                        type: 'NOTIFICATION_DELETE',
+                        userId: targetUserId,
+                        notificationIds: data.notificationIds
+                    }));
+                } else {
+                    client.send(JSON.stringify({
+                        type: 'NEW_NOTIFICATION',
+                        userId: targetUserId,
+                        notification: data.notification
+                    }));
+                }
             }
         });
     }

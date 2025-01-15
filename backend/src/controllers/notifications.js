@@ -68,13 +68,19 @@ const notificationsController = {
             const userId = req.user.userId;
 
             const deletedNotifications = await notificationQueries.deleteNotifications(eventIds, userId);
-            const deletedNotificationIds = deletedNotifications.map(notification => notification.id);
+            
+            if (deletedNotifications.length > 0) {
+                const deletedNotificationIds = deletedNotifications.map(notification => notification.id);
 
-            req.app.locals.broadcastNotification({
-                type: 'NOTIFICATION_DELETE',
-                userId: userId,
-                notificationIds: deletedNotificationIds
-            });
+                // Only broadcast if there were actually notifications deleted
+                if (req.app.locals.broadcastNotification) {
+                    req.app.locals.broadcastNotification({
+                        type: 'NOTIFICATION_DELETE',
+                        userId,
+                        notificationIds: deletedNotificationIds
+                    });
+                }
+            }
 
             res.json({
                 success: true,

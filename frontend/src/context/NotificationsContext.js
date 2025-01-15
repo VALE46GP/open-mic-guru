@@ -13,7 +13,7 @@ export function NotificationsProvider({ children }) {
     const [notifications, setNotifications] = useState([]);
     const [unreadCount, setUnreadCount] = useState(0);
     const { getUserId, getToken, user } = useAuth();
-    const { lastMessage } = useWebSocketContext();
+    const { lastMessage, setLastMessage } = useWebSocketContext();
 
     const defaultFetchOptions = {
         credentials: 'include',
@@ -103,29 +103,28 @@ export function NotificationsProvider({ children }) {
             
             try {
                 const data = JSON.parse(message.data);
+                console.log('Received WebSocket message:', data);
                 
-                // Only fetch notifications for authenticated users and notification updates
-                if (getUserId() && (data.type === 'NOTIFICATION_UPDATE' || data.type === 'NEW_NOTIFICATION')) {
-                    fetchNotifications();
-                    
-                    if (data.userId === getUserId()) {
-                        setNotifications(prev => {
-                            const exists = prev.some(n => n.id === data.notification.id);
-                            if (exists) {
-                                return prev.map(n => 
-                                    n.id === data.notification.id ? data.notification : n
-                                );
-                            }
+                if (data.type === 'NEW_NOTIFICATION' && data.userId === getUserId() && data.notification) {
+                    setNotifications(prev => {
+                        const exists = prev.some(n => n.id === data.notification.id);
+                        if (!exists) {
                             return [data.notification, ...prev];
-                        });
+                        }
+                        return prev;
+                    });
+                } else if (data.type === 'NOTIFICATION_DELETE' && data.userId === getUserId()) {
+                    setNotifications(prev => 
+                        prev.filter(notification => !data.notificationIds.includes(notification.id))
+                    );
+                    
+                    // Clear the message after handling deletion
+                    if (setLastMessage) {
+                        setLastMessage(null);
                     }
                 }
             } catch (error) {
                 console.error('Error processing WebSocket message:', error);
-                if (getUserId()) {  // Only retry for authenticated users
-                    clearTimeout(retryTimeout);
-                    retryTimeout = setTimeout(fetchNotifications, 1000);
-                }
             }
         };
 
@@ -136,7 +135,12 @@ export function NotificationsProvider({ children }) {
         return () => {
             clearTimeout(retryTimeout);
         };
-    }, [lastMessage, getUserId]);
+    }, [lastMessage, getUserId, setLastMessage]);
+
+    useEffect(() => {
+        const newUnreadCount = notifications.filter(n => !n.is_read).length;
+        setUnreadCount(newUnreadCount);
+    }, [notifications]);
 
     const markAsRead = async (notificationIds) => {
         try {
@@ -160,10 +164,9 @@ export function NotificationsProvider({ children }) {
                         : notification
                 )
             );
-            setUnreadCount(prev => Math.max(0, prev - notificationIds.length));
         } catch (error) {
             console.error('Error marking notifications as read:', error);
-            throw error; // Propagate error to component
+            throw error;
         }
     };
 
@@ -185,16 +188,9 @@ export function NotificationsProvider({ children }) {
             setNotifications(prev => 
                 prev.filter(notification => !eventIds.includes(notification.event_id))
             );
-            
-            setUnreadCount(prev => {
-                const deletedUnreadCount = notifications
-                    .filter(n => eventIds.includes(n.event_id) && !n.is_read)
-                    .length;
-                return Math.max(0, prev - deletedUnreadCount);
-            });
         } catch (error) {
             console.error('Error deleting notifications:', error);
-            throw error; // Propagate error to component
+            throw error;
         }
     };
 
