@@ -2,6 +2,7 @@ import React from 'react';
 import { render, screen, fireEvent, act } from '@testing-library/react';
 import VenueAutocomplete from './VenueAutocomplete';
 import { mockPlaceData } from '../../testData/mockVenues';
+import '@testing-library/jest-dom';
 
 describe('VenueAutocomplete', () => {
     beforeEach(() => {

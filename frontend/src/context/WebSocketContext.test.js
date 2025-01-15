@@ -4,7 +4,7 @@ import { useWebSocketContext } from './WebSocketContext';
 import { renderWithProviders } from '../testUtils/testUtils';
 import '@testing-library/jest-dom';
 
-// Mock component that uses the WebSocket context
+// Test component can stay in the test file since it's specific to this test
 function TestComponent() {
     const { lastMessage, isConnected } = useWebSocketContext();
     return (

@@ -4,6 +4,17 @@ export const mockNotification = {
     event_name: 'Test Event 1',
     venue_name: 'Test Venue',
     venue_utc_offset: -5,
+    venue_address: '123 Test St',
+    venue_latitude: 0,
+    venue_longitude: 0,
+    host_name: 'Test Host',
+    event_start_time: '2024-02-01T08:00:00Z',
+    event_image: null,
+    event_types: [],
+    active: true,
+    deleted: false,
+    is_host: false,
+    is_performer: false,
     start_time: '2024-02-01T08:00:00Z',
     is_performer: true,
     performer_slot_time: '2024-02-01T09:00:00Z',
@@ -16,32 +27,4 @@ export const mockNotification = {
     }
 };
 
-export const emptyMockHook = {
-    notifications: [],
-    markAsRead: jest.fn().mockResolvedValue({}),
-    deleteNotifications: jest.fn().mockResolvedValue({}),
-    fetchNotifications: jest.fn(),
-    groupedNotifications: {}
-};
-
-export const populatedMockHook = {
-    notifications: [mockNotification],
-    markAsRead: jest.fn().mockResolvedValue({}),
-    deleteNotifications: jest.fn().mockResolvedValue({}),
-    fetchNotifications: jest.fn(),
-    groupedNotifications: {
-        '123': {
-            event: {
-                event_id: '123',
-                event_name: 'Test Event 1',
-                venue_name: 'Test Venue',
-                start_time: '2024-02-01T08:00:00Z'
-            },
-            notifications: [mockNotification],
-            venue: {
-                name: 'Test Venue',
-                utc_offset: -5
-            }
-        }
-    }
-};
+// Move mock hooks to a separate file

@@ -59,6 +59,13 @@
     "msw": "^2.6.0"
   },
   "jest": {
+    "collectCoverageFrom": [
+      "src/**/*.{js,jsx}",
+      "!src/__mocks__/**",
+      "!src/testData/**",
+      "!src/testUtils/**",
+      "!src/index.js"
+    ],
     "moduleNameMapper": {
       "^@/(.*)$": "<rootDir>/src/$1",
       "\\.(css|less|sass|scss)$": "<rootDir>/src/__mocks__/styleMock.js",
@@ -66,6 +73,11 @@
     },
     "transformIgnorePatterns": [
       "node_modules/(?!(axios|@react-google-maps|@googlemaps)/)"
+    ],
+    "coveragePathIgnorePatterns": [
+      "/node_modules/",
+      "/__mocks__",
+      "/src/__mocks__"
     ],
     "clearMocks": true,
     "resetMocks": true,

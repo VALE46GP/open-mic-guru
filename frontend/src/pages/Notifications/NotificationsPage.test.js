@@ -4,22 +4,25 @@ import { screen, fireEvent, waitFor, within } from '@testing-library/react';
 import { act } from 'react-dom/test-utils';
 import NotificationsPage from './NotificationsPage';
 import { renderWithProviders } from '../../testUtils/testUtils';
+import { mockNotification } from '../../testData/mockNotifications';
+import { emptyMockHook, populatedMockHook } from '../../__mocks__/mockHooks';
 import '@testing-library/jest-dom';
-import { mockNotification, emptyMockHook, populatedMockHook } from '../../testData/mockNotifications';
 
 // Mock EventCard component
-jest.mock('../../components/events/EventCard', () => ({
-    __esModule: true,
-    default: function MockEventCard({ event }) {
-        return (
-            <div data-testid={`event-card-${event.event_id}`} className="event-card">
-                <h3>{event.event_name}</h3>
-                <p>{event.venue_name}</p>
-                {!event.active && <div>Event Cancelled</div>}
-            </div>
-        );
-    }
-}));
+jest.mock('../../components/events/EventCard', () => {
+    return {
+        __esModule: true,
+        default: function MockEventCard({ event }) {
+            return (
+                <div data-testid={`event-card-${event.event_id}`} className="event-card">
+                    <h3>{event.event_name}</h3>
+                    <p>{event.venue_name}</p>
+                    {!event.active && <div>Event Cancelled</div>}
+                </div>
+            );
+        }
+    };
+});
 
 // Mock NotificationsContext
 let mockHookImplementation = () => populatedMockHook;
