@@ -214,6 +214,13 @@ function Lineup({
             return;
         }
 
+        // Redirect non-users to login before showing modal
+        if (!currentUserId && !isHost) {
+            // Call the parent's onSlotClick with null values to trigger the redirect
+            onSlotClick(slot, '', false);
+            return;
+        }
+
         // only allow them to click their own slot or prevent clicking open slots
         if (!isHost) {
             const hasExistingSlot = slots.some(s => {
@@ -230,8 +237,8 @@ function Lineup({
         }
 
         setCurrentSlot(slot);
-        // If host, leave the field empty. Otherwise, use the user's name or current slot name
-        setCurrentSlotName(isHost ? "" : (currentUserId ? userName : (slot.slot_name === "Open" ? "" : slot.slot_name)));
+        // If host, leave the field empty. Otherwise, use the user's name
+        setCurrentSlotName(isHost ? "" : (currentUserId ? userName : ""));
         setShowModal(true);
     };
 

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useAuth } from '../../hooks/useAuth';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import CreateUser from '../../components/users/CreateUser';
 import './LoginPage.sass';
 
@@ -11,6 +11,7 @@ function LoginPage() {
     const [success, setSuccess] = useState(false);
     const { login } = useAuth();
     const navigate = useNavigate();
+    const location = useLocation();
     const [showCreateUser, setShowCreateUser] = useState(false);
     const [showForgotPassword, setShowForgotPassword] = useState(false);
     const [forgotPasswordEmail, setForgotPasswordEmail] = useState('');
@@ -39,7 +40,8 @@ function LoginPage() {
             if (response.ok && data.token) {
                 setSuccess(true);
                 login(data.token);
-                navigate('/');
+                const returnUrl = location.state?.returnUrl || '/';
+                navigate(returnUrl);
             } else if (data.needsVerification) {
                 navigate(`/verify-email?email=${encodeURIComponent(email)}`);
             } else {
