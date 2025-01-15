@@ -25,12 +25,13 @@ function EventPage() {
     const { getUserId, getToken, user } = useAuth();
     const userId = getUserId();
 
-    useEffect(() => {
-        // Set a unique identifier cookie for non-users if it doesn't already exist
-        if (!document.cookie.includes('nonUserId')) {
-            document.cookie = `nonUserId=${uuidv4()}; path=/; max-age=31536000`; // 1-year expiration
-        }
-    }, []);
+    // Temporarily disabled non-user identification
+    // useEffect(() => {
+    //     // Set a unique identifier cookie for non-users if it doesn't already exist
+    //     if (!document.cookie.includes('nonUserId')) {
+    //         document.cookie = `nonUserId=${uuidv4()}; path=/; max-age=31536000`; // 1-year expiration
+    //     }
+    // }, []);
 
     useEffect(() => {
         const fetchEventData = async () => {
@@ -206,25 +207,34 @@ function EventPage() {
                 is_current_non_user: false,
                 slot_start_time: slotTime,
                 slot_duration: eventDetails.event.slot_duration,
-                setup_duration: eventDetails.event.setup_duration
+                setup_duration: eventDetails.event.setup_duration,
+                is_open: true
             };
         });
     };
 
     // Remove the local state update after successful POST
     const handleSlotClick = async (slot, slotName, isHostAssignment) => {
+        // If user is not logged in and this isn't a host assignment, redirect to login
+        if (!userId && !isHostAssignment) {
+            // Save the current event URL to redirect back after login
+            const returnUrl = `/events/${eventId}`;
+            navigate('/login', { state: { returnUrl } });
+            return;
+        }
+
         // Only use the user's name if no custom name was provided
         const finalSlotName = (userId && !isHostAssignment && !slotName.trim())
             ? user.name
             : slotName;
 
-        // Get nonUserId from cookies
-        const getCookie = (name) => {
-            const value = `; ${document.cookie}`;
-            const parts = value.split(`; ${name}=`);
-            if (parts.length === 2) return parts.pop().split(';').shift();
-        };
-        const nonUserId = getCookie('nonUserId');
+        // // Get nonUserId from cookies - Temporarily disabled
+        // const getCookie = (name) => {
+        //     const value = `; ${document.cookie}`;
+        //     const parts = value.split(`; ${name}=`);
+        //     if (parts.length === 2) return parts.pop().split(';').shift();
+        // };
+        // const nonUserId = getCookie('nonUserId');
 
         const response = await fetch('/api/lineup_slots/', {
             method: 'POST',
@@ -237,7 +247,7 @@ function EventPage() {
                 slot_number: slot.slot_number,
                 slot_name: finalSlotName,
                 isHostAssignment,
-                nonUserId: !userId ? nonUserId : null  // Include nonUserId if there's no userId
+                // nonUserId: !userId ? nonUserId : null  // Temporarily disabled - Include nonUserId if there's no userId
             }),
         });
 
