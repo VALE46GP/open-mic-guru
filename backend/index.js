@@ -18,7 +18,7 @@ app.use((req, res, next) => {
     // console.log('=== Incoming Request ===');
     // console.log(`${req.method} ${req.url}`);
     // console.log('Headers:', JSON.stringify(req.headers, null, 2));
-    // console.log('Query:', req.query);
+    // console.log('Query: ', req.query);
     // console.log('Body:', req.body);
     // console.log('=====================');
     next();
