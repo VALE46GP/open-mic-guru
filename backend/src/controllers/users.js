@@ -26,7 +26,25 @@ const usersController = {
 
     async registerUser(req, res) {
         const { isUpdate, userId } = req.body;
+        
         try {
+            if (isUpdate) {
+                // Check if token exists
+                if (!req.headers.authorization) {
+                    return res.status(401).json({ error: 'Token missing or invalid' });
+                }
+
+                // Check if token is valid
+                if (!req.user) {
+                    return res.status(403).json({ error: 'Invalid token' });
+                }
+
+                // Check if the token's userId matches the requested update userId
+                if (req.user.userId !== userId) {
+                    return res.status(403).json({ error: 'Unauthorized' });
+                }
+            }
+
             const { email, password, name, photoUrl, socialMediaAccounts, bio } = req.body;
             let existingUser;
 
