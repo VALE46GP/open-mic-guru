@@ -28,9 +28,10 @@ const usersController = {
         const { isUpdate, userId } = req.body;
         try {
             const { email, password, name, photoUrl, socialMediaAccounts, bio } = req.body;
+            let existingUser;
 
             if (isUpdate) {
-                const existingUser = await userQueries.getUserProfileById(userId);
+                existingUser = await userQueries.getUserProfileById(userId);
                 console.log('Update user image debug:', {
                     newPhotoUrl: photoUrl,
                     existingImage: existingUser?.image,
