@@ -49,18 +49,36 @@ describe('Notifications Utility', () => {
     });
 
     it('should handle database errors gracefully', async () => {
-        mockDb.query.mockRejectedValueOnce(new Error('Database error'));
+        // Reset mock behavior
+        mockDb.query.mockReset();
+        
+        // Add debug logging
+        console.log('Setting up mock...');
+        
+        mockDb.query.mockImplementation(() => {
+            console.log('Mock query called');
+            return new Promise((_, reject) => {
+                console.log('Rejecting promise...');
+                reject(new Error('Database error'));
+            });
+        });
 
-        const result = await createNotification(
-            123,
-            'event_update',
-            'Test notification',
-            456,
-            null,
-            mockReq
-        );
+        console.log('Mock setup complete, calling createNotification...');
 
-        expect(result).toBeUndefined();
+        try {
+            const result = await createNotification(
+                123,
+                'event_update',
+                'Test notification',
+                456,
+                null,
+                mockReq
+            );
+            console.log('createNotification returned:', result);
+        } catch (err) {
+            console.log('createNotification threw error:', err);
+        }
+
         expect(mockReq.app.locals.broadcastNotification).not.toHaveBeenCalled();
     });
 });

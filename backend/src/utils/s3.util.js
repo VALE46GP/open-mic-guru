@@ -10,8 +10,8 @@ const s3Util = {
         }
 
         try {
-            // Extract the key from the S3 URL
-            const key = imageUrl.split('.com/')[1];
+            // Extract the key from the S3 URL and decode URL-encoded characters
+            const key = decodeURIComponent(imageUrl.split('.com/')[1]);
             console.log('Attempting to delete S3 object with key:', key);
             
             const deleteCommand = new DeleteObjectCommand({

@@ -58,7 +58,7 @@ describe('WebSocket Server', () => {
         client.on('message', (data) => {
             try {
                 const message = JSON.parse(data);
-                expect(message).toHaveProperty('type', 'NOTIFICATION_UPDATE');
+                expect(message).toHaveProperty('type', 'NEW_NOTIFICATION');
                 expect(message).toHaveProperty('userId', 1);
                 messageReceived = true;
                 done();
@@ -68,10 +68,9 @@ describe('WebSocket Server', () => {
         });
 
         client.on('open', () => {
-            // Wait a bit to ensure connection is fully established
             setTimeout(() => {
                 wss.broadcastNotification({
-                    type: 'NOTIFICATION_UPDATE',
+                    type: 'NEW_NOTIFICATION',
                     userId: 1,
                     notification: { id: 1, message: 'Test notification' }
                 });

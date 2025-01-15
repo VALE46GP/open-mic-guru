@@ -149,26 +149,130 @@ describe('Users Controller', () => {
         });
 
         it('should update existing user when isUpdate is true', async () => {
-            const updateUser = {
-                userId: 1,
-                email: 'update@example.com',
-                name: 'Updated User',
-                photoUrl: 'updated-image.jpg',
-                socialMediaAccounts: ['twitter.com/updated'],
-                isUpdate: true
+            // Reset mocks
+            mockDb.query.mockReset();
+            mockDb.connect.mockReset();
+            
+            // Mock JWT verification
+            jest.spyOn(jwt, 'verify').mockImplementation((token, secret, callback) => {
+                callback(null, { userId: 1 });
+            });
+
+            // Track all queries for debugging
+            const queryLog = [];
+            
+            // Mock client with transaction support
+            const mockClient = {
+                query: jest.fn().mockImplementation((sql, params) => {
+                    console.log('Client query:', { sql, params });
+                    queryLog.push({ sql, params });
+
+                    if (sql === 'BEGIN') return Promise.resolve({ rows: [] });
+                    if (sql === 'COMMIT') return Promise.resolve({ rows: [] });
+                    if (sql === 'ROLLBACK') return Promise.resolve({ rows: [] });
+
+                    if (sql.includes('UPDATE users')) {
+                        return Promise.resolve({
+                            rows: [{
+                                id: 1,
+                                name: 'Updated User',
+                                email: 'test@example.com',
+                                image: null,
+                                social_media_accounts: [],
+                                bio: null,
+                                email_verified: true
+                            }]
+                        });
+                    }
+
+                    return Promise.resolve({ rows: [] });
+                }),
+                release: jest.fn()
             };
 
-            mockDb.connect.mockResolvedValueOnce({
-                query: jest.fn().mockResolvedValue({ rows: [{ ...updateUser, id: 1 }] }),
-                release: jest.fn()
+            // Mock database connection
+            mockDb.connect.mockResolvedValue(mockClient);
+
+            // Mock initial user query
+            mockDb.query.mockResolvedValueOnce({
+                rows: [{
+                    id: 1,
+                    email: 'test@example.com',
+                    name: 'Test User',
+                    email_verified: true
+                }]
             });
 
             const response = await request(app)
                 .post('/users/register')
-                .send(updateUser);
+                .set('Authorization', 'Bearer test-token')
+                .send({
+                    userId: 1,
+                    email: 'test@example.com',
+                    name: 'Updated User',
+                    isUpdate: true
+                });
+
+            console.log('Test response:', {
+                status: response.status,
+                body: response.body,
+                queries: queryLog
+            });
 
             expect(response.status).toBe(200);
-            expect(response.body.user).toMatchObject({ name: 'Updated User' });
+            expect(response.body.user).toMatchObject({
+                name: 'Updated User',
+                email: 'test@example.com'
+            });
+        });
+
+        it('should require authentication for updates', async () => {
+            const response = await request(app)
+                .post('/users/register')
+                .send({
+                    userId: 1,
+                    email: 'test@example.com',
+                    name: 'Updated User',
+                    isUpdate: true
+                });
+
+            expect(response.status).toBe(401);
+            expect(response.body).toHaveProperty('error', 'Token missing or invalid');
+        });
+
+        it('should reject updates with invalid token', async () => {
+            const response = await request(app)
+                .post('/users/register')
+                .set('Authorization', 'Bearer invalid-token')
+                .send({
+                    userId: 1,
+                    email: 'test@example.com',
+                    name: 'Updated User',
+                    isUpdate: true
+                });
+
+            expect(response.status).toBe(403);
+            expect(response.body).toHaveProperty('error', 'Invalid token');
+        });
+
+        it('should reject updates for non-matching user IDs', async () => {
+            // Mock JWT to return different user ID
+            jest.spyOn(jwt, 'verify').mockImplementation((token, secret, callback) => {
+                callback(null, { userId: 999 }); // Different from the requested update
+            });
+
+            const response = await request(app)
+                .post('/users/register')
+                .set('Authorization', 'Bearer test-token')
+                .send({
+                    userId: 1, // Trying to update different user
+                    email: 'test@example.com',
+                    name: 'Updated User',
+                    isUpdate: true
+                });
+
+            expect(response.status).toBe(403);
+            expect(response.body).toHaveProperty('error', 'Unauthorized');
         });
     });
 

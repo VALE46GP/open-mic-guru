@@ -7,6 +7,10 @@ import { socialMediaPlatforms } from '../utils/socialMediaPlatforms';
 import './CreateUser.sass';
 import { useAuth } from '../../hooks/useAuth';
 
+axios.defaults.withCredentials = true;
+
+const API_URL = process.env.REACT_APP_API_URL;
+
 function CreateUser({ initialData, onCancel }) {
     const [registerEmail, setRegisterEmail] = useState('');
     const [registerPassword, setRegisterPassword] = useState('');
@@ -92,14 +96,20 @@ function CreateUser({ initialData, onCancel }) {
         let photoUrl = profilePhoto;
         if (profilePhoto && profilePhoto instanceof File) {
             try {
-                const { data } = await axios.post('/api/users/upload', {
+                const token = getToken();
+                const { data } = await axios.post(`${API_URL}/users/upload`, {
                     fileName: profilePhoto.name,
                     fileType: profilePhoto.type,
                     userId: initialData?.id,
+                }, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
                 });
 
                 await axios.put(data.uploadURL, profilePhoto, {
                     headers: { 'Content-Type': profilePhoto.type },
+                    withCredentials: false
                 });
                 photoUrl = data.uploadURL.split('?')[0];
             } catch (error) {
@@ -121,10 +131,22 @@ function CreateUser({ initialData, onCancel }) {
         };
 
         try {
-            const response = await fetch('/api/users/register', {
+            const headers = {
+                'Content-Type': 'application/json'
+            };
+
+            if (initialData) {
+                const token = getToken();
+                if (!token) {
+                    throw new Error('No authentication token found');
+                }
+                headers['Authorization'] = `Bearer ${token}`;
+            }
+
+            const response = await fetch(`${API_URL}/users/register`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload),
+                headers: headers,
+                body: JSON.stringify(payload)
             });
 
             const result = await response.json();
