@@ -81,10 +81,10 @@ jobs:
           GOOGLE_CLIENT_ID=${{ secrets.TEST_GOOGLE_CLIENT_ID }}
           GOOGLE_CLIENT_SECRET=${{ secrets.TEST_GOOGLE_CLIENT_SECRET }}
           CALLBACK_URL=${{ secrets.TEST_CALLBACK_URL }}
-          REACT_APP_AWS_ACCESS_KEY_ID=${{ secrets.TEST_REACT_APP_AWS_ACCESS_KEY_ID }}
-          REACT_APP_AWS_SECRET_ACCESS_KEY=${{ secrets.TEST_REACT_APP_AWS_SECRET_ACCESS_KEY }}
-          REACT_APP_AWS_REGION=${{ secrets.TEST_REACT_APP_AWS_REGION }}
-          REACT_APP_S3_BUCKET_NAME=${{ secrets.TEST_REACT_APP_S3_BUCKET_NAME }}
+          REACT_APP_AWS_ACCESS_KEY_ID=${{ secrets.TEST_AWS_ACCESS_KEY_ID }}
+          REACT_APP_AWS_SECRET_ACCESS_KEY=${{ secrets.TEST_AWS_SECRET_ACCESS_KEY }}
+          REACT_APP_AWS_REGION=${{ secrets.TEST_AWS_REGION }}
+          REACT_APP_S3_BUCKET_NAME=${{ secrets.TEST_S3_BUCKET_NAME }}
           EOL
 
       - name: Create test setup file
@@ -105,10 +105,10 @@ jobs:
           process.env.GOOGLE_CLIENT_SECRET = '${{ secrets.TEST_GOOGLE_CLIENT_SECRET }}';
           process.env.CALLBACK_URL = '${{ secrets.TEST_CALLBACK_URL }}';
 
-          process.env.REACT_APP_AWS_ACCESS_KEY_ID = '${{ secrets.TEST_REACT_APP_AWS_ACCESS_KEY_ID }}';
-          process.env.REACT_APP_AWS_SECRET_ACCESS_KEY = '${{ secrets.TEST_REACT_APP_AWS_SECRET_ACCESS_KEY }}';
-          process.env.REACT_APP_AWS_REGION = '${{ secrets.TEST_REACT_APP_AWS_REGION }}';
-          process.env.REACT_APP_S3_BUCKET_NAME = '${{ secrets.TEST_REACT_APP_S3_BUCKET_NAME }}';
+          process.env.REACT_APP_AWS_ACCESS_KEY_ID = '${{ secrets.TEST_AWS_ACCESS_KEY_ID }}';
+          process.env.REACT_APP_AWS_SECRET_ACCESS_KEY = '${{ secrets.TEST_AWS_SECRET_ACCESS_KEY }}';
+          process.env.REACT_APP_AWS_REGION = '${{ secrets.TEST_AWS_REGION }}';
+          process.env.REACT_APP_S3_BUCKET_NAME = '${{ secrets.TEST_S3_BUCKET_NAME }}';
           EOL
 
       - name: Install dependencies
