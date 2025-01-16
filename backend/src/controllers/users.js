@@ -9,7 +9,7 @@ const TokenUtility = require('../utils/token.util');
 const emailService = require('../utils/emailService.util');
 const s3Util = require('../utils/s3.util');
 
-const s3Client = new S3Client({ region: process.env.AWS_REGION });
+const s3Client = new S3Client({ region: process.env.REACT_APP_AWS_REGION });
 
 const defaultImageUrl = 'https://open-mic-guru.s3.us-west-1.amazonaws.com/users/user-default.jpg';
 
@@ -337,7 +337,7 @@ const usersController = {
             const uniqueFileName = `${userId}-${fileName}`;
             
             const command = new PutObjectCommand({
-                Bucket: process.env.S3_BUCKET_NAME,
+                Bucket: process.env.REACT_APP_S3_BUCKET_NAME,
                 Key: `users/${uniqueFileName}`,
                 ContentType: fileType
             });

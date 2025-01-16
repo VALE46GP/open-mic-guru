@@ -4,10 +4,10 @@ const { logger } = require('../../tests/utils/logger');
 class EmailService {
     constructor() {
         this.sesClient = new SESClient({
-            region: process.env.AWS_REGION,
+            region: process.env.REACT_APP_AWS_REGION,
             credentials: {
-                accessKeyId: process.env.AWS_ACCESS_KEY_ID,
-                secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+                accessKeyId: process.env.REACT_APP_AWS_ACCESS_KEY_ID,
+                secretAccessKey: process.env.REACT_APP_AWS_SECRET_ACCESS_KEY,
             }
         });
     }
@@ -23,7 +23,7 @@ class EmailService {
         console.log('Generated verification link:', verificationLink);
 
         const params = {
-            Source: process.env.SES_VERIFIED_EMAIL,
+            Source: process.env.REACT_APP_SES_VERIFIED_EMAIL,
             Destination: {
                 ToAddresses: [to]
             },
@@ -71,7 +71,7 @@ class EmailService {
         const resetLink = `${process.env.CLIENT_URL}/reset-password?token=${resetToken}`;
 
         const params = {
-            Source: process.env.SES_VERIFIED_EMAIL,
+            Source: process.env.REACT_APP_SES_VERIFIED_EMAIL,
             Destination: {
                 ToAddresses: [to]
             },

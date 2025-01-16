@@ -1,6 +1,6 @@
 const { S3Client, DeleteObjectCommand } = require("@aws-sdk/client-s3");
 
-const s3Client = new S3Client({ region: process.env.AWS_REGION });
+const s3Client = new S3Client({ region: process.env.REACT_APP_AWS_REGION });
 
 const s3Util = {
     async deleteImage(imageUrl) {
@@ -15,7 +15,7 @@ const s3Util = {
             console.log('Attempting to delete S3 object with key:', key);
             
             const deleteCommand = new DeleteObjectCommand({
-                Bucket: process.env.S3_BUCKET_NAME,
+                Bucket: process.env.REACT_APP_S3_BUCKET_NAME,
                 Key: key
             });
 
