@@ -1,12 +1,14 @@
+@use 'sass:color'
+
 // Colors
 $color-primary: #007bff
-$color-primary-dark: #0056b3
+$color-primary-dark: color.adjust($color-primary, $lightness: -10%)
 $color-secondary: #6c757d
-$color-secondary-dark: darken($color-secondary, 10%)
+$color-secondary-dark: color.adjust($color-secondary, $lightness: -10%)
 $color-success: #28a745
-$color-success-dark: darken($color-success, 10%)
+$color-success-dark: color.adjust($color-success, $lightness: -10%)
 $color-danger: #dc3545
-$color-danger-dark: darken($color-danger, 10%)
+$color-danger-dark: color.adjust($color-danger, $lightness: -10%)
 $color-warning: #ffc107
 $color-info: #17a2b8
 $color-light: #f8f9fa
@@ -22,7 +24,7 @@ $text-light: #f8f9fa
 
 // Border colors
 $border-color: #ddd
-$border-color-dark: darken($border-color, 10%)
+$border-color-dark: color.adjust($border-color, $lightness: -10%)
 
 // Background colors
 $bg-primary: #fff

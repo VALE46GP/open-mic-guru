@@ -2,6 +2,9 @@
   "name": "frontend",
   "version": "0.1.0",
   "private": true,
+  "engines": {
+    "node": ">=18.0.0"
+  },
   "dependencies": {
     "@googlemaps/markerclusterer": "^2.5.3",
     "@hello-pangea/dnd": "^17.0.0",

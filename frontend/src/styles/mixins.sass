@@ -1,4 +1,6 @@
-@import './_variables'
+@use 'sass:color'
+@forward './variables'
+@use './variables' as vars
 
 // Breakpoints
 $xxs: 375px
@@ -43,17 +45,17 @@ $xxl: 1400px
 
 // Button styles
 =button-base
-    padding: $spacing-md $spacing-lg
+    padding: vars.$spacing-md vars.$spacing-lg
     border: none
-    border-radius: $border-radius-sm
-    font-weight: $font-weight-medium
+    border-radius: vars.$border-radius-sm
+    font-weight: vars.$font-weight-medium
     cursor: pointer
-    transition: all $transition-base
+    transition: all vars.$transition-base
     text-align: center
     width: 100%
     
-    +media-down($xs)
-        padding: $spacing-md $spacing-xs
+    +media-down($sm)
+        padding: vars.$spacing-md vars.$spacing-xs
     
     &:disabled
         opacity: 0.7
@@ -61,50 +63,50 @@ $xxl: 1400px
 
 =button-primary
     +button-base
-    background-color: $color-primary
-    color: $color-white
+    background-color: vars.$color-primary
+    color: vars.$color-white
 
     &:focus-visible,
     &:hover
-        background-color: $color-primary-dark
+        background-color: vars.$color-primary-dark
 
 =button-secondary
     +button-base
-    background-color: $color-secondary
-    color: $color-white
+    background-color: vars.$color-secondary
+    color: vars.$color-white
 
     &:focus-visible,
     &:hover
-        background-color: $color-secondary-dark
+        background-color: vars.$color-secondary-dark
 
 =button-danger
     +button-base
-    background-color: $color-danger
-    color: $color-white
+    background-color: vars.$color-danger
+    color: vars.$color-white
 
     &:focus-visible,
     &:hover
-        background-color: $color-danger-dark
+        background-color: vars.$color-danger-dark
 
 // Input styles
 =input-base
     width: 100%
-    padding: $spacing-md
-    border: 1px solid $border-color
-    border-radius: $border-radius-sm
-    transition: border-color $transition-base
+    padding: vars.$spacing-md
+    border: 1px solid vars.$border-color
+    border-radius: vars.$border-radius-sm
+    transition: border-color vars.$transition-base
     
     &:focus
         outline: none
-        border-color: $color-primary
-        box-shadow: 0 0 0 2px rgba($color-primary, 0.1)
+        border-color: vars.$color-primary
+        box-shadow: 0 0 0 2px rgba(vars.$color-primary, 0.1)
 
 // Card styles
 =card-base
-    background: $bg-primary
-    border-radius: $border-radius-md
-    padding: $spacing-md
-    box-shadow: $shadow-sm
+    background: vars.$bg-primary
+    border-radius: vars.$border-radius-md
+    padding: vars.$spacing-md
+    box-shadow: vars.$shadow-sm
 
 // Text truncation
 =text-truncate
@@ -114,15 +116,15 @@ $xxl: 1400px
 
 // Hover transition
 =hover-transition
-    transition: all $transition-base
+    transition: all vars.$transition-base
 
     &:focus-visible,
     &:hover
         transform: translateY(-1px)
-        box-shadow: $shadow-md
+        box-shadow: vars.$shadow-md
 
 // Grid layout
-=grid($columns: 1, $gap: $spacing-md)
+=grid($columns: 1, $gap: vars.$spacing-md)
     display: grid
     grid-template-columns: repeat($columns, 1fr)
     gap: $gap
@@ -130,47 +132,47 @@ $xxl: 1400px
 // Container
 =container
     width: 100%
-    max-width: $container-max-width
+    max-width: vars.$container-max-width
     margin: 0 auto
-    padding: 0 $spacing-md
+    padding: 0 vars.$spacing-md
 
 // Error message
 =error-message
-    padding: $spacing-md
-    background: $bg-error
-    color: $color-danger
-    border-radius: $border-radius-sm
-    margin: $spacing-md 0
+    padding: vars.$spacing-md
+    background: vars.$bg-error
+    color: vars.$color-danger
+    border-radius: vars.$border-radius-sm
+    margin: vars.$spacing-md 0
 
 // Success message
 =success-message
-    padding: $spacing-md
-    background: $bg-success
-    color: $color-success
-    border-radius: $border-radius-sm
-    margin: $spacing-md 0
+    padding: vars.$spacing-md
+    background: vars.$bg-success
+    color: vars.$color-success
+    border-radius: vars.$border-radius-sm
+    margin: vars.$spacing-md 0
 
 // Additional button variations
 =button-outline
     +button-base
     background: transparent
-    border: 1px solid $border-color
-    color: $text-primary
+    border: 1px solid vars.$border-color
+    color: vars.$text-primary
     
     &:focus-visible,
     &:hover
-        background: $bg-light
-        border-color: $border-color-dark
+        background: vars.$bg-light
+        border-color: vars.$border-color-dark
 
 =button-icon
     background: none
     border: none
-    padding: $spacing-xs
+    padding: vars.$spacing-xs
     cursor: pointer
     display: flex
     align-items: center
     justify-content: center
-    transition: all $transition-fast
+    transition: all vars.$transition-fast
 
     &:focus-visible,
     &:hover
@@ -180,7 +182,7 @@ $xxl: 1400px
     background: none
     border: none
     padding: 0
-    color: $color-primary
+    color: vars.$color-primary
     cursor: pointer
     text-decoration: none
 
@@ -191,18 +193,18 @@ $xxl: 1400px
 // Form related mixins
 =form-group
     +flex-column
-    gap: $spacing-sm
-    margin-bottom: $spacing-md
+    gap: vars.$spacing-sm
+    margin-bottom: vars.$spacing-md
 
 =form-label
-    font-weight: $font-weight-medium
-    color: $text-primary
-    margin-bottom: $spacing-xs
+    font-weight: vars.$font-weight-medium
+    color: vars.$text-primary
+    margin-bottom: vars.$spacing-xs
 
 =form-error
-    color: $color-danger
-    font-size: $font-size-sm
-    margin-top: $spacing-xs
+    color: vars.$color-danger
+    font-size: vars.$font-size-sm
+    margin-top: vars.$spacing-xs
 
 // Modal related mixins
 =modal-overlay
@@ -211,26 +213,26 @@ $xxl: 1400px
     left: 0
     width: 100%
     height: 100%
-    background: rgba($color-black, 0.5)
+    background: rgba(vars.$color-black, 0.5)
     display: flex
     justify-content: center
     align-items: center
-    z-index: $z-index-modal
+    z-index: vars.$z-index-modal
 
 =modal-content
-    background: $bg-primary
-    padding: $spacing-xl
-    border-radius: $border-radius-md
+    background: vars.$bg-primary
+    padding: vars.$spacing-xl
+    border-radius: vars.$border-radius-md
     max-width: 90%
     width: 400px
-    box-shadow: $shadow-lg
+    box-shadow: vars.$shadow-lg
 
 // Badge mixins
 =badge-base
-    font-size: $font-size-xs
-    padding: $spacing-xs $spacing-sm
-    border-radius: $border-radius-lg
-    font-weight: $font-weight-semibold
+    font-size: vars.$font-size-xs
+    padding: vars.$spacing-xs vars.$spacing-sm
+    border-radius: vars.$border-radius-lg
+    font-weight: vars.$font-weight-semibold
     text-transform: uppercase
 
 =badge--host
@@ -251,11 +253,11 @@ $xxl: 1400px
 =list-inline
     +list-unstyled
     display: flex
-    gap: $spacing-sm
+    gap: vars.$spacing-sm
     flex-wrap: wrap
 
 // Image mixins
-=image-container($size, $border-radius:$border-radius-circle)
+=image-container($size, $border-radius: vars.$border-radius-circle)
     width: $size
     height: $size
     border-radius: $border-radius
@@ -272,7 +274,7 @@ $xxl: 1400px
 =social-media-icon
     width: 42px
     height: 42px
-    transition: all $transition-fast
+    transition: all vars.$transition-fast
 
     &:focus-visible,
     &:hover
@@ -281,29 +283,29 @@ $xxl: 1400px
 =social-media-link
     display: flex
     align-items: center
-    gap: $spacing-sm
-    color: $text-primary
+    gap: vars.$spacing-sm
+    color: vars.$text-primary
     text-decoration: none
-    padding: $spacing-sm $spacing-md
-    border-radius: $border-radius-sm
-    transition: background-color $transition-fast
+    padding: vars.$spacing-sm vars.$spacing-md
+    border-radius: vars.$border-radius-sm
+    transition: background-color vars.$transition-fast
     
     &:hover, &:focus-visible
-        background-color: $bg-light
+        background-color: vars.$bg-light
 
 // Event card mixins
 =event-card
     +card-base
-    transition: all $transition-base
+    transition: all vars.$transition-base
     
     &--cancelled
         opacity: .75
         filter: saturate(50%)
-        background-color: rgba($color-danger, .2)
+        background-color: rgba(vars.$color-danger, .2)
 
 =event-meta
-    font-size: $font-size-sm
-    color: $text-secondary
+    font-size: vars.$font-size-sm
+    color: vars.$text-secondary
 
 // Lineup slot mixins
 =lineup-slot
@@ -335,7 +337,7 @@ $xxl: 1400px
     width: 100%
     height: 400px
     max-height: 90vw
-    border-radius: $border-radius-md
+    border-radius: vars.$border-radius-md
     overflow: hidden
 
 // Notification mixins
@@ -344,21 +346,21 @@ $xxl: 1400px
     top: 50%
     right: 0
     transform: translateY(-50%)
-    background-color: $color-danger
-    color: $color-white
-    border-radius: $border-radius-circle
+    background-color: vars.$color-danger
+    color: vars.$color-white
+    border-radius: vars.$border-radius-circle
     min-width: 26px
     height: 26px
     display: flex
     align-items: center
     justify-content: center
-    font-size: $font-size-sm
+    font-size: vars.$font-size-sm
 
 // Form field mixins
 =input-group
     position: relative
     width: 100%
-    margin-bottom: $spacing-md
+    margin-bottom: vars.$spacing-md
 
 =textarea-base
     +input-base
@@ -370,16 +372,16 @@ $xxl: 1400px
 =page-container
     max-width: 800px
     margin: 0 auto
-    padding: $spacing-md
+    padding: vars.$spacing-md
 
     +media-down($xs)
         padding: .75rem
 
 =page-title
     text-align: center
-    margin: $spacing-xl 0 $spacing-lg
-    font-size: $font-size-xxl
-    color: $text-primary
+    margin: vars.$spacing-xl 0 vars.$spacing-lg
+    font-size: vars.$font-size-xxl
+    color: vars.$text-primary
 
 // Switch component mixins
 =switch-base
