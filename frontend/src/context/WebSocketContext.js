@@ -9,16 +9,10 @@ export const WebSocketProvider = ({ children, value }) => {
     const [lastMessage, setLastMessage] = useState(null);
     const [isConnected, setIsConnected] = useState(false);
 
-    // If a value is provided (for testing), use that instead
-    if (value) {
-        return (
-            <WebSocketContext.Provider value={value}>
-                {children}
-            </WebSocketContext.Provider>
-        );
-    }
-
     useEffect(() => {
+        // Skip effect for test cases that provide a value
+        if (value) return;
+
         let ws = null;
         let reconnectTimeout;
 
@@ -46,7 +40,7 @@ export const WebSocketProvider = ({ children, value }) => {
                 ws.onclose = (event) => {
                     setIsConnected(false);
                     setSocket(null);
-                    
+
                     if (event.code !== 1000 || event.reason !== 'Token expired') {
                         clearTimeout(reconnectTimeout);
                         reconnectTimeout = setTimeout(connectWebSocket, 3000);
@@ -73,7 +67,16 @@ export const WebSocketProvider = ({ children, value }) => {
                 ws.close();
             }
         };
-    }, [isAuthenticated]);
+    }, [isAuthenticated, value, getToken, logout]);
+
+    // Return early for test cases
+    if (value) {
+        return (
+            <WebSocketContext.Provider value={value}>
+                {children}
+            </WebSocketContext.Provider>
+        );
+    }
 
     return (
         <WebSocketContext.Provider value={{ socket, lastMessage, setLastMessage, isConnected }}>
