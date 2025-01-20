@@ -9,8 +9,6 @@ const { S3Client, PutObjectCommand } = require("@aws-sdk/client-s3");
 const { getSignedUrl } = require("@aws-sdk/s3-request-presigner");
 const s3Util = require('../utils/s3.util');
 
-console.log('s3Util loaded:', s3Util);
-
 const s3Client = new S3Client({ region: process.env.REACT_APP_AWS_REGION });
 
 async function getUpdateMessage(originalEvent, updatedFields, venueUtcOffset) {

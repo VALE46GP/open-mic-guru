@@ -1,5 +1,5 @@
-@import '../../styles/variables'
-@import '../../styles/mixins'
+@use '../../styles/mixins' as *
+@use '../../styles/variables' as vars
 
 .create-user
     &__container
@@ -8,20 +8,20 @@
         +flex-column($align: center)
 
     &__title
-        font-size: $font-size-xl
-        margin-bottom: $spacing-md
+        font-size: vars.$font-size-xl
+        margin-bottom: vars.$spacing-md
         text-align: center
 
     &__profile-box,
     &__social-media-box,
     &__form-box
         width: 100%
-        margin-bottom: $spacing-md
+        margin-bottom: vars.$spacing-md
 
     &__profile-image
         width: 100%
         aspect-ratio: 1
-        border-radius: $border-radius-circle
+        border-radius: vars.$border-radius-circle
         object-fit: cover
         object-position: center
 
@@ -30,21 +30,21 @@
 
     &__input
         +input-base
-        margin-bottom: $spacing-md
+        margin-bottom: vars.$spacing-md
 
         &--textarea
             +textarea-base
 
     &__social-media-input-group
         +flex($align: center)
-        gap: $spacing-sm
-        margin-bottom: $spacing-sm
+        gap: vars.$spacing-sm
+        margin-bottom: vars.$spacing-sm
         width: 100%
 
     &__social-input
         +input-base
         flex: 1 1 auto
-        padding: $spacing-sm
+        padding: vars.$spacing-sm
         min-width: 20px
 
         &--platform
@@ -59,21 +59,21 @@
         height: 30px
 
         path
-            stroke: $text-primary
-            transition: stroke $transition-fast
+            stroke: vars.$text-primary
+            transition: stroke vars.$transition-fast
 
         &:hover,
         &:focus-visible
             path
-                stroke: $color-danger
+                stroke: vars.$color-danger
 
     &__add-social-button
         +button-primary
-        background-color: $color-success
-        margin-top: $spacing-md
+        background-color: vars.$color-success
+        margin-top: vars.$spacing-md
         
         &:hover
-            background-color: $color-success-dark
+            background-color: vars.$color-success-dark
 
     &__input-group
         +input-group
@@ -82,23 +82,23 @@
         +form-label
 
     &__password-box
-        margin-bottom: $spacing-xl
+        margin-bottom: vars.$spacing-xl
 
     &__password-error
         +form-error
-        margin: -$spacing-sm 0 $spacing-md 0
+        margin: -(vars.$spacing-sm) 0 vars.$spacing-md 0
 
     &__button-group
         +flex($justify: center)
-        gap: $spacing-md
-        margin-top: $spacing-md
+        gap: vars.$spacing-md
+        margin-top: vars.$spacing-md
         width: 100%
 
     &__submit-button,
     &__cancel-button
         +button-base
-        padding: $spacing-sm $spacing-md
-        transition: background-color $transition-fast
+        padding: vars.$spacing-sm vars.$spacing-md
+        transition: background-color vars.$transition-fast
 
     &__submit-button
         +button-primary
@@ -107,24 +107,24 @@
         +button-danger
 
     &__success-message
-        color: $color-success
-        margin-top: $spacing-md
+        color: vars.$color-success
+        margin-top: vars.$spacing-md
         text-align: center
 
     &__error-message
-        color: $color-danger
-        margin-top: $spacing-md
+        color: vars.$color-danger
+        margin-top: vars.$spacing-md
         text-align: center
 
     &__delete-button
         +button-danger
-        padding: $spacing-sm $spacing-md
-        margin-top: $spacing-md
+        padding: vars.$spacing-sm vars.$spacing-md
+        margin-top: vars.$spacing-md
 
     &__password-info
-        margin-bottom: $spacing-md
-        color: $text-secondary
-        font-size: $font-size-sm
+        margin-bottom: vars.$spacing-md
+        color: vars.$text-secondary
+        font-size: vars.$font-size-sm
 
     &__password-reset-button
         +button-primary
@@ -134,17 +134,17 @@
     &__success-message,
     &__error-message
         &--password
-            padding: $spacing-sm
-            border-radius: $border-radius-sm
-            font-size: $font-size-sm
+            padding: vars.$spacing-sm
+            border-radius: vars.$border-radius-sm
+            font-size: vars.$font-size-sm
             text-align: left
 
     &__success-message--password
-        background-color: rgba($color-success, 0.1)
-        border: 1px solid $color-success
-        color: darken($color-success, 20%)
+        background-color: rgba(vars.$color-success, 0.1)
+        border: 1px solid vars.$color-success
+        color: darken(vars.$color-success, 20%)
 
     &__error-message--password
-        background-color: rgba($color-danger, 0.1)
-        border: 1px solid $color-danger
-        color: darken($color-danger, 20%)
+        background-color: rgba(vars.$color-danger, 0.1)
+        border: 1px solid vars.$color-danger
+        color: darken(vars.$color-danger, 20%)
