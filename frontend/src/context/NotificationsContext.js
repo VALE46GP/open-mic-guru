@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react';
 import { useAuth } from '../hooks/useAuth';
 import { useWebSocketContext } from './WebSocketContext';
 
@@ -15,33 +15,24 @@ export function NotificationsProvider({ children }) {
     const { getUserId, getToken } = useAuth();
     const { lastMessage, setLastMessage } = useWebSocketContext();
 
-    const defaultFetchOptions = {
+    const defaultFetchOptions = useMemo(() => ({
         credentials: 'include',
         headers: {
             'Authorization': `Bearer ${getToken()}`,
             'Content-Type': 'application/json'
         }
-    };
+    }), [getToken]);
 
-    const fetchNotifications = async (retryCount = 0) => {
+    const fetchNotifications = useCallback(async (retryCount = 0) => {
         try {
             const token = getToken();
-            const userId = getUserId();
-            const apiUrl = getApiUrl();
             
-            // console.log('Attempting to fetch notifications:', {
-            //     userId,
-            //     hasToken: !!token,
-            //     apiUrl,
-            //     retryCount
-            // });
-
             if (!token) {
                 console.error('No token available for fetching notifications');
                 return;
             }
 
-            const url = `${apiUrl}/notifications`;
+            const url = `${getApiUrl()}/notifications`;
             
             const response = await fetch(url, {
                 method: 'GET',
@@ -86,7 +77,7 @@ export function NotificationsProvider({ children }) {
                 setTimeout(() => fetchNotifications(retryCount + 1), 1000 * (retryCount + 1));
             }
         }
-    };
+    }, [getToken, defaultFetchOptions]);
 
     useEffect(() => {
         const userId = getUserId();

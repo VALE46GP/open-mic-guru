@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNotifications } from '../../context/NotificationsContext';
 import EventCard from '../../components/events/EventCard';
 import './NotificationsPage.sass';
-import { formatEventTimeInVenueTimezone, formatNotificationTime } from '../../utils/timeCalculations';
+import { formatNotificationTime } from '../../utils/timeCalculations';
 import { BsChevronDown, BsChevronRight } from 'react-icons/bs';
 import { Modal, Button } from 'react-bootstrap';
 import { FaTrash } from 'react-icons/fa';

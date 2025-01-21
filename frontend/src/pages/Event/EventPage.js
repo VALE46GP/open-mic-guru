@@ -33,6 +33,19 @@ function EventPage() {
     //     }
     // }, []);
 
+    // Process the event data outside useEffect
+    useEffect(() => {
+        if (eventDetails) {
+            const processedData = {
+                ...eventDetails,
+                is_host: userId ? eventDetails.host_id === userId : false,
+                is_performer: userId ? eventDetails.performers?.includes(userId) : false,
+            };
+            setEventDetails(processedData);
+        }
+    }, [eventDetails, userId]);
+
+    // Fetch event data without userId dependency
     useEffect(() => {
         const fetchEventData = async () => {
             try {
@@ -54,7 +67,7 @@ function EventPage() {
             }
         };
         fetchEventData();
-    }, [eventId, navigate, userId]);
+    }, [eventId, navigate]);
 
     useEffect(() => {
         const baseUrl = process.env.NODE_ENV === 'development'
@@ -138,7 +151,7 @@ function EventPage() {
         } catch (error) {
             console.error('Error processing WebSocket message:', error);
         }
-    }, [lastMessage, eventId]);
+    }, [lastMessage, eventId, userId]);
 
     useEffect(() => {
         async function updateFormattedTimes() {
