@@ -36,14 +36,19 @@ function EventPage() {
     // Process the event data outside useEffect
     useEffect(() => {
         if (eventDetails) {
-            const processedData = {
-                ...eventDetails,
-                is_host: userId ? eventDetails.host_id === userId : false,
-                is_performer: userId ? eventDetails.performers?.includes(userId) : false,
-            };
-            setEventDetails(processedData);
+            const isHost = userId ? eventDetails.host_id === userId : false;
+            const isPerformer = userId ? eventDetails.performers?.includes(userId) : false;
+            
+            // Only update if these values actually changed
+            if (eventDetails.is_host !== isHost || eventDetails.is_performer !== isPerformer) {
+                setEventDetails(prev => ({
+                    ...prev,
+                    is_host: isHost,
+                    is_performer: isPerformer,
+                }));
+            }
         }
-    }, [eventDetails, userId]);
+    }, [eventDetails?.host_id, eventDetails?.performers, userId]);
 
     // Fetch event data without userId dependency
     useEffect(() => {
@@ -82,22 +87,14 @@ function EventPage() {
 
         try {
             const update = JSON.parse(lastMessage.data);
-            console.log('WebSocket message received:', {
-                update,
-                currentUser: userId,
-                isNonUser: !userId,
-                eventId
-            });
-
+            
             if (update.type === 'LINEUP_UPDATE' && update.eventId === parseInt(eventId)) {
                 setEventDetails(prevDetails => {
                     if (!prevDetails) return prevDetails;
 
+                    let newLineup;
                     if (update.action === 'DELETE') {
-                        return {
-                            ...prevDetails,
-                            lineup: prevDetails.lineup.filter(slot => slot.slot_id !== update.data.slotId)
-                        };
+                        newLineup = prevDetails.lineup.filter(slot => slot.slot_id !== update.data.slotId);
                     } else if (update.action === 'CREATE') {
                         const filteredLineup = prevDetails.lineup.filter(
                             slot => slot.slot_number !== update.data.slot_number
@@ -115,23 +112,25 @@ function EventPage() {
                             ip_address: update.data.ip_address
                         };
 
-                        return {
-                            ...prevDetails,
-                            lineup: [...filteredLineup, newSlot]
-                                .sort((a, b) => a.slot_number - b.slot_number)
-                        };
+                        newLineup = [...filteredLineup, newSlot]
+                            .sort((a, b) => a.slot_number - b.slot_number);
                     } else if (update.action === 'REORDER') {
-                        const updatedLineup = prevDetails.lineup.map(slot => {
+                        newLineup = prevDetails.lineup.map(slot => {
                             const updatedSlot = update.data.slots.find(s => s.slot_id === slot.slot_id);
                             return updatedSlot ? {
                                 ...slot,
                                 slot_number: updatedSlot.slot_number
                             } : slot;
-                        });
+                        }).sort((a, b) => a.slot_number - b.slot_number);
+                    } else {
+                        return prevDetails;
+                    }
 
+                    // Only update if the lineup actually changed
+                    if (JSON.stringify(newLineup) !== JSON.stringify(prevDetails.lineup)) {
                         return {
                             ...prevDetails,
-                            lineup: updatedLineup.sort((a, b) => a.slot_number - b.slot_number)
+                            lineup: newLineup
                         };
                     }
                     return prevDetails;
@@ -139,13 +138,20 @@ function EventPage() {
             } else if (update.type === 'EVENT_UPDATE' && update.eventId === parseInt(eventId)) {
                 setEventDetails(prevDetails => {
                     if (!prevDetails) return null;
-                    return {
-                        ...prevDetails,
-                        event: {
-                            ...prevDetails.event,
-                            ...update.data
-                        }
+                    
+                    // Only update if the data actually changed
+                    const newEventData = {
+                        ...prevDetails.event,
+                        ...update.data
                     };
+                    
+                    if (JSON.stringify(newEventData) !== JSON.stringify(prevDetails.event)) {
+                        return {
+                            ...prevDetails,
+                            event: newEventData
+                        };
+                    }
+                    return prevDetails;
                 });
             }
         } catch (error) {
