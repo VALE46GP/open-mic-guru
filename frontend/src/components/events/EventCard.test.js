@@ -52,7 +52,7 @@ describe('EventCard', () => {
     test('renders event image with correct alt text', () => {
       renderWithProviders(<EventCard event={mockEvent} />);
       
-      const image = screen.getByAltText(`${mockEvent.event_name} image`);
+      const image = screen.getByAltText(mockEvent.event_name);
       expect(image).toHaveAttribute('src', mockEvent.event_image);
       expect(image).toHaveClass('event-card__image');
     });
