@@ -6,7 +6,7 @@ import BorderBox from '../../components/shared/BorderBox/BorderBox';
 import './EventPage.sass';
 import { QRCodeSVG } from 'qrcode.react';
 import Lineup from '../../components/Lineup/Lineup';
-import { v4 as uuidv4 } from 'uuid';
+// import { v4 as uuidv4 } from 'uuid';
 import { useAuth } from '../../hooks/useAuth';
 import { useWebSocketContext } from '../../context/WebSocketContext';
 
@@ -22,7 +22,7 @@ function EventPage() {
     const [formattedStartTime, setFormattedStartTime] = useState('');
     const [formattedEndTime, setFormattedEndTime] = useState('');
     const { lastMessage } = useWebSocketContext();
-    const { getUserId, getToken, user } = useAuth();
+    const { getUserId, user } = useAuth();
     const userId = getUserId();
 
     // Temporarily disabled non-user identification
@@ -33,6 +33,19 @@ function EventPage() {
     //     }
     // }, []);
 
+    // Process the event data outside useEffect
+    useEffect(() => {
+        if (eventDetails) {
+            const processedData = {
+                ...eventDetails,
+                is_host: userId ? eventDetails.host_id === userId : false,
+                is_performer: userId ? eventDetails.performers?.includes(userId) : false,
+            };
+            setEventDetails(processedData);
+        }
+    }, [eventDetails, userId]);
+
+    // Fetch event data without userId dependency
     useEffect(() => {
         const fetchEventData = async () => {
             try {
@@ -138,7 +151,7 @@ function EventPage() {
         } catch (error) {
             console.error('Error processing WebSocket message:', error);
         }
-    }, [lastMessage, eventId]);
+    }, [lastMessage, eventId, userId]);
 
     useEffect(() => {
         async function updateFormattedTimes() {

@@ -1,6 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
 import './VenueAutocomplete.sass';
-import { DateTime } from 'luxon';
 
 const VenueAutocomplete = ({
                                onPlaceSelected,

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNotifications } from '../../context/NotificationsContext';
 import EventCard from '../../components/events/EventCard';
 import './NotificationsPage.sass';
-import { formatEventTimeInVenueTimezone, formatNotificationTime } from '../../utils/timeCalculations';
+import { formatNotificationTime } from '../../utils/timeCalculations';
 import { BsChevronDown, BsChevronRight } from 'react-icons/bs';
 import { Modal, Button } from 'react-bootstrap';
 import { FaTrash } from 'react-icons/fa';
@@ -40,7 +40,7 @@ function NotificationMessage({ notification, venue, isRead, isLocallyViewed }) {
 }
 
 function NotificationsPage() {
-    const { notifications, markAsRead, deleteNotifications, fetchNotifications } = useNotifications();
+    const { notifications, markAsRead, deleteNotifications } = useNotifications();
     
     const [expandedEvents, setExpandedEvents] = useState(new Set());
     const [selectedEvents, setSelectedEvents] = useState(new Set());
@@ -168,23 +168,6 @@ function NotificationsPage() {
     const handleConfirmDelete = async () => {
         await handleDeleteSelected();
         setShowDeleteModal(false);
-    };
-
-    const renderNotification = (notification) => {
-        // Format the notification creation time in user's local timezone
-        const createdAt = formatNotificationTime(notification.created_at);
-        
-        // If the notification references an event, format that time in venue's timezone
-        const eventTime = notification.event?.start_time ? 
-            formatEventTimeInVenueTimezone(notification.event.start_time, notification.event.venue) :
-            null;
-
-        return (
-            <div>
-                <span>Notification received: {createdAt}</span>
-                {eventTime && <span>Event starts: {eventTime}</span>}
-            </div>
-        );
     };
 
     return (

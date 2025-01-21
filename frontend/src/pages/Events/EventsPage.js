@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { useAuth } from '../../hooks/useAuth';
 import EventCard from '../../components/events/EventCard';
 import EventsMap from '../../components/events/EventsMap';
@@ -6,7 +6,7 @@ import VenueAutocomplete from '../../components/shared/VenueAutocomplete';
 import EventSearch from '../../components/shared/EventSearch';
 import BorderBox from '../../components/shared/BorderBox/BorderBox';
 import './EventsPage.sass';
-import { Link, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { useWebSocketContext } from '../../context/WebSocketContext';
 import { sortEventsByDate } from '../../utils/eventUtils';
 
@@ -31,6 +31,76 @@ const EventsPage = () => {
     const { lastMessage } = useWebSocketContext();
     const [selectedEventTypes, setSelectedEventTypes] = useState([]);
     const [showTypeFilter, setShowTypeFilter] = useState(false);
+
+    const filterEvents = useCallback((events, searchTerm, location) => {
+        let filtered = [...events];
+
+        // Event type filtering
+        if (selectedEventTypes.length > 0) {
+            filtered = filtered.filter(event => 
+                event.event_types?.some(eventType => 
+                    selectedEventTypes.includes(eventType)
+                )
+            );
+        }
+
+        // Search filtering
+        if (searchTerm.trim()) {
+            const searchLower = searchTerm.toLowerCase();
+            filtered = filtered.filter(event => {
+                const eventName = (event.event_name || '').toLowerCase();
+                const venueName = (event.venue_name || '').toLowerCase();
+                const hostName = (event.host_name || '').toLowerCase();
+                
+                return eventName.includes(searchLower) ||
+                       venueName.includes(searchLower) ||
+                       hostName.includes(searchLower);
+            });
+        }
+
+        // Location filtering
+        if (location) {
+            const isSpecificLocation = location.address_components?.some(component =>
+                ['street_number', 'route', 'postal_code'].includes(component.types[0])
+            );
+
+            if (isSpecificLocation && location.lat && location.lng) {
+                filtered = filtered.filter(event => {
+                    if (!event.venue_latitude || !event.venue_longitude) return false;
+
+                    const eventLocation = new window.google.maps.LatLng(
+                        Number(event.venue_latitude),
+                        Number(event.venue_longitude)
+                    );
+
+                    const distance = window.google.maps.geometry.spherical.computeDistanceBetween(
+                        new window.google.maps.LatLng(location.lat, location.lng),
+                        eventLocation
+                    );
+
+                    return distance <= 16093.33;
+                });
+            } else if (location.viewport && Object.keys(location.viewport).length > 0) {
+                const bounds = new window.google.maps.LatLngBounds(
+                    location.viewport.getSouthWest(),
+                    location.viewport.getNorthEast()
+                );
+
+                filtered = filtered.filter(event => {
+                    if (!event.venue_latitude || !event.venue_longitude) return false;
+
+                    const eventLocation = new window.google.maps.LatLng(
+                        Number(event.venue_latitude),
+                        Number(event.venue_longitude)
+                    );
+
+                    return bounds.contains(eventLocation);
+                });
+            }
+        }
+
+        return filtered;
+    }, [selectedEventTypes]);
 
     useEffect(() => {
         const fetchEvents = async () => {
@@ -112,77 +182,7 @@ const EventsPage = () => {
 
     useEffect(() => {
         setFilteredEvents(filterEvents(events, searchTerm, selectedLocation));
-    }, [selectedEventTypes, events, searchTerm, selectedLocation]);
-
-    const filterEvents = (events, searchTerm, location) => {
-        let filtered = [...events];
-
-        // Event type filtering
-        if (selectedEventTypes.length > 0) {
-            filtered = filtered.filter(event => 
-                event.event_types?.some(eventType => 
-                    selectedEventTypes.includes(eventType)
-                )
-            );
-        }
-
-        // Search filtering
-        if (searchTerm.trim()) {
-            const searchLower = searchTerm.toLowerCase();
-            filtered = filtered.filter(event => {
-                const eventName = (event.event_name || '').toLowerCase();
-                const venueName = (event.venue_name || '').toLowerCase();
-                const hostName = (event.host_name || '').toLowerCase();
-                
-                return eventName.includes(searchLower) ||
-                       venueName.includes(searchLower) ||
-                       hostName.includes(searchLower);
-            });
-        }
-
-        // Location filtering
-        if (location) {
-            const isSpecificLocation = location.address_components?.some(component =>
-                ['street_number', 'route', 'postal_code'].includes(component.types[0])
-            );
-
-            if (isSpecificLocation && location.lat && location.lng) {
-                filtered = filtered.filter(event => {
-                    if (!event.venue_latitude || !event.venue_longitude) return false;
-
-                    const eventLocation = new window.google.maps.LatLng(
-                        Number(event.venue_latitude),
-                        Number(event.venue_longitude)
-                    );
-
-                    const distance = window.google.maps.geometry.spherical.computeDistanceBetween(
-                        new window.google.maps.LatLng(location.lat, location.lng),
-                        eventLocation
-                    );
-
-                    return distance <= 16093.33;
-                });
-            } else if (location.viewport && Object.keys(location.viewport).length > 0) {
-                const bounds = new window.google.maps.LatLngBounds(
-                    location.viewport.getSouthWest(),
-                    location.viewport.getNorthEast()
-                );
-
-                filtered = filtered.filter(event => {
-                    if (!event.venue_latitude || !event.venue_longitude) return false;
-
-                    const eventLocation = new window.google.maps.LatLng(
-                        Number(event.venue_latitude),
-                        Number(event.venue_longitude)
-                    );
-
-                    return bounds.contains(eventLocation);
-                });
-            }
-        }
-
-        return filtered;
-    };
+    }, [selectedEventTypes, events, searchTerm, selectedLocation, filterEvents]);
 
     const handleSearch = searchTerm => {
         setSearchTerm(searchTerm);

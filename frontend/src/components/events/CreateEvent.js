@@ -315,10 +315,6 @@ function CreateEvent() {
         setPendingStatusChange(prev => !prev);
     };
 
-    const handleConfirmStatusChange = async () => {
-        await handleSubmit();
-    };
-
     const handleDelete = async () => {
         if (window.confirm('Are you sure you want to perminantly delete this event? \nYou could just cancel the event. \nCancelled events are still visible and can be reinstated.')) {
             try {

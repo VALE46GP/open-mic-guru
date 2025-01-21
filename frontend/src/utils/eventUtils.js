@@ -1,5 +1,3 @@
-import { DateTime } from 'luxon';
-
 export const sortEventsByDate = (events) => {
     const now = new Date();
     
