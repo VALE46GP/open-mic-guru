@@ -401,7 +401,6 @@ function Lineup({
             });
 
             if (response.ok) {
-                const data = await response.json();
                 setIsSignupOpen(!isSignupOpen);
             }
         } catch (err) {

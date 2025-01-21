@@ -12,7 +12,7 @@ const getApiUrl = () => {
 export function NotificationsProvider({ children }) {
     const [notifications, setNotifications] = useState([]);
     const [unreadCount, setUnreadCount] = useState(0);
-    const { getUserId, getToken, user } = useAuth();
+    const { getUserId, getToken } = useAuth();
     const { lastMessage, setLastMessage } = useWebSocketContext();
 
     const defaultFetchOptions = {
@@ -93,7 +93,7 @@ export function NotificationsProvider({ children }) {
         if (userId) {
             fetchNotifications();
         }
-    }, [getUserId]);
+    }, [getUserId, fetchNotifications]);
 
     useEffect(() => {
         let retryTimeout;

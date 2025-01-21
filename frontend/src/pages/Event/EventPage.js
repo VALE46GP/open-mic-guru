@@ -6,7 +6,7 @@ import BorderBox from '../../components/shared/BorderBox/BorderBox';
 import './EventPage.sass';
 import { QRCodeSVG } from 'qrcode.react';
 import Lineup from '../../components/Lineup/Lineup';
-import { v4 as uuidv4 } from 'uuid';
+// import { v4 as uuidv4 } from 'uuid';
 import { useAuth } from '../../hooks/useAuth';
 import { useWebSocketContext } from '../../context/WebSocketContext';
 
@@ -22,7 +22,7 @@ function EventPage() {
     const [formattedStartTime, setFormattedStartTime] = useState('');
     const [formattedEndTime, setFormattedEndTime] = useState('');
     const { lastMessage } = useWebSocketContext();
-    const { getUserId, getToken, user } = useAuth();
+    const { getUserId, user } = useAuth();
     const userId = getUserId();
 
     // Temporarily disabled non-user identification
@@ -54,7 +54,7 @@ function EventPage() {
             }
         };
         fetchEventData();
-    }, [eventId, navigate]);
+    }, [eventId, navigate, userId]);
 
     useEffect(() => {
         const baseUrl = process.env.NODE_ENV === 'development'

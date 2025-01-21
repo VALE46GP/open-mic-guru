@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { formatEventTimeInVenueTimezone, formatTimeComparison, formatPerformerTime } from '../../utils/timeCalculations';
+import { formatEventTimeInVenueTimezone, formatPerformerTime } from '../../utils/timeCalculations';
 import BorderBox from '../shared/BorderBox/BorderBox';
 import { Link } from 'react-router-dom';
 import './EventCard.sass';
@@ -52,7 +52,7 @@ function EventCard({ event, slotTime, compact, showDeleted = false }) {
                         <div className="event-card__image-container">
                             <img
                                 src={event.event_image}
-                                alt={`${event.event_name} image`}
+                                alt={event.event_name}
                                 className="event-card__image"
                             />
                         </div>

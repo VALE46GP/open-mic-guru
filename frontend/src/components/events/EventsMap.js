@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { MarkerClusterer } from '@googlemaps/markerclusterer';
 import './EventsMap.sass';
 
@@ -8,6 +8,13 @@ const EventsMap = ({ events, center, onEventSelect }) => {
     const markers = useRef([]);
     const markerClusterer = useRef(null);
     const [isGoogleLoaded, setIsGoogleLoaded] = useState(false);
+
+    const handleMarkerClick = useCallback((venueEvents) => {
+        if (!map.current) return;
+
+        map.current.isMarkerClick = true;
+        onEventSelect(venueEvents);
+    }, [onEventSelect]);
 
     useEffect(() => {
         const loadGoogleMaps = () => {
@@ -138,14 +145,7 @@ const EventsMap = ({ events, center, onEventSelect }) => {
             }
         }, 100);
 
-    }, [isGoogleLoaded, center, events]);
-
-    const handleMarkerClick = (venueEvents) => {
-        if (!map.current) return;
-
-        map.current.isMarkerClick = true;
-        onEventSelect(venueEvents);
-    };
+    }, [isGoogleLoaded, center, events, handleMarkerClick]);
 
     return (
         <div ref={mapRef} className="events-map">
