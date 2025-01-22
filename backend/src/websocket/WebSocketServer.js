@@ -5,40 +5,78 @@ const jwt = require('jsonwebtoken');
 const { logger } = require('../../tests/utils/logger');
 
 function getAllowedOrigins() {
-    const defaultOrigins = [
+    // Base development origins with ports
+    const developmentOrigins = [
+        'localhost:3000',
+        'localhost:3001',
+        '127.0.0.1:3000',
+        '127.0.0.1:3001',
+        '192.168.1.104:3000',
+        '192.168.1.104:3001'
+    ];
+
+    // Base development origins without ports for flexibility
+    const developmentOriginsNoPorts = [
         'localhost',
         '127.0.0.1',
-        '192.168.1.104',
-        window.location.hostname
+        '192.168.1.104'
     ];
-    const defaultPorts = ['3000', '3001', window.location.port];
 
     if (process.env.NODE_ENV === 'production') {
         const clientUrl = process.env.CLIENT_URL?.replace(/(^\w+:|^)\/\//, '').replace(/\/$/, '');
-        if (clientUrl) {
-            return [clientUrl, ...defaultOrigins];
-        }
+        const awsUrl = process.env.REACT_APP_AWS_URL?.replace(/(^\w+:|^)\/\//, '').replace(/\/$/, '');
+        
+        const productionOrigins = [
+            ...(clientUrl ? [clientUrl] : []),
+            ...(awsUrl ? [awsUrl] : [])
+        ];
+
+        // In production, we only want to allow specific origins
+        return productionOrigins;
     }
 
-    return defaultOrigins;
+    if (process.env.NODE_ENV === 'test') {
+        // In test environment, we want to be more permissive
+        return [...developmentOrigins, ...developmentOriginsNoPorts];
+    }
+
+    // In development, allow both with and without ports
+    return [...developmentOrigins, ...developmentOriginsNoPorts];
 }
 
 function verifyOrigin(origin) {
-    if (process.env.NODE_ENV !== 'production') {
+    // In test environment, allow connections without origin
+    if (process.env.NODE_ENV === 'test' && !origin) {
         return true;
     }
 
-    if (!origin) {
+    // In development, be more permissive
+    if (process.env.NODE_ENV === 'development' && !origin) {
         return true;
+    }
+
+    // In production, require and validate origin
+    if (process.env.NODE_ENV === 'production' && !origin) {
+        return false;
     }
 
     try {
         const requestOrigin = new URL(origin);
+        const originWithPort = `${requestOrigin.hostname}${requestOrigin.port ? ':' + requestOrigin.port : ''}`;
+        const originNoPort = requestOrigin.hostname;
         const allowedOrigins = getAllowedOrigins();
-        return allowedOrigins.includes(requestOrigin.host);
+        
+        return allowedOrigins.some(allowed => {
+            if (allowed.includes(':')) {
+                // Match exact origin with port
+                return originWithPort === allowed;
+            }
+            // Match hostname without port
+            return originNoPort === allowed;
+        });
     } catch (error) {
-        console.error('Error verifying origin:', error);
-        return false;
+        logger.error('Error verifying origin:', error);
+        return process.env.NODE_ENV !== 'production';
     }
 }
 
