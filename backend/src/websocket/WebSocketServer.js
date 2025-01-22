@@ -5,12 +5,15 @@ const jwt = require('jsonwebtoken');
 const { logger } = require('../../tests/utils/logger');
 
 function getAllowedOrigins() {
-    const defaultOrigins = ['localhost', '192.168.1.104'];
-    const defaultPorts = ['3000', '3001'];
+    const defaultOrigins = [
+        'localhost',
+        '127.0.0.1',
+        '192.168.1.104',
+        window.location.hostname
+    ];
+    const defaultPorts = ['3000', '3001', window.location.port];
 
-    // In production, add the deployed frontend URL
     if (process.env.NODE_ENV === 'production') {
-        // Remove http:// or https:// and any trailing slash
         const clientUrl = process.env.CLIENT_URL?.replace(/(^\w+:|^)\/\//, '').replace(/\/$/, '');
         if (clientUrl) {
             return [clientUrl, ...defaultOrigins];
@@ -21,26 +24,20 @@ function getAllowedOrigins() {
 }
 
 function verifyOrigin(origin) {
+    if (process.env.NODE_ENV !== 'production') {
+        return true;
+    }
+
     if (!origin) {
-        // logger.log('No origin - allowing connection');
         return true;
     }
 
     try {
         const requestOrigin = new URL(origin);
         const allowedOrigins = getAllowedOrigins();
-
-        // In production, we match the full hostname
-        if (process.env.NODE_ENV === 'production') {
-            return allowedOrigins.includes(requestOrigin.host);
-        }
-
-        // In development, we check hostname and port separately
-        const allowedPorts = ['3000', '3001'];
-        return allowedOrigins.includes(requestOrigin.hostname) &&
-            allowedPorts.includes(requestOrigin.port);
+        return allowedOrigins.includes(requestOrigin.host);
     } catch (error) {
-        logger.error('Error verifying origin:', error);
+        console.error('Error verifying origin:', error);
         return false;
     }
 }

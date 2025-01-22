@@ -1,4 +1,4 @@
-import React, { createContext, useState, useEffect } from 'react';
+import React, { createContext, useState, useEffect, useCallback } from 'react';
 
 // console.log('Domain debug:', {
 //     hostname: window.location.hostname,
@@ -21,39 +21,17 @@ export const AuthProvider = ({ children }) => {
         return sessionStorage.getItem('authToken');
     });
 
-    // Initialize user data if we have a token in sessionStorage
-    useEffect(() => {
-        const token = sessionStorage.getItem('authToken');
-        if (token) {
-            fetchUserDetails(token);
-        }
-    }, []); // Run once on mount
-
-    // Login function: stores the token in sessionStorage and state
-    const login = (token) => {
-        if (!token) {
-            console.error('Attempted login with null token');
-            return;
-        }
-
-        console.log('Setting auth token and state');
-        sessionStorage.setItem('authToken', token);
-        setAuthToken(token);
-        setIsAuthenticated(true);
-        fetchUserDetails(token);
-    };
-
     // Logout function: removes the token and resets state
-    const logout = () => {
+    const logout = useCallback(() => {
         // console.log('Logging out, clearing auth state');
         sessionStorage.removeItem('authToken');
         setAuthToken(null);
         setIsAuthenticated(false);
         setUser(null);
-    };
+    }, []);
 
-    // Fetch user details using the token's payload
-    const fetchUserDetails = async (token) => {
+    // Create fetchUserDetails as a memoized function
+    const fetchUserDetails = useCallback(async (token) => {
         try {
             // Decode the token to extract the userId
             const payload = JSON.parse(atob(token.split('.')[1]));
@@ -79,7 +57,29 @@ export const AuthProvider = ({ children }) => {
             console.error('Error fetching user details:', error);
             logout();
         }
-    };
+    }, [logout]);
+
+    // Initialize user data if we have a token
+    useEffect(() => {
+        const token = sessionStorage.getItem('authToken');
+        if (token) {
+            fetchUserDetails(token);
+        }
+    }, [fetchUserDetails]);
+
+    // Login function: stores the token in sessionStorage and state
+    const login = useCallback((token) => {
+        if (!token) {
+            console.error('Attempted login with null token');
+            return;
+        }
+
+        console.log('Setting auth token and state');
+        sessionStorage.setItem('authToken', token);
+        setAuthToken(token);
+        setIsAuthenticated(true);
+        fetchUserDetails(token);
+    }, [fetchUserDetails]);
 
     // Get the token from state with expiration check
     const getToken = () => {

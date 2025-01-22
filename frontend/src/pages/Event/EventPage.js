@@ -35,7 +35,10 @@ function EventPage() {
 
     // Process the event data outside useEffect
     useEffect(() => {
-        if (eventDetails) {
+        // Only run this effect if eventDetails exists and has changed
+        const updateUserRoles = () => {
+            if (!eventDetails) return;
+            
             const isHost = userId ? eventDetails.host_id === userId : false;
             const isPerformer = userId ? eventDetails.performers?.includes(userId) : false;
             
@@ -47,8 +50,10 @@ function EventPage() {
                     is_performer: isPerformer,
                 }));
             }
-        }
-    }, [eventDetails?.host_id, eventDetails?.performers, userId]);
+        };
+
+        updateUserRoles();
+    }, [eventDetails, userId]); // Include both dependencies
 
     // Fetch event data without userId dependency
     useEffect(() => {
