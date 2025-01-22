@@ -54,7 +54,7 @@ class EmailService {
         try {
             const command = new SendEmailCommand(params);
             await this.sesClient.send(command);
-            logger.log('Verification email sent successfully');
+            // logger.log('Verification email sent successfully');
         } catch (error) {
             logger.error('Error sending verification email:', error);
             throw new Error('Failed to send verification email. Please try again later.');

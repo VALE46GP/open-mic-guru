@@ -2,7 +2,7 @@ const jwt = require('jsonwebtoken');
 const { logger } = require('../../tests/utils/logger');
 
 const verifyToken = (req, res, next) => {
-    console.log('verifyToken called with headers:', req.headers);
+    // console.log('verifyToken called with headers:', req.headers);
     
     // Check both Authorization header and cookie
     const authHeader = req.headers['authorization'];
@@ -23,7 +23,7 @@ const verifyToken = (req, res, next) => {
             return res.status(403).json({ error: 'Invalid token' });
         }
 
-        console.log('Token verified, decoded:', decoded);
+        // console.log('Token verified, decoded:', decoded);
         req.user = decoded;
         next();
     });

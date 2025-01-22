@@ -1,6 +1,49 @@
+// backend/src/websocket/WebSocketServer.js
+
 const WebSocket = require('ws');
 const jwt = require('jsonwebtoken');
 const { logger } = require('../../tests/utils/logger');
+
+function getAllowedOrigins() {
+    const defaultOrigins = ['localhost', '192.168.1.104'];
+    const defaultPorts = ['3000', '3001'];
+
+    // In production, add the deployed frontend URL
+    if (process.env.NODE_ENV === 'production') {
+        // Remove http:// or https:// and any trailing slash
+        const clientUrl = process.env.CLIENT_URL?.replace(/(^\w+:|^)\/\//, '').replace(/\/$/, '');
+        if (clientUrl) {
+            return [clientUrl, ...defaultOrigins];
+        }
+    }
+
+    return defaultOrigins;
+}
+
+function verifyOrigin(origin) {
+    if (!origin) {
+        // logger.log('No origin - allowing connection');
+        return true;
+    }
+
+    try {
+        const requestOrigin = new URL(origin);
+        const allowedOrigins = getAllowedOrigins();
+
+        // In production, we match the full hostname
+        if (process.env.NODE_ENV === 'production') {
+            return allowedOrigins.includes(requestOrigin.host);
+        }
+
+        // In development, we check hostname and port separately
+        const allowedPorts = ['3000', '3001'];
+        return allowedOrigins.includes(requestOrigin.hostname) &&
+            allowedPorts.includes(requestOrigin.port);
+    } catch (error) {
+        logger.error('Error verifying origin:', error);
+        return false;
+    }
+}
 
 function initializeWebSocketServer(server) {
     const wss = new WebSocket.Server({
@@ -8,32 +51,15 @@ function initializeWebSocketServer(server) {
         path: '/ws',
         clientTracking: true,
         verifyClient: ({ origin, req }, callback) => {
-            if (!origin) {
-                logger.log('No origin - allowing connection');
-                callback(true);
-                return;
-            }
-
-            try {
-                const requestOrigin = new URL(origin);
-                const allowedHosts = ['localhost', '192.168.1.104'];
-                const allowedPorts = ['3000', '3001'];
-
-                const isAllowed = allowedHosts.includes(requestOrigin.hostname) &&
-                    allowedPorts.includes(requestOrigin.port);
-
-                callback(isAllowed);
-            } catch (error) {
-                logger.error('Error verifying WebSocket client:', error);
-                callback(false);
-            }
+            const isAllowed = verifyOrigin(origin);
+            callback(isAllowed);
         }
     });
 
     const clients = new Map();
 
     wss.on('connection', (ws, req) => {
-        const url = new URL(req.url, 'ws://localhost');
+        const url = new URL(req.url, `ws://${req.headers.host}`);
         const token = url.searchParams.get('token');
         const nonUserId = getCookieFromRequest(req, 'nonUserId');
 
@@ -45,6 +71,7 @@ function initializeWebSocketServer(server) {
                 const decoded = jwt.verify(token, process.env.JWT_SECRET);
                 const userId = decoded.userId;
                 clients.set(ws, { type: 'user', id: userId });
+                // logger.log(`Authenticated user connected: ${userId}`);
             } catch (err) {
                 logger.error('Invalid token:', err);
                 if (err.name === 'TokenExpiredError') {
@@ -55,68 +82,69 @@ function initializeWebSocketServer(server) {
                 return;
             }
         } else if (nonUserId) {
-            // Store non-user connection with their nonUserId
             clients.set(ws, { type: 'nonuser', id: nonUserId });
+            // logger.log(`Non-user connected: ${nonUserId}`);
         } else {
-            // For connections without token or nonUserId
             clients.set(ws, { type: 'anonymous', id: ws.id });
+            // logger.log(`Anonymous user connected: ${ws.id}`);
         }
 
         ws.on('close', () => {
+            const client = clients.get(ws);
+            // logger.log(`Client disconnected: ${client?.type} ${client?.id}`);
             clients.delete(ws);
         });
     });
 
-    // Helper function to get cookie value from request
+    // Rest of the code remains the same
     function getCookieFromRequest(req, cookieName) {
         const cookies = req.headers.cookie;
         if (!cookies) return null;
-        
+
         const match = cookies.match(new RegExp(`${cookieName}=([^;]+)`));
         return match ? match[1] : null;
     }
 
     function broadcastNotification(data) {
         const targetUserId = data.userId;
-        console.log('Broadcasting notification:', { data, targetUserId });
-        
+        // logger.log('Broadcasting notification:', { data, targetUserId });
+
         wss.clients.forEach(client => {
             const clientInfo = clients.get(client);
-            if (client.readyState === WebSocket.OPEN && 
-                clientInfo?.type === 'user' && 
+            if (client.readyState === WebSocket.OPEN &&
+                clientInfo?.type === 'user' &&
                 clientInfo?.id === targetUserId) {
-                // Handle different notification types
-                if (data.type === 'NOTIFICATION_DELETE') {
-                    client.send(JSON.stringify({
-                        type: 'NOTIFICATION_DELETE',
-                        userId: targetUserId,
-                        notificationIds: data.notificationIds
-                    }));
-                } else {
-                    client.send(JSON.stringify({
-                        type: 'NEW_NOTIFICATION',
-                        userId: targetUserId,
-                        notification: data.notification
-                    }));
-                }
+                client.send(JSON.stringify(
+                    data.type === 'NOTIFICATION_DELETE'
+                        ? {
+                            type: 'NOTIFICATION_DELETE',
+                            userId: targetUserId,
+                            notificationIds: data.notificationIds
+                        }
+                        : {
+                            type: 'NEW_NOTIFICATION',
+                            userId: targetUserId,
+                            notification: data.notification
+                        }
+                ));
             }
         });
     }
 
     function broadcastLineupUpdate(data) {
-        console.log('Broadcasting update:', data);
+        // logger.log('Broadcasting update:', data);
         const clientCount = wss.clients.size;
-        console.log('Number of connected clients:', clientCount);
-        
+        // logger.log('Number of connected clients:', clientCount);
+
         if (clientCount === 0) {
-            console.warn('No clients connected to receive broadcast');
+            logger.warn('No clients connected to receive broadcast');
             return;
         }
 
         wss.clients.forEach(client => {
             if (client.readyState === WebSocket.OPEN) {
                 const clientInfo = clients.get(client);
-                console.log(`Sending to client ${client.id} (${clientInfo?.type}: ${clientInfo?.id})`);
+                // logger.log(`Sending to client ${client.id} (${clientInfo?.type}: ${clientInfo?.id})`);
                 client.send(JSON.stringify(data));
             }
         });

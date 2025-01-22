@@ -94,9 +94,10 @@ export function NotificationsProvider({ children }) {
             
             try {
                 const data = JSON.parse(message.data);
-                console.log('Received WebSocket message:', data);
+                console.log('Processing WebSocket message:', data);
                 
                 if (data.type === 'NEW_NOTIFICATION' && data.userId === getUserId() && data.notification) {
+                    console.log('Adding new notification:', data.notification);
                     setNotifications(prev => {
                         const exists = prev.some(n => n.id === data.notification.id);
                         if (!exists) {
@@ -105,14 +106,40 @@ export function NotificationsProvider({ children }) {
                         return prev;
                     });
                 } else if (data.type === 'NOTIFICATION_DELETE' && data.userId === getUserId()) {
+                    console.log('Deleting notifications:', data.notificationIds);
                     setNotifications(prev => 
                         prev.filter(notification => !data.notificationIds.includes(notification.id))
                     );
                     
-                    // Clear the message after handling deletion
                     if (setLastMessage) {
                         setLastMessage(null);
                     }
+                } else if (data.type === 'EVENT_UPDATE' && data.eventId) {
+                    console.log('Updating notifications for event:', data.eventId);
+                    setNotifications(prev => {
+                        const updatedNotifications = prev.map(notification => {
+                            if (notification.event_id === data.eventId) {
+                                console.log('Updating notification:', notification.id);
+                                return {
+                                    ...notification,
+                                    event_name: data.data.name,
+                                    event_start_time: data.data.start_time,
+                                    event_types: data.data.types,
+                                    active: data.data.active,
+                                    deleted: data.data.deleted,
+                                    venue_name: data.data.venue_name,
+                                    host_name: data.data.host_name
+                                };
+                            }
+                            return notification;
+                        });
+                        
+                        console.log('Updated notifications:', updatedNotifications);
+                        return updatedNotifications;
+                    });
+                    
+                    // Trigger a refetch to ensure we have the latest data
+                    fetchNotifications();
                 }
             } catch (error) {
                 console.error('Error processing WebSocket message:', error);
@@ -126,7 +153,7 @@ export function NotificationsProvider({ children }) {
         return () => {
             clearTimeout(retryTimeout);
         };
-    }, [lastMessage, getUserId, setLastMessage]);
+    }, [lastMessage, getUserId, setLastMessage, fetchNotifications]);
 
     useEffect(() => {
         const newUnreadCount = notifications.filter(n => !n.is_read).length;

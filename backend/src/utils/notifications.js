@@ -23,7 +23,7 @@ async function createNotification(userId, type, message, eventId = null, lineupS
             [userId]
         );
 
-        logger.log('Notification preferences for user:', userId, prefsResult.rows[0]);
+        // logger.log('Notification preferences for user:', userId, prefsResult.rows[0]);
 
         const prefs = prefsResult.rows[0];
         if (!prefs) {

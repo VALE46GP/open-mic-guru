@@ -1,3 +1,5 @@
+// backend/index.js
+
 const path = require('path');
 require('dotenv').config({ path: path.join(__dirname, '.env') });
 
@@ -27,30 +29,16 @@ app.use((req, res, next) => {
 // CORS Configuration
 const corsOptions = {
     origin: function (origin, callback) {
-        
-        // Allow requests with no origin (like mobile apps or curl requests)
-        if (!origin) {
+        const allowedOrigins = [
+            process.env.CLIENT_URL,
+            'http://localhost:3000',
+            'http://192.168.1.104:3000'
+        ];
+
+        if (!origin || allowedOrigins.includes(origin)) {
             callback(null, true);
-            return;
-        }
-
-        try {
-            const requestOrigin = new URL(origin);
-            const allowedHosts = ['localhost', '192.168.1.104'];
-            const allowedPorts = ['3000', '3001'];
-
-            if (allowedHosts.includes(requestOrigin.hostname) && 
-                allowedPorts.includes(requestOrigin.port)) {
-                callback(null, true);
-            } else {
-                console.log('Rejected Origin:', origin);
-                console.log('Hostname:', requestOrigin.hostname);
-                console.log('Port:', requestOrigin.port);
-                callback(new Error('Not allowed by CORS'));
-            }
-        } catch (error) {
-            console.error('Error parsing origin:', error);
-            callback(new Error('Invalid origin format'));
+        } else {
+            callback(new Error('Not allowed by CORS'));
         }
     },
     credentials: true,

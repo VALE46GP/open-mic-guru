@@ -80,7 +80,7 @@ async function getUpdateMessage(originalEvent, updatedFields, venueUtcOffset) {
             changes.push(`• Location changed to ${updatedFields.venue_name}`);
         }
 
-        console.log('Debug - Final changes array:', changes);
+        // console.log('Debug - Final changes array:', changes);
         return changes.length > 0 ? changes.join('\n') + '\n\nYour new performance time is ' : '';
     } catch (error) {
         console.error('Error generating update message:', error);
@@ -255,12 +255,11 @@ const eventsController = {
                 active
             } = req.body;
 
-            // Add debug logs
-            console.log('Update Event Debug:', {
-                newImage: image,
-                originalImage: originalEvent.event_image,
-                areImagesDifferent: image !== originalEvent.event_image
-            });
+            // console.log('Update Event Debug:', {
+            //     newImage: image,
+            //     originalImage: originalEvent.event_image,
+            //     areImagesDifferent: image !== originalEvent.event_image
+            // });
 
             // Validate times first
             if (start_time && end_time && new Date(start_time) >= new Date(end_time)) {
@@ -274,7 +273,7 @@ const eventsController = {
 
             // If there's a new image and it's different from the original, delete the old one
             if (image && originalEvent.event_image && image !== originalEvent.event_image) {
-                console.log('Deleting old image:', originalEvent.event_image);
+                // console.log('Deleting old image:', originalEvent.event_image);
                 await s3Util.deleteImage(originalEvent.event_image);
             }
 
