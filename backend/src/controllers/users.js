@@ -9,7 +9,13 @@ const TokenUtility = require('../utils/token.util');
 const emailService = require('../utils/emailService.util');
 const s3Util = require('../utils/s3.util');
 
-const s3Client = new S3Client({ region: process.env.REACT_APP_AWS_REGION });
+const s3Client = new S3Client({ 
+    region: process.env.REACT_APP_AWS_REGION,
+    credentials: {
+        accessKeyId: process.env.REACT_APP_AWS_ACCESS_KEY_ID,
+        secretAccessKey: process.env.REACT_APP_AWS_SECRET_ACCESS_KEY
+    }
+});
 
 const defaultImageUrl = 'https://open-mic-guru.s3.us-west-1.amazonaws.com/users/user-default.jpg';
 
@@ -50,12 +56,12 @@ const usersController = {
 
             if (isUpdate) {
                 existingUser = await userQueries.getUserProfileById(userId);
-                console.log('Update user image debug:', {
-                    newPhotoUrl: photoUrl,
-                    existingImage: existingUser?.image,
-                    hasExistingImage: !!existingUser?.image,
-                    isDifferent: photoUrl !== existingUser?.image
-                });
+                // console.log('Update user image debug:', {
+                //     newPhotoUrl: photoUrl,
+                //     existingImage: existingUser?.image,
+                //     hasExistingImage: !!existingUser?.image,
+                //     isDifferent: photoUrl !== existingUser?.image
+                // });
 
                 if (!existingUser) {
                     return res.status(404).json({ error: 'User not found' });
@@ -83,12 +89,12 @@ const usersController = {
                         const newPhotoKey = photoUrl.split('/').pop();
                         const existingPhotoKey = existingUser.image.split('/').pop();
                         
-                        console.log('Image comparison:', {
-                            newPhotoKey,
-                            existingPhotoKey,
-                            isDifferent: newPhotoKey !== existingPhotoKey,
-                            isNotDefault: existingUser.image !== defaultImageUrl
-                        });
+                        // console.log('Image comparison:', {
+                        //     newPhotoKey,
+                        //     existingPhotoKey,
+                        //     isDifferent: newPhotoKey !== existingPhotoKey,
+                        //     isNotDefault: existingUser.image !== defaultImageUrl
+                        // });
                         
                         if (newPhotoKey !== existingPhotoKey && existingUser.image !== defaultImageUrl) {
                             console.log('Deleting old user image:', existingUser.image);
@@ -349,7 +355,7 @@ const usersController = {
 
             res.json({ uploadURL });
         } catch (err) {
-            logger.error(err);
+            console.error('Error generating upload URL:', err);
             res.status(500).json({ error: 'Error generating upload URL' });
         }
     },
