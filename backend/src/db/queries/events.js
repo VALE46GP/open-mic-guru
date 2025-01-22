@@ -38,7 +38,7 @@ const eventQueries = {
     },
 
     async getEventById(eventId) {
-        console.log('Fetching event by ID:', eventId);
+        // console.log('Fetching event by ID:', eventId);
         const result = await db.query(`
             SELECT e.id        AS event_id,
                    e.name      AS event_name,
@@ -65,7 +65,7 @@ const eventQueries = {
                      JOIN users u ON e.host_id = u.id
             WHERE e.id = $1 AND e.deleted = false
         `, [eventId]);
-        console.log('Event data:', result.rows[0]);
+        // console.log('Event data:', result.rows[0]);
         return result.rows[0];
     },
 

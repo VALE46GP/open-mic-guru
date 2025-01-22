@@ -9,7 +9,13 @@ const { S3Client, PutObjectCommand } = require("@aws-sdk/client-s3");
 const { getSignedUrl } = require("@aws-sdk/s3-request-presigner");
 const s3Util = require('../utils/s3.util');
 
-const s3Client = new S3Client({ region: process.env.REACT_APP_AWS_REGION });
+const s3Client = new S3Client({ 
+    region: process.env.REACT_APP_AWS_REGION,
+    credentials: {
+        accessKeyId: process.env.REACT_APP_AWS_ACCESS_KEY_ID,
+        secretAccessKey: process.env.REACT_APP_AWS_SECRET_ACCESS_KEY
+    }
+});
 
 async function getUpdateMessage(originalEvent, updatedFields, venueUtcOffset) {
     const changes = [];
@@ -80,7 +86,7 @@ async function getUpdateMessage(originalEvent, updatedFields, venueUtcOffset) {
             changes.push(`• Location changed to ${updatedFields.venue_name}`);
         }
 
-        console.log('Debug - Final changes array:', changes);
+        // console.log('Debug - Final changes array:', changes);
         return changes.length > 0 ? changes.join('\n') + '\n\nYour new performance time is ' : '';
     } catch (error) {
         console.error('Error generating update message:', error);
@@ -255,12 +261,11 @@ const eventsController = {
                 active
             } = req.body;
 
-            // Add debug logs
-            console.log('Update Event Debug:', {
-                newImage: image,
-                originalImage: originalEvent.event_image,
-                areImagesDifferent: image !== originalEvent.event_image
-            });
+            // console.log('Update Event Debug:', {
+            //     newImage: image,
+            //     originalImage: originalEvent.event_image,
+            //     areImagesDifferent: image !== originalEvent.event_image
+            // });
 
             // Validate times first
             if (start_time && end_time && new Date(start_time) >= new Date(end_time)) {
@@ -274,7 +279,7 @@ const eventsController = {
 
             // If there's a new image and it's different from the original, delete the old one
             if (image && originalEvent.event_image && image !== originalEvent.event_image) {
-                console.log('Deleting old image:', originalEvent.event_image);
+                // console.log('Deleting old image:', originalEvent.event_image);
                 await s3Util.deleteImage(originalEvent.event_image);
             }
 
@@ -588,7 +593,7 @@ const eventsController = {
             const uploadURL = await getSignedUrl(s3Client, command, { expiresIn: 60 });
             res.json({ uploadURL });
         } catch (err) {
-            logger.error(err);
+            console.error('Error generating upload URL:', err);
             res.status(500).json(createErrorResponse('Error generating upload URL'));
         }
     }
