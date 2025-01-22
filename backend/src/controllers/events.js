@@ -9,7 +9,13 @@ const { S3Client, PutObjectCommand } = require("@aws-sdk/client-s3");
 const { getSignedUrl } = require("@aws-sdk/s3-request-presigner");
 const s3Util = require('../utils/s3.util');
 
-const s3Client = new S3Client({ region: process.env.REACT_APP_AWS_REGION });
+const s3Client = new S3Client({ 
+    region: process.env.REACT_APP_AWS_REGION,
+    credentials: {
+        accessKeyId: process.env.REACT_APP_AWS_ACCESS_KEY_ID,
+        secretAccessKey: process.env.REACT_APP_AWS_SECRET_ACCESS_KEY
+    }
+});
 
 async function getUpdateMessage(originalEvent, updatedFields, venueUtcOffset) {
     const changes = [];
@@ -587,7 +593,7 @@ const eventsController = {
             const uploadURL = await getSignedUrl(s3Client, command, { expiresIn: 60 });
             res.json({ uploadURL });
         } catch (err) {
-            logger.error(err);
+            console.error('Error generating upload URL:', err);
             res.status(500).json(createErrorResponse('Error generating upload URL'));
         }
     }
