@@ -3,11 +3,11 @@ require('dotenv').config();
 const { logger } = require('../../tests/utils/logger');
 
 const pool = new Pool({
-    user: process.env.PGUSER || 'postgres',
-    host: process.env.PGHOST || 'localhost',
-    database: process.env.PGDATABASE || 'open_mic_guru',
-    password: process.env.PGPASSWORD || 'yourefuckingout',
-    port: process.env.PGPORT || 5432
+    user: process.env.PGUSER,
+    host: process.env.PGHOST,
+    database: process.env.PGDATABASE,
+    password: process.env.PGPASSWORD,
+    port: process.env.PGPORT
 });
 
 pool.on('error', (err) => {

@@ -23,9 +23,10 @@ function getAllowedOrigins() {
     ];
 
     if (process.env.NODE_ENV === 'production') {
+        // In production, get origins from environment variables
         const clientUrl = process.env.CLIENT_URL?.replace(/(^\w+:|^)\/\//, '').replace(/\/$/, '');
         const awsUrl = process.env.REACT_APP_AWS_URL?.replace(/(^\w+:|^)\/\//, '').replace(/\/$/, '');
-        
+
         const productionOrigins = [
             ...(clientUrl ? [clientUrl] : []),
             ...(awsUrl ? [awsUrl] : [])
@@ -36,7 +37,7 @@ function getAllowedOrigins() {
     }
 
     if (process.env.NODE_ENV === 'test') {
-        // In test environment, we want to be more permissive
+        // In test environment, we want to be permissive but maintain the test origins
         return [...developmentOrigins, ...developmentOriginsNoPorts];
     }
 
@@ -65,7 +66,7 @@ function verifyOrigin(origin) {
         const originWithPort = `${requestOrigin.hostname}${requestOrigin.port ? ':' + requestOrigin.port : ''}`;
         const originNoPort = requestOrigin.hostname;
         const allowedOrigins = getAllowedOrigins();
-        
+
         return allowedOrigins.some(allowed => {
             if (allowed.includes(':')) {
                 // Match exact origin with port
@@ -76,6 +77,7 @@ function verifyOrigin(origin) {
         });
     } catch (error) {
         logger.error('Error verifying origin:', error);
+        // Allow in test and development, reject in production
         return process.env.NODE_ENV !== 'production';
     }
 }
