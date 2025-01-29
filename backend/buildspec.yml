@@ -1,4 +1,5 @@
 version: 0.2
+
 phases:
   install:
     runtime-versions:
@@ -7,29 +8,25 @@ phases:
       - echo "Installing dependencies..."
       - cd backend
       - npm install
+
   build:
     commands:
       - echo "Building the application..."
       - npm run build
+
   post_build:
     commands:
-      - echo "Preparing for deployment..."
-      - cd ..
-      - zip -r backend-deploy.zip backend/* backend/.[^.]*
-      - echo "Uploading to S3..."
-      - aws s3 cp backend-deploy.zip s3://open-mic-guru/backend-deploy.zip
-      - export VERSION_LABEL=v-$(date +%Y-%m-%d-%H-%M-%S)
-      - echo "Creating Elastic Beanstalk application version: $VERSION_LABEL"
-      - |
-        aws elasticbeanstalk create-application-version \
-          --application-name open-mic-guru \
-          --version-label $VERSION_LABEL \
-          --source-bundle S3Bucket=open-mic-guru,S3Key=backend-deploy.zip
-      - |
-        aws elasticbeanstalk update-environment \
-          --environment-name open-mic-guru-backend-env \
-          --version-label $VERSION_LABEL
+      - echo "Zipping application for Elastic Beanstalk deployment..."
+      - zip -r ../backend-deploy.zip * .[^.]*
+      - echo "Uploading application to S3 bucket $REACT_APP_S3_BUCKET_NAME..."
+      - aws s3 cp ../backend-deploy.zip s3://$REACT_APP_S3_BUCKET_NAME/backend-deploy.zip
+      - echo "Deploying application to Elastic Beanstalk..."
+      - aws elasticbeanstalk create-application-version --application-name open-mic-guru-backend-env \
+        --version-label $(date +%Y-%m-%d_%H-%M-%S) \
+        --source-bundle S3Bucket=$REACT_APP_S3_BUCKET_NAME,S3Key=backend-deploy.zip
+      - aws elasticbeanstalk update-environment --environment-name open-mic-guru-backend-env \
+        --version-label $(date +%Y-%m-%d_%H-%M-%S)
+
 artifacts:
   files:
-    - backend-deploy.zip
-  base-directory: .
+    - ../backend-deploy.zip
