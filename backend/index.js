@@ -11,7 +11,7 @@ const initializeWebSocketServer = require('./src/websocket/WebSocketServer');
 require('dotenv').config({ path: path.join(__dirname, '.env') });
 
 // Environment Variables
-const PORT = process.env.PORT || 3001;
+const PORT = process.env.PORT || 8080;
 const NODE_ENV = process.env.NODE_ENV || 'development';
 const ALLOWED_ORIGINS = [
     process.env.CLIENT_URL,
