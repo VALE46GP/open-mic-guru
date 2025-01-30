@@ -1,69 +1,106 @@
 // backend/index.js
-
 const path = require('path');
-require('dotenv').config({ path: path.join(__dirname, '.env') });
-
 const express = require('express');
 const cors = require('cors');
 const http = require('http');
+const passport = require('passport');
 const routes = require('./src/routes');
 const initializeWebSocketServer = require('./src/websocket/WebSocketServer');
-const passport = require('passport');
 
+// Load environment variables
+require('dotenv').config({ path: path.join(__dirname, '.env') });
+
+// Environment Variables
 const PORT = process.env.PORT || 3001;
+const NODE_ENV = process.env.NODE_ENV || 'development';
+const ALLOWED_ORIGINS = [
+    process.env.CLIENT_URL,
+    'https://www.openmicguru.com',
+    'https://openmicguru.com',
+    ...(NODE_ENV === 'development' ? [
+        'http://localhost:3000',
+        'http://192.168.1.104:3000'
+    ] : [])
+];
 
+// Initialize Express app and HTTP server
 const app = express();
 const server = http.createServer(app);
 
-// Global Middleware for Logging Requests
+// Request Logging Middleware
 app.use((req, res, next) => {
-    // console.log('=== Incoming Request ===');
-    // console.log(`${req.method} ${req.url}`);
-    // console.log('Headers:', JSON.stringify(req.headers, null, 2));
-    // console.log('Query:', req.query);
-    // console.log('Body:', req.body);
-    // console.log('=====================');
+    if (NODE_ENV !== 'production') {
+        console.log(`[${new Date().toISOString()}] ${req.method} ${req.url}`);
+        console.log('Headers:', req.headers);
+        console.log('Query:', req.query);
+        console.log('Body:', req.body);
+    }
     next();
 });
 
 // CORS Configuration
-const corsOptions = {
-    origin: function (origin, callback) {
-        const allowedOrigins = [
-            process.env.CLIENT_URL,
-            'http://localhost:3000',
-            'http://192.168.1.104:3000'
-        ];
-
-        if (!origin || allowedOrigins.includes(origin)) {
+app.use(cors({
+    origin: (origin, callback) => {
+        if (!origin || ALLOWED_ORIGINS.includes(origin)) {
             callback(null, true);
         } else {
+            console.warn(`Blocked by CORS: ${origin}`);
             callback(new Error('Not allowed by CORS'));
         }
     },
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'Cache-Control', 'Pragma', 'Expires'],
+    allowedHeaders: [
+        'Content-Type',
+        'Authorization',
+        'Cache-Control',
+        'Pragma',
+        'Expires'
+    ],
     exposedHeaders: ['Access-Control-Allow-Origin']
-};
+}));
 
-app.use(cors(corsOptions));
-
-// Middleware for parsing JSON
+// Middleware Setup
 app.use(express.json());
-
-// Initialize Passport
 app.use(passport.initialize());
 
-// Initialize WebSocket server and store broadcast function
+// Error handling middleware
+app.use((err, req, res, next) => {
+    console.error('Server Error:', err);
+    res.status(err.status || 500).json({
+        error: NODE_ENV === 'production' ? 'Internal Server Error' : err.message
+    });
+});
+
+// Initialize WebSocket Server
 const { broadcastLineupUpdate, broadcastNotification } = initializeWebSocketServer(server);
 app.locals.broadcastLineupUpdate = broadcastLineupUpdate;
 app.locals.broadcastNotification = broadcastNotification;
 
-// Define routes
+// Initialize Routes
 routes(app);
 
-// Start the server
+// Health Check Endpoint
+app.get('/health', (req, res) => {
+    res.json({
+        status: 'healthy',
+        environment: NODE_ENV,
+        timestamp: new Date().toISOString()
+    });
+});
+
+// Start Server
 server.listen(PORT, () => {
-    console.log(`Server is running on port ${PORT}`);
+    console.log(`Server running in ${NODE_ENV} mode on port ${PORT}`);
+    console.log(`Allowed origins:`, ALLOWED_ORIGINS);
+});
+
+// Handle unhandled rejections and exceptions
+process.on('unhandledRejection', (reason, promise) => {
+    console.error('Unhandled Rejection at:', promise, 'reason:', reason);
+});
+
+process.on('uncaughtException', (error) => {
+    console.error('Uncaught Exception:', error);
+    process.exit(1);
 });
