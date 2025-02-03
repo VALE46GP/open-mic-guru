@@ -2,7 +2,8 @@ import React, { useState } from 'react';
 import { useAuth } from '../../hooks/useAuth';
 import { useNavigate, useLocation } from 'react-router-dom';
 import CreateUser from '../../components/users/CreateUser';
-import ApiTest from '../../components/ApiTest/ApiTest';
+import ApiTest from '../../components/temporary-tests/ApiTest';
+import UrlTest from '../../components/temporary-tests/UrlTest';
 import './LoginPage.sass';
 
 function LoginPage() {
@@ -90,6 +91,7 @@ function LoginPage() {
     return (
         <div className="login-page">
             <ApiTest />
+            <UrlTest />
             <button 
                 className="login-page__button"
                 data-testid="toggle-form-button"
