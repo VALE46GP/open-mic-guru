@@ -15,6 +15,9 @@ jest.mock('../../hooks/useAuth', () => ({
     }),
 }));
 
+// TODO: remove this when ApitTest is no longer needed.
+jest.mock('../../components/ApiTest/ApiTest', () => () => <div data-testid="api-test-mock" />);
+
 const renderWithProviders = (component) => {
     return render(
         <MemoryRouter>
