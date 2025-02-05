@@ -1,40 +1,31 @@
-import { useState, useEffect } from 'react';
+import React from 'react';
 
-const ApiTest = () => {
-    const [status, setStatus] = useState('Testing connection...');
-    const API_URL = 'https://api.openmicguru.com';
-
-    useEffect(() => {
-        const testConnection = async () => {
-            try {
-                const response = await fetch(`${API_URL}/health`, {
-                    method: 'GET',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                });
-
-                if (response.ok) {
-                    setStatus('Connected successfully to API');
-                } else {
-                    setStatus(`Failed to connect: ${response.status}`);
-                }
-            } catch (error) {
-                setStatus(`Connection error: ${error.message}`);
-            }
-        };
-
-        testConnection();
-    }, []);
+const SimpleTest = () => {
+    const testApi = () => {
+        console.log('Testing API connection...');
+        fetch('https://api.openmicguru.com/health')
+            .then(response => {
+                console.log('Response:', response);
+                return response.json();
+            })
+            .then(data => {
+                console.log('Data:', data);
+            })
+            .catch(error => {
+                console.error('Error:', error);
+            });
+    };
 
     return (
-        <div className="p-4 border rounded">
-            <h2 className="text-xl font-bold mb-4">API Connection Status</h2>
-            <div className={`p-2 rounded ${status.includes('success') ? 'bg-green-100' : 'bg-red-100'}`}>
-                {status}
-            </div>
+        <div className="p-4">
+            <button
+                onClick={testApi}
+                className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+            >
+                Test API Connection
+            </button>
         </div>
     );
 };
 
-export default ApiTest;
+export default SimpleTest;
