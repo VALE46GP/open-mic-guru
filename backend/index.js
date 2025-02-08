@@ -60,6 +60,15 @@ app.use(cors({
     exposedHeaders: ['Access-Control-Allow-Origin']
 }));
 
+// TODO: remove this after successful launch
+app.get('/debug', (req, res) => {
+    res.json({
+        env: process.env,
+        headers: req.headers,
+        timestamp: new Date().toISOString()
+    });
+});
+
 // Middleware Setup
 app.use(express.json());
 app.use(passport.initialize());
