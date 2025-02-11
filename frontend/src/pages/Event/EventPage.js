@@ -9,6 +9,7 @@ import Lineup from '../../components/Lineup/Lineup';
 // import { v4 as uuidv4 } from 'uuid';
 import { useAuth } from '../../hooks/useAuth';
 import { useWebSocketContext } from '../../context/WebSocketContext';
+import { BASE_URL } from '../../config';
 
 const DEV_IP = '192.168.1.104';
 
@@ -59,7 +60,7 @@ function EventPage() {
     useEffect(() => {
         const fetchEventData = async () => {
             try {
-                const response = await fetch(`/api/events/${eventId}`);
+                const response = await fetch(`${BASE_URL}/events/${eventId}`);
                 if (response.status === 410) {
                     navigate('/events', { 
                         replace: true,
@@ -260,7 +261,7 @@ function EventPage() {
         // };
         // const nonUserId = getCookie('nonUserId');
 
-        const response = await fetch('/api/lineup_slots/', {
+        const response = await fetch(`${BASE_URL}/lineup_slots/`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -287,7 +288,7 @@ function EventPage() {
 
     // Remove the local state update after successful DELETE
     const handleSlotDelete = async (slotId) => {
-        const response = await fetch(`/api/lineup_slots/${slotId}`, {
+        const response = await fetch(`${BASE_URL}/lineup_slots/${slotId}`, {
             method: 'DELETE',
             headers: {
                 'Authorization': `Bearer ${localStorage.getItem('token')}`,

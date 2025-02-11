@@ -5,6 +5,7 @@ import CreateUser from '../../components/users/CreateUser';
 import ApiTest from '../../components/temporary-tests/ApiTest';
 // import UrlTest from '../../components/temporary-tests/UrlTest';
 import './LoginPage.sass';
+import { BASE_URL } from '../../config';
 
 function LoginPage() {
     const [email, setEmail] = useState('');
@@ -30,7 +31,7 @@ function LoginPage() {
         }
 
         try {
-            const response = await fetch('/api/users/login', {
+            const response = await fetch(`${BASE_URL}/users/login`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -66,7 +67,7 @@ function LoginPage() {
         }
 
         try {
-            const response = await fetch('/api/users/forgot-password', {
+            const response = await fetch(`${BASE_URL}/users/forgot-password`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

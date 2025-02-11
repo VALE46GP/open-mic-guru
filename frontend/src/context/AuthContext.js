@@ -1,4 +1,5 @@
 import React, { createContext, useState, useEffect, useCallback } from 'react';
+import { BASE_URL } from '../config';
 
 // console.log('Domain debug:', {
 //     hostname: window.location.hostname,
@@ -38,7 +39,7 @@ export const AuthProvider = ({ children }) => {
             const userId = payload.userId;
 
             // Fetch the user's details from the backend
-            const response = await fetch(`/api/users/${userId}`, {
+            const response = await fetch(`${BASE_URL}/users/${userId}`, {
                 headers: {
                     Authorization: `Bearer ${token}`,
                 },

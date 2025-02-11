@@ -9,6 +9,7 @@ import './EventsPage.sass';
 import { useNavigate } from 'react-router-dom';
 import { useWebSocketContext } from '../../context/WebSocketContext';
 import { sortEventsByDate } from '../../utils/eventUtils';
+import { BASE_URL } from '../../config';
 
 const EVENT_TYPE_OPTIONS = [
     { label: 'Music', value: 'music' },
@@ -105,7 +106,7 @@ const EventsPage = () => {
     useEffect(() => {
         const fetchEvents = async () => {
             try {
-                const response = await fetch('/api/events');
+                const response = await fetch(`${BASE_URL}/events`);
                 if (!response.ok) {
                     throw new Error('Failed to fetch events');
                 }

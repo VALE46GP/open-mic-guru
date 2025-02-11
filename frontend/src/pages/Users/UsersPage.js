@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import UserCard from '../../components/users/UserCard';
 import UserSearch from '../../components/users/UserSearch';
 import './UsersPage.sass';
+import { BASE_URL } from '../../config';
 
 function UsersPage() {
     const [users, setUsers] = useState([]);
@@ -10,7 +11,7 @@ function UsersPage() {
     useEffect(() => {
         const fetchUsers = async () => {
             try {
-                const response = await fetch('/api/users');
+                const response = await fetch(`${BASE_URL}/users`);
                 if (!response.ok) {
                     throw new Error('Failed to fetch users');
                 }

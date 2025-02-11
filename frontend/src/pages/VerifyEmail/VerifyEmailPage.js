@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import BorderBox from '../../components/shared/BorderBox/BorderBox';
 import './VerifyEmailPage.sass';
+import { BASE_URL } from '../../config';
 
 function VerifyEmailPage() {
     const [searchParams] = useSearchParams();
@@ -31,7 +32,7 @@ function VerifyEmailPage() {
         let isSubscribed = true;
         const verifyEmail = async () => {
             try {
-                const verifyUrl = `/api/users/verifications/${token}`;
+                const verifyUrl = `${BASE_URL}/users/verifications/${token}`;
                 console.log('Making verification request to:', verifyUrl);
 
                 const verifyResponse = await fetch(verifyUrl, {
@@ -79,7 +80,7 @@ function VerifyEmailPage() {
         if (!email) return;
 
         try {
-            const response = await fetch('/api/users/verifications', {
+            const response = await fetch(`${BASE_URL}/users/verifications`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

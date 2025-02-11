@@ -7,6 +7,7 @@ import { socialMediaPlatforms } from '../../components/utils/socialMediaPlatform
 import './UserPage.sass';
 import { useWebSocketContext } from '../../context/WebSocketContext';
 import { sortEventsByDate } from '../../utils/eventUtils';
+import { BASE_URL } from '../../config';
 
 function UserPage() {
     const { userId } = useParams();
@@ -19,7 +20,7 @@ function UserPage() {
     useEffect(() => {
         const fetchUserData = async () => {
             try {
-                const response = await fetch(`/api/users/${userId}`);
+                const response = await fetch(`${BASE_URL}/users/${userId}`);
                 const data = await response.json();
                 setUserData(data);
             } catch (error) {

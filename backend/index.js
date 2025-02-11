@@ -60,12 +60,26 @@ app.use(cors({
     exposedHeaders: ['Access-Control-Allow-Origin']
 }));
 
-// TODO: remove this after successful launch
+// TODO: remove these after successful launch
 app.get('/debug', (req, res) => {
     res.json({
         env: process.env,
         headers: req.headers,
         timestamp: new Date().toISOString()
+    });
+});
+
+app.get('/debug-server', (req, res) => {
+    res.json({
+        port: PORT,
+        nodeEnv: NODE_ENV,
+        allowedOrigins: ALLOWED_ORIGINS,
+        processEnv: {
+            NODE_ENV: process.env.NODE_ENV,
+            PORT: process.env.PORT,
+            CLIENT_URL: process.env.CLIENT_URL
+        },
+        serverTime: new Date().toISOString()
     });
 });
 
