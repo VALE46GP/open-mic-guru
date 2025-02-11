@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { BASE_URL } from '../../config';
 
 function CreateVenue() {
     const [selectedVenue, setSelectedVenue] = useState(null);
@@ -30,7 +31,7 @@ function CreateVenue() {
         };
 
         try {
-            const response = await fetch('/api/venues/checkOrCreate', {
+            const response = await fetch(`${BASE_URL}/venues/checkOrCreate`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

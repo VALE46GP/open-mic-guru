@@ -6,6 +6,7 @@ import { ReactComponent as DeleteIcon } from "../../assets/icons/delete.svg";
 import { socialMediaPlatforms } from '../utils/socialMediaPlatforms';
 import './CreateUser.sass';
 import { useAuth } from '../../hooks/useAuth';
+import { BASE_URL } from '../../config';
 
 axios.defaults.withCredentials = true;
 
@@ -64,7 +65,7 @@ function CreateUser({ initialData, onCancel }) {
         setPasswordResetSuccess(false);
 
         try {
-            const response = await fetch('/api/users/forgot-password', {
+            const response = await fetch(`${BASE_URL}/users/forgot-password`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -187,7 +188,7 @@ function CreateUser({ initialData, onCancel }) {
             
             const response = await axios({
                 method: 'DELETE',
-                url: `/api/users/${initialData.id}`,
+                url: `${BASE_URL}/users/${initialData.id}`,
                 headers: {
                     'Authorization': `Bearer ${token}`
                 }

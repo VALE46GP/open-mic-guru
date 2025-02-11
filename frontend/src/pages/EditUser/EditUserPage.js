@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import CreateUser from '../../components/users/CreateUser';
 import { useAuth } from '../../hooks/useAuth';
+import { BASE_URL } from '../../config';
 
 function EditUserPage() {
     const { userId } = useParams();
@@ -17,7 +18,7 @@ function EditUserPage() {
 
         const fetchUserData = async () => {
             try {
-                const response = await fetch(`/api/users/${userId}`);
+                const response = await fetch(`${BASE_URL}/users/${userId}`);
                 const data = await response.json();
                 setUserData(data.user);
             } catch (error) {

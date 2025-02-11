@@ -3,6 +3,7 @@ import { screen, fireEvent, waitFor, act, cleanup } from '@testing-library/react
 import Lineup from './Lineup';
 import { mockLineupSlots } from '../../testData/mockLineupSlots';
 import { renderWithProviders } from '../../testUtils/testUtils';
+import { BASE_URL } from '../../config';
 
 // Mock components
 jest.mock('../shared/BorderBox/BorderBox', () => {
@@ -236,7 +237,7 @@ describe('Lineup Component', () => {
 
         await waitFor(() => {
             expect(global.fetch).toHaveBeenCalledWith(
-                '/api/lineup_slots/123/toggle-signup',
+                `${BASE_URL}/lineup_slots/123/toggle-signup`,
                 expect.objectContaining({
                     method: 'PUT',
                     headers: {

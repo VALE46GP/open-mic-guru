@@ -5,6 +5,7 @@ import BorderBox from '../shared/BorderBox/BorderBox';
 import './Lineup.sass';
 import Switch from '../shared/Switch/Switch';
 import { useWebSocketContext } from '../../context/WebSocketContext';
+import { BASE_URL } from '../../config';
 
 function Slot({
                   slot,
@@ -192,7 +193,7 @@ function Lineup({
             try {
                 // Only fetch if we have slots and an event ID
                 if (slots.length > 0 && slots[0].event_id) {
-                    const response = await fetch(`/api/lineup_slots/${slots[0].event_id}/status`);
+                    const response = await fetch(`${BASE_URL}/lineup_slots/${slots[0].event_id}/status`);
                     const data = await response.json();
                     setIsSignupOpen(data.is_signup_open);
                 }
@@ -323,7 +324,7 @@ function Lineup({
         try {
             // First update any existing slots' order
             if (editedSlots.some(slot => slot.slot_id)) {
-                const response = await fetch('/api/lineup_slots/reorder', {
+                const response = await fetch(`${BASE_URL}/lineup_slots/reorder`, {
                     method: 'PUT',
                     headers: {
                         'Content-Type': 'application/json',
@@ -349,7 +350,7 @@ function Lineup({
                 const eventId = slots[0]?.event_id;
                 if (!eventId) throw new Error('Event ID not found');
 
-                const eventUpdateResponse = await fetch(`/api/events/${eventId}/extend`, {
+                const eventUpdateResponse = await fetch(`${BASE_URL}/events/${eventId}/extend`, {
                     method: 'PUT',
                     headers: {
                         'Content-Type': 'application/json',
@@ -392,7 +393,7 @@ function Lineup({
 
     const handleSignupToggle = async () => {
         try {
-            const response = await fetch(`/api/lineup_slots/${eventId}/toggle-signup`, {
+            const response = await fetch(`${BASE_URL}/lineup_slots/${eventId}/toggle-signup`, {
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json'

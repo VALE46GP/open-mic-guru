@@ -7,6 +7,7 @@ import TextInput from '../shared/TextInput';
 import LocationMap from '../shared/LocationMap';
 import './CreateEvent.sass';
 import BorderBox from '../shared/BorderBox/BorderBox';
+import { BASE_URL } from '../../config';
 
 function CreateEvent() {
     const { eventId } = useParams();
@@ -39,7 +40,7 @@ function CreateEvent() {
         if (eventId) {
             const fetchEventDetails = async () => {
                 try {
-                    const response = await fetch(`/api/events/${eventId}`);
+                    const response = await fetch(`${BASE_URL}/events/${eventId}`);
                     const { data } = await response.json();
 
                     if (data.event) {
@@ -164,7 +165,7 @@ function CreateEvent() {
         if (file instanceof File) {
             try {
                 // Get the S3 upload URL
-                const response = await fetch('/api/events/upload', {
+                const response = await fetch(`${BASE_URL}/events/upload`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -244,7 +245,7 @@ function CreateEvent() {
                 console.log('Using existing image:', imagePreview);
             }
 
-            const url = isEditMode ? `/api/events/${eventId}` : '/api/events';
+            const url = isEditMode ? `${BASE_URL}/events/${eventId}` : `${BASE_URL}/events`;
             const method = isEditMode ? 'PATCH' : 'POST';
 
             const payload = {
@@ -296,7 +297,7 @@ function CreateEvent() {
         };
 
         try {
-            const response = await fetch('/api/venues/checkOrCreate', {
+            const response = await fetch(`${BASE_URL}/venues/checkOrCreate`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -318,7 +319,7 @@ function CreateEvent() {
     const handleDelete = async () => {
         if (window.confirm('Are you sure you want to perminantly delete this event? \nYou could just cancel the event. \nCancelled events are still visible and can be reinstated.')) {
             try {
-                const response = await authenticatedFetch(`/api/events/${eventId}`, {
+                const response = await authenticatedFetch(`${BASE_URL}/events/${eventId}`, {
                     method: 'DELETE'
                 });
 

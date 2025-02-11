@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import BorderBox from '../../components/shared/BorderBox/BorderBox';
 import './ResetPasswordPage.sass';
+import { BASE_URL } from '../../config';
 
 function ResetPasswordPage() {
     const [searchParams] = useSearchParams();
@@ -32,7 +33,7 @@ function ResetPasswordPage() {
         }
 
         try {
-            const response = await fetch('/api/users/reset-password', {
+            const response = await fetch(`${BASE_URL}/users/reset-password`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

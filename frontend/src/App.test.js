@@ -3,6 +3,7 @@ import { render, screen, waitFor } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import App from './App';
 import '@testing-library/jest-dom';
+import { BASE_URL } from './config';
 
 // Properly mock console methods
 const originalConsole = { ...console };
@@ -29,7 +30,7 @@ afterEach(() => {
 
 beforeAll(() => {
     global.fetch = jest.fn((url) => {
-        if (url.includes('/api/events')) {
+        if (url.includes(`${BASE_URL}events`)) {
             return Promise.resolve({
                 ok: true,
                 json: () =>
@@ -48,7 +49,7 @@ beforeAll(() => {
             });
         }
 
-        if (url.includes('/api/notifications')) {
+        if (url.includes(`${BASE_URL}/notifications`)) {
             return Promise.resolve({
                 ok: true,
                 json: () =>
