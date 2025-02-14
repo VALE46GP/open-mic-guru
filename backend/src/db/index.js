@@ -14,10 +14,10 @@ if (process.env.NODE_ENV === 'production') {
     try {
         poolConfig.ssl = {
             rejectUnauthorized: true,
-            ca: process.env.RDS_CA_CERT
+            ca: Buffer.from(process.env.RDS_CA_CERT, 'base64').toString('ascii')
         };
     } catch (error) {
-        console.error('Error loading SSL certificate:', error);
+        console.error('Error configuring SSL:', error);
         process.exit(1);
     }
 }
