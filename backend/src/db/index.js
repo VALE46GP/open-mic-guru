@@ -1,4 +1,5 @@
 const { Pool } = require('pg');
+const fs = require('fs');
 require('dotenv').config();
 const { logger } = require('../../tests/utils/logger');
 
