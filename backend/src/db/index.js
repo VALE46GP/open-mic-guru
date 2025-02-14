@@ -11,10 +11,17 @@ const poolConfig = {
 };
 
 if (process.env.NODE_ENV === 'production') {
-    poolConfig.ssl = {
-        rejectUnauthorized: true,
-        ca: process.env.RDS_CA_CERT
-    };
+    try {
+        const ca = fs.readFileSync('/var/app/current/global-bundle.pem').toString();
+        poolConfig.ssl = {
+            rejectUnauthorized: true,
+            ca: ca,
+            checkServerIdentity: () => undefined // This is needed for RDS certificate verification
+        };
+    } catch (error) {
+        console.error('Error loading SSL certificate:', error);
+        process.exit(1);
+    }
 }
 
 const pool = new Pool(poolConfig);
