@@ -83,6 +83,33 @@ app.get('/debug-server', (req, res) => {
     });
 });
 
+app.get('/debug-db', async (req, res) => {
+    try {
+        // Simple query to test DB connection
+        const result = await pool.query('SELECT NOW() as time');
+
+        res.json({
+            status: 'success',
+            message: 'Database connection successful',
+            serverTime: new Date().toISOString(),
+            dbTime: result.rows[0].time,
+            dbConfig: {
+                host: process.env.PGHOST,
+                database: process.env.PGDATABASE,
+                port: process.env.PGPORT,
+                ssl: process.env.NODE_ENV === 'production' ? 'enabled' : 'disabled'
+            }
+        });
+    } catch (error) {
+        res.status(500).json({
+            status: 'error',
+            message: 'Database connection failed',
+            error: error.message,
+            stack: process.env.NODE_ENV === 'production' ? null : error.stack
+        });
+    }
+});
+
 // Middleware Setup
 app.use(express.json());
 app.use(passport.initialize());
