@@ -1,3 +1,4 @@
+// frontend/src/context/NotificationsContext.js
 import React, { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react';
 import { useAuth } from '../hooks/useAuth';
 import { useWebSocketContext } from './WebSocketContext';
@@ -5,8 +6,9 @@ import { useWebSocketContext } from './WebSocketContext';
 const NotificationsContext = createContext();
 
 const getApiUrl = () => {
-    const hostname = window.location.hostname;
-    return `http://${hostname}:3001`;
+    return process.env.NODE_ENV === 'development'
+        ? 'http://localhost:3001'
+        : 'https://api.openmicguru.com';
 };
 
 export function NotificationsProvider({ children }) {
