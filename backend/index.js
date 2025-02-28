@@ -41,6 +41,11 @@ app.use((req, res, next) => {
 // CORS Configuration
 app.use(cors({
     origin: (origin, callback) => {
+        // Log all origins in production for debugging
+        if (NODE_ENV === 'production') {
+            console.log(`Request origin: ${origin || 'No origin'}`);
+        }
+
         if (!origin || ALLOWED_ORIGINS.includes(origin)) {
             callback(null, true);
         } else {
