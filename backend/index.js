@@ -6,6 +6,7 @@ const http = require('http');
 const passport = require('passport');
 const routes = require('./src/routes');
 const initializeWebSocketServer = require('./src/websocket/WebSocketServer');
+const pool = require('./src/db');
 
 // Load environment variables
 require('dotenv').config({ path: path.join(__dirname, '.env') });
@@ -15,7 +16,6 @@ const PORT = process.env.PORT || 3001;
 const NODE_ENV = process.env.NODE_ENV || 'development';
 const ALLOWED_ORIGINS = [
     process.env.CLIENT_URL,
-    'https://www.openmicguru.com',
     'https://openmicguru.com',
     ...(NODE_ENV === 'development' ? [
         'http://localhost:3000',
@@ -65,7 +65,11 @@ app.use(cors({
     exposedHeaders: ['Access-Control-Allow-Origin']
 }));
 
-// TODO: remove these after successful launch
+// Middleware Setup
+app.use(express.json());
+app.use(passport.initialize());
+
+// Debug Endpoints
 app.get('/debug', (req, res) => {
     res.json({
         env: process.env,
@@ -88,6 +92,7 @@ app.get('/debug-server', (req, res) => {
     });
 });
 
+// Database debug endpoint
 app.get('/debug-db', async (req, res) => {
     try {
         // Simple query to test DB connection
@@ -106,6 +111,7 @@ app.get('/debug-db', async (req, res) => {
             }
         });
     } catch (error) {
+        console.error('Database debug error:', error);
         res.status(500).json({
             status: 'error',
             message: 'Database connection failed',
@@ -115,9 +121,38 @@ app.get('/debug-db', async (req, res) => {
     }
 });
 
-// Middleware Setup
-app.use(express.json());
-app.use(passport.initialize());
+// Environment variables debug endpoint (safe version)
+app.get('/debug-env', (req, res) => {
+    // Only show non-sensitive environment variables
+    res.json({
+        database: {
+            host: process.env.PGHOST,
+            database: process.env.PGDATABASE,
+            port: process.env.PGPORT,
+            user: process.env.PGUSER ? 'Set' : 'Not set',
+            password: process.env.PGPASSWORD ? 'Set' : 'Not set',
+            ssl: {
+                enabled: process.env.NODE_ENV === 'production',
+                cert: process.env.RDS_CA_CERT ? 'Set' : 'Not set',
+                certLength: process.env.RDS_CA_CERT ? Buffer.from(process.env.RDS_CA_CERT, 'base64').toString('ascii').length : 0
+            }
+        },
+        server: {
+            nodeEnv: process.env.NODE_ENV,
+            port: process.env.PORT,
+            clientUrl: process.env.CLIENT_URL
+        }
+    });
+});
+
+// Health Check Endpoint
+app.get('/health', (req, res) => {
+    res.json({
+        status: 'healthy',
+        environment: NODE_ENV,
+        timestamp: new Date().toISOString()
+    });
+});
 
 // Error handling middleware
 app.use((err, req, res, next) => {
@@ -134,15 +169,6 @@ app.locals.broadcastNotification = broadcastNotification;
 
 // Initialize Routes
 routes(app);
-
-// Health Check Endpoint
-app.get('/health', (req, res) => {
-    res.json({
-        status: 'healthy',
-        environment: NODE_ENV,
-        timestamp: new Date().toISOString()
-    });
-});
 
 // Start Server
 server.listen(PORT, () => {
