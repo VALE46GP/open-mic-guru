@@ -29,12 +29,12 @@ const server = http.createServer(app);
 
 // Request Logging Middleware
 app.use((req, res, next) => {
-    if (NODE_ENV !== 'production') {
-        console.log(`[${new Date().toISOString()}] ${req.method} ${req.url}`);
-        console.log('Headers:', req.headers);
-        console.log('Query:', req.query);
-        console.log('Body:', req.body);
-    }
+    // if (NODE_ENV !== 'production') {
+    //     console.log(`[${new Date().toISOString()}] ${req.method} ${req.url}`);
+    //     console.log('Headers:', req.headers);
+    //     console.log('Query:', req.query);
+    //     console.log('Body:', req.body);
+    // }
     next();
 });
 
@@ -42,9 +42,9 @@ app.use((req, res, next) => {
 app.use(cors({
     origin: (origin, callback) => {
         // Log all origins in production for debugging
-        if (NODE_ENV === 'production') {
-            console.log(`Request origin: ${origin || 'No origin'}`);
-        }
+        // if (NODE_ENV === 'production') {
+        //     console.log(`Request origin: ${origin || 'No origin'}`);
+        // }
 
         if (!origin || ALLOWED_ORIGINS.includes(origin)) {
             callback(null, true);

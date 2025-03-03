@@ -13,7 +13,7 @@ const poolConfig = {
 
 if (process.env.NODE_ENV === 'production') {
     try {
-        console.log('Configuring SSL for database connection in production');
+        // console.log('Configuring SSL for database connection in production');
 
         // OPTION 1: Use this for testing only - will accept self-signed certificates
         poolConfig.ssl = {
@@ -46,19 +46,19 @@ if (process.env.NODE_ENV === 'production') {
     }
 }
 
-console.log('Creating database pool with config:', {
-    host: poolConfig.host,
-    database: poolConfig.database,
-    port: poolConfig.port,
-    ssl: poolConfig.ssl ? `configured (rejectUnauthorized: ${poolConfig.ssl.rejectUnauthorized})` : 'not configured'
-});
+// console.log('Creating database pool with config:', {
+//     host: poolConfig.host,
+//     database: poolConfig.database,
+//     port: poolConfig.port,
+//     ssl: poolConfig.ssl ? `configured (rejectUnauthorized: ${poolConfig.ssl.rejectUnauthorized})` : 'not configured'
+// });
 
 const pool = new Pool(poolConfig);
 
 // Add connection event handler for debugging
-pool.on('connect', () => {
-    console.log('New database connection established successfully');
-});
+// pool.on('connect', () => {
+//     console.log('New database connection established successfully');
+// });
 
 pool.on('error', (err) => {
     console.error('Unexpected error on idle client', err);
