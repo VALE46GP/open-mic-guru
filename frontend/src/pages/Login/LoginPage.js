@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useAuth } from '../../hooks/useAuth';
 import { useNavigate, useLocation } from 'react-router-dom';
 import CreateUser from '../../components/users/CreateUser';
-import ApiTest from '../../components/temporary-tests/ApiTest';
+// import ApiTest from '../../components/temporary-tests/ApiTest';
 // import UrlTest from '../../components/temporary-tests/UrlTest';
 import './LoginPage.sass';
 import { BASE_URL } from '../../config';
@@ -91,7 +91,7 @@ function LoginPage() {
 
     return (
         <div className="login-page">
-            <ApiTest />
+            {/*<ApiTest />*/}
             {/*<UrlTest />*/}
             <button 
                 className="login-page__button"

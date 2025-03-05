@@ -28,4 +28,4 @@ export const sortEventsByDate = (events) => {
     );
     
     return [...sortedFutureEvents, ...sortedPastEvents];
-}; 
+};

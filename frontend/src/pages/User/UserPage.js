@@ -79,8 +79,9 @@ function UserPage() {
     const isOwnProfile = user && String(user.id) === String(userId);
 
     const allSortedEvents = sortEventsByDate(userData.events);
-    const currentEvents = allSortedEvents.slice(0, allSortedEvents.findIndex(event => new Date(event.start_time) < new Date()));
-    const pastEvents = allSortedEvents.slice(allSortedEvents.findIndex(event => new Date(event.start_time) < new Date()));
+    const splitIndex = allSortedEvents.findIndex(event => new Date(event.start_time) < new Date());
+    const currentEvents = splitIndex === -1 ? allSortedEvents : allSortedEvents.slice(0, splitIndex);
+    const pastEvents = splitIndex === -1 ? [] : allSortedEvents.slice(splitIndex);
 
     return (
         <div className="user-page">
